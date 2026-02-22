@@ -350,6 +350,8 @@ export function AIProvider(props: ParentProps) {
       timestamp: Date.now(),
     };
 
+    const abortController = new AbortController();
+
     batch(() => {
       setState(
         produce((s) => {
@@ -363,10 +365,8 @@ export function AIProvider(props: ParentProps) {
       );
       setState("isStreaming", true);
       setState("streamingContent", "");
+      setState("currentStreamAbortController", abortController);
     });
-
-    const abortController = new AbortController();
-    setState("currentStreamAbortController", abortController);
 
     try {
       const thread = state.threads.find(t => t.id === threadId);
@@ -407,7 +407,9 @@ export function AIProvider(props: ParentProps) {
         produce((s) => {
           const thread = s.threads.find((t) => t.id === threadId);
           if (thread) {
-            thread.messages = thread.messages.filter((m) => m.id !== assistantMessage.id);
+            thread.messages = thread.messages.filter(
+              (m) => m.id !== assistantMessage.id && m.id !== userMessage.id
+            );
           }
         })
       );
@@ -429,6 +431,10 @@ export function AIProvider(props: ParentProps) {
     if (abortController) {
       abortController.abort();
     }
+
+    invoke("ai_cancel_stream", { threadId: state.activeThreadId }).catch(() => {
+      // Backend may not support cancel — ignore
+    });
 
     batch(() => {
       if (state.streamingContent) {

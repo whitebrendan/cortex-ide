@@ -318,11 +318,11 @@ export function AgentStep(props: AgentStepProps) {
         <div class="flex-1 font-mono text-[11px] font-medium flex items-center gap-2" style={{ color: palette.textBody }}>
           <span style={{ color: palette.accent }}>{getDisplayName()}</span>
           <span class="truncate max-w-[300px]" style={{ color: palette.textMuted }}>
-            {props.tool.name.toLowerCase().includes("ls") && props.tool.input.directory_path 
+            {props.tool.name.toLowerCase().includes("ls") && props.tool.input?.directory_path 
               ? (props.tool.input.directory_path as string)
-              : props.tool.name.toLowerCase().includes("read") && props.tool.input.file_path
+              : props.tool.name.toLowerCase().includes("read") && props.tool.input?.file_path
               ? (props.tool.input.file_path as string)
-              : JSON.stringify(props.tool.input)}
+              : (() => { try { return JSON.stringify(props.tool.input || {}); } catch { return "{}"; } })()}
           </span>
         </div>
         

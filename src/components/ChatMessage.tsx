@@ -175,7 +175,7 @@ export function ChatMessage(props: ChatMessageProps) {
             <Show when={part.type === "tool"} fallback={
               <Show when={(part as { type: "text"; content: string }).content}>
                 <div style={isUser() ? userMessageStyle : { ...assistantMessageStyle, ...contentStyle }}>
-                  <Markdown content={(part as { type: "text"; content: string }).content} />
+                  <Markdown content={(part as { type: "text"; content: string }).content || ""} />
                 </div>
               </Show>
             }>
@@ -305,7 +305,7 @@ function ToolCallCard(props: ToolCallCardProps) {
       <Show when={expanded()}>
         <div style={{ "border-top": `1px solid ${palette.borderSubtle}` }}>
           {/* Input */}
-          <Show when={Object.keys(props.tool.input).length > 0}>
+          <Show when={props.tool.input && Object.keys(props.tool.input).length > 0}>
             <div 
               style={{ 
                 padding: "8px 12px", 

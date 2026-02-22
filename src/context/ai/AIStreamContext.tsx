@@ -159,6 +159,10 @@ export function AIStreamProvider(props: ParentProps) {
       abortController.abort();
     }
 
+    invoke("ai_cancel_stream").catch(() => {
+      // Backend may not support cancel — ignore
+    });
+
     batch(() => {
       setState("isStreaming", false);
       setState("streamingContent", "");

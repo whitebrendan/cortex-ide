@@ -291,8 +291,11 @@ export function QuickChat() {
       setShowQuickActions(false);
     });
 
-    // Send through AI context
-    await ai.sendMessage(processedContent, context);
+    try {
+      await ai.sendMessage(processedContent, context);
+    } catch (e) {
+      console.error("[QuickChat] Failed to send message:", e);
+    }
   };
 
   const handleCancel = () => {
@@ -300,7 +303,11 @@ export function QuickChat() {
   };
 
   const handleNewThread = async () => {
-    await ai.createThread();
+    try {
+      await ai.createThread();
+    } catch (e) {
+      console.error("[QuickChat] Failed to create thread:", e);
+    }
   };
 
   const copyMessage = async (message: Message) => {
@@ -324,7 +331,11 @@ export function QuickChat() {
   };
 
   const clearHistory = async () => {
-    await ai.clearAllThreads();
+    try {
+      await ai.clearAllThreads();
+    } catch (e) {
+      console.error("[QuickChat] Failed to clear history:", e);
+    }
   };
 
   const handleInputKeyDown = (e: KeyboardEvent) => {

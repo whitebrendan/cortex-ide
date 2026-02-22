@@ -238,7 +238,12 @@ export function SDKProvider(props: ParentProps) {
   };
 
   const processMessage = (data: CortexEvent) => {
+    if (!data || !data.type) {
+      cortexLogger.warn("Received malformed cortex event:", data);
+      return;
+    }
     cortexLogger.debug("Event:", data.type, data);
+    try {
     switch (data.type) {
       case "joined_session":
         const newSession: Session = {
@@ -304,36 +309,46 @@ export function SDKProvider(props: ParentProps) {
         break;
 
       case "stream_chunk":
-        setState(produce((s) => {
-          const msg = s.messages.find(m => m.id === currentMessageId);
-          if (msg && msg.role === "assistant") {
-            appendText(msg, data.content as string);
-          }
-        }));
+        if (data.content != null) {
+          setState(produce((s) => {
+            const msg = s.messages.find(m => m.id === currentMessageId);
+            if (msg && msg.role === "assistant") {
+              appendText(msg, String(data.content));
+            }
+          }));
+        }
         break;
 
       case "agent_message":
-        setState(produce((s) => {
-          const msg = s.messages.find(m => m.id === currentMessageId);
-          if (msg && msg.role === "assistant") {
-            msg.parts = msg.parts.filter(p => p.type !== "text");
-            msg.parts.push({ type: "text", content: data.content as string });
-          }
-        }));
+        if (data.content != null) {
+          setState(produce((s) => {
+            const msg = s.messages.find(m => m.id === currentMessageId);
+            if (msg && msg.role === "assistant") {
+              msg.parts = msg.parts.filter(p => p.type !== "text");
+              msg.parts.push({ type: "text", content: String(data.content) });
+            }
+          }));
+        }
         break;
 
       case "reasoning_delta":
-        setState("reasoning", state.reasoning + (data.delta as string));
-        setState(produce((s) => {
-          const msg = s.messages.find(m => m.id === currentMessageId);
-          if (msg) {
-            msg.reasoning = (msg.reasoning || "") + (data.delta as string);
-          }
-        }));
+        if (data.delta != null) {
+          const delta = String(data.delta);
+          setState("reasoning", state.reasoning + delta);
+          setState(produce((s) => {
+            const msg = s.messages.find(m => m.id === currentMessageId);
+            if (msg) {
+              msg.reasoning = (msg.reasoning || "") + delta;
+            }
+          }));
+        }
         break;
 
-      case "tool_call_begin":
-        cortexLogger.debug("tool_call_begin - currentMessageId:", currentMessageId, "tool:", data.tool_name);
+      case "tool_call_begin": {
+        const callId = String(data.call_id || "");
+        const toolName = String(data.tool_name || "unknown");
+        const toolArgs = (data.arguments as Record<string, unknown>) || {};
+        cortexLogger.debug("tool_call_begin - currentMessageId:", currentMessageId, "tool:", toolName);
         setState(produce((s) => {
           const msg = s.messages.find(m => m.id === currentMessageId);
           cortexLogger.debug("Adding tool to message:", msg?.id);
@@ -341,15 +356,14 @@ export function SDKProvider(props: ParentProps) {
             msg.parts.push({
               type: "tool",
               tool: {
-                id: data.call_id as string,
-                name: data.tool_name as string,
-                input: data.arguments as Record<string, unknown>,
+                id: callId,
+                name: toolName,
+                input: toolArgs,
                 status: "running",
               }
             });
           } else {
             cortexLogger.warn("No message found for tool_call_begin! Creating one.");
-            // Create a message if none exists
             currentMessageId = crypto.randomUUID();
             s.messages.push({
               id: currentMessageId,
@@ -357,9 +371,9 @@ export function SDKProvider(props: ParentProps) {
               parts: [{
                 type: "tool",
                 tool: {
-                  id: data.call_id as string,
-                  name: data.tool_name as string,
-                  input: data.arguments as Record<string, unknown>,
+                  id: callId,
+                  name: toolName,
+                  input: toolArgs,
                   status: "running",
                 }
               }],
@@ -369,6 +383,7 @@ export function SDKProvider(props: ParentProps) {
           }
         }));
         break;
+      }
 
       case "tool_call_output_delta":
         setState(produce((s) => {
@@ -474,6 +489,9 @@ export function SDKProvider(props: ParentProps) {
       case "terminal_list":
         window.dispatchEvent(new CustomEvent("cortex:terminal-list", { detail: data }));
         break;
+    }
+    } catch (e) {
+      cortexLogger.error("Error processing cortex event:", data.type, e);
     }
   };
 
@@ -663,24 +681,24 @@ export function SDKProvider(props: ParentProps) {
         invoke("cortex_get_status", { sessionId }) as Promise<any>
       ]);
 
-      const messages: Message[] = (history || []).map((m: any) => ({
+      const messages: Message[] = (history || []).filter((m: any) => m && m.id).map((m: any) => ({
         id: m.id,
-        role: m.role,
+        role: m.role || "assistant",
         parts: [
-          { type: "text" as const, content: m.content },
+          { type: "text" as const, content: m.content || "" },
           ...(m.tool_calls || []).map((tc: any) => ({
             type: "tool" as const,
             tool: {
-              id: tc.id,
-              name: tc.name,
-              input: tc.input,
+              id: tc.id || "",
+              name: tc.name || "unknown",
+              input: tc.input || {},
               output: tc.output,
               status: tc.success ? "completed" : "error",
               durationMs: tc.duration_ms,
             } as ToolCall,
           })),
         ],
-        timestamp: m.timestamp * 1000,
+        timestamp: (m.timestamp || 0) * 1000,
       }));
       
       batch(() => {

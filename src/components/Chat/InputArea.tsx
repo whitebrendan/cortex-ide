@@ -153,7 +153,11 @@ const handleSubmit = async () => {
     setText("");
     setAttachments([]);
     setShowCommands(false);
-    await sendMessage(val, currentAttachments);
+    try {
+      await sendMessage(val, currentAttachments);
+    } catch (e) {
+      console.error("[InputArea] Failed to send message:", e);
+    }
   };
   
   const selectCommand = (cmd: Command) => {

@@ -148,7 +148,7 @@ export function AgentMessage(props: AgentMessageProps) {
           <Switch>
             <Match when={part.type === "text"}>
               {(() => {
-                const content = (part as { type: "text"; content: string }).content;
+                const content = (part as { type: "text"; content: string }).content || "";
                 const questionsResult = tryParseQuestionsJson(content);
                 
                 if (questionsResult.isQuestions && questionsResult.data) {

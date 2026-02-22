@@ -91,22 +91,27 @@ export function AIThreadProvider(props: ParentProps) {
   };
 
   const createThread = async (modelId: string, provider: string): Promise<Thread> => {
-    const thread = await invoke<Thread>("ai_create_thread", {
-      modelId,
-      provider,
-      title: "New Chat",
-      systemPrompt: "You are a helpful coding assistant.",
-    });
+    try {
+      const thread = await invoke<Thread>("ai_create_thread", {
+        modelId,
+        provider,
+        title: "New Chat",
+        systemPrompt: "You are a helpful coding assistant.",
+      });
 
-    setState(
-      produce((s) => {
-        s.threads.unshift(thread);
-        s.activeThreadId = thread.id;
-      })
-    );
-    saveToStorage();
+      setState(
+        produce((s) => {
+          s.threads.unshift(thread);
+          s.activeThreadId = thread.id;
+        })
+      );
+      saveToStorage();
 
-    return thread;
+      return thread;
+    } catch (e) {
+      console.error("[AIThreadContext] Failed to create thread:", e);
+      throw e;
+    }
   };
 
   const selectThread = (id: string) => {
@@ -118,7 +123,12 @@ export function AIThreadProvider(props: ParentProps) {
   };
 
   const deleteThread = async (id: string): Promise<void> => {
-    await invoke("ai_delete_thread", { threadId: id });
+    try {
+      await invoke("ai_delete_thread", { threadId: id });
+    } catch (e) {
+      console.error("[AIThreadContext] Failed to delete thread:", e);
+      throw e;
+    }
 
     setState(
       produce((s) => {
@@ -132,8 +142,13 @@ export function AIThreadProvider(props: ParentProps) {
   };
 
   const clearAllThreads = async (): Promise<void> => {
-    const threadIds = state.threads.map((t) => t.id);
-    await Promise.all(threadIds.map((id) => invoke("ai_delete_thread", { threadId: id })));
+    try {
+      const threadIds = state.threads.map((t) => t.id);
+      await Promise.all(threadIds.map((id) => invoke("ai_delete_thread", { threadId: id })));
+    } catch (e) {
+      console.error("[AIThreadContext] Failed to clear all threads:", e);
+      throw e;
+    }
 
     batch(() => {
       setState("threads", []);

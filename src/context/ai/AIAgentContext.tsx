@@ -143,15 +143,20 @@ export function AIAgentProvider(props: ParentProps) {
   };
 
   const spawnAgent = async (name: string, systemPrompt: string): Promise<string> => {
-    const agentId = await invoke<string>("agent_spawn", {
-      name,
-      systemPrompt,
-      parentId: null,
-    });
+    try {
+      const agentId = await invoke<string>("agent_spawn", {
+        name,
+        systemPrompt,
+        parentId: null,
+      });
 
-    await fetchAgents();
+      await fetchAgents();
 
-    return agentId;
+      return agentId;
+    } catch (e) {
+      console.error("[AIAgentContext] Failed to spawn agent:", e);
+      throw e;
+    }
   };
 
   const runAgentTask = async (agentId: string, prompt: string, context: string[]): Promise<void> => {
@@ -184,7 +189,12 @@ export function AIAgentProvider(props: ParentProps) {
   };
 
   const cancelAgentTask = async (taskId: string): Promise<void> => {
-    await invoke("agent_cancel_task", { taskId });
+    try {
+      await invoke("agent_cancel_task", { taskId });
+    } catch (e) {
+      console.error("[AIAgentContext] Failed to cancel agent task:", e);
+      throw e;
+    }
   };
 
   const getAgentById = (agentId: string): SubAgent | undefined => {
