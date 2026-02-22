@@ -1316,7 +1316,9 @@ mod tests {
 
         let err_msg = result.unwrap_err();
         assert!(
-            err_msg.contains("escapes workspace root") || err_msg.contains("Invalid"),
+            err_msg.contains("escapes workspace root")
+                || err_msg.contains("Invalid")
+                || err_msg.contains("must not contain '..'"),
             "Error should mention path escape: {}",
             err_msg
         );
