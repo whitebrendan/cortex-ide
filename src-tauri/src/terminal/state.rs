@@ -54,6 +54,20 @@ pub(super) struct TerminalInstance {
     pub child_pid: Option<u32>,
 }
 
+impl Drop for TerminalInstance {
+    fn drop(&mut self) {
+        // Signal the reader thread to stop
+        self.running.store(false, Ordering::Release);
+
+        // Kill the child process if we have its PID
+        if let Some(pid) = self.child_pid {
+            if let Err(e) = kill_process_tree(pid) {
+                warn!("Failed to kill terminal process {} on drop: {}", pid, e);
+            }
+        }
+    }
+}
+
 impl TerminalState {
     /// Get the default shell for the current platform
     pub fn get_default_shell() -> String {
@@ -192,6 +206,10 @@ impl TerminalState {
         // Store PID for cleanup on close
         let child_pid = child.process_id();
 
+        // Drop the slave side immediately after spawning to release the FD.
+        // The child process has its own copy of the slave FD.
+        drop(pair.slave);
+
         info!(
             "Terminal {} created with shell: {}, cwd: {}, pid: {:?}",
             terminal_id, shell, cwd, child_pid
@@ -257,8 +275,8 @@ impl TerminalState {
                     .with_flow_controller(flow_controller_clone.clone());
 
             loop {
-                // Check if we should stop (lock-free read)
-                if !running_clone.load(Ordering::Relaxed) {
+                // Check if we should stop (lock-free read with Acquire ordering)
+                if !running_clone.load(Ordering::Acquire) {
                     if !leftover.is_empty() {
                         let data = String::from_utf8_lossy(&leftover);
                         batcher.push(&data);
@@ -373,13 +391,15 @@ impl TerminalState {
         // This is done after the terminal is stored to ensure the reader thread is running
         // and can receive the output from the injection
         if should_inject {
-            // Small delay to allow the shell to initialize
-            std::thread::sleep(Duration::from_millis(100));
+            // Spawn injection in a background thread to avoid blocking the caller
+            thread::spawn(move || {
+                // Small delay to allow the shell to initialize
+                thread::sleep(Duration::from_millis(100));
 
-            if let Err(e) = inject_shell_integration(&shell_for_injection, &writer_clone) {
-                warn!("Failed to inject shell integration: {}", e);
-                // Don't fail terminal creation if injection fails
-            }
+                if let Err(e) = inject_shell_integration(&shell_for_injection, &writer_clone) {
+                    warn!("Failed to inject shell integration: {}", e);
+                }
+            });
         }
 
         Ok(info)
@@ -470,8 +490,9 @@ impl TerminalState {
         let mut terminals = self.terminals.lock();
 
         if let Some(terminal) = terminals.remove(terminal_id) {
-            // Set running to false to stop the reader thread (lock-free write)
-            terminal.running.store(false, Ordering::Relaxed);
+            // Set running to false to stop the reader thread (Release ordering
+            // pairs with the Acquire load in the reader thread)
+            terminal.running.store(false, Ordering::Release);
 
             // Kill the child process if we have its PID
             if let Some(pid) = terminal.child_pid {
@@ -480,6 +501,10 @@ impl TerminalState {
                     warn!("Failed to kill terminal process {}: {}", pid, e);
                 }
             }
+
+            // Explicitly drop writer and master to close PTY file descriptors promptly
+            drop(terminal.writer);
+            drop(terminal.master);
 
             // Emit closed event
             let status_event = TerminalStatus {
@@ -544,7 +569,9 @@ impl TerminalState {
         };
 
         for id in terminal_ids {
-            let _ = self.close_terminal(app_handle, &id);
+            if let Err(e) = self.close_terminal(app_handle, &id) {
+                warn!("Failed to close terminal {} during close_all: {}", id, e);
+            }
         }
 
         Ok(())

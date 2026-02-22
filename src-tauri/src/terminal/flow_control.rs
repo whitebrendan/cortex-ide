@@ -47,10 +47,12 @@ impl FlowController {
 
     /// Acknowledge bytes have been processed by frontend
     pub fn acknowledge(&self, bytes: usize) {
-        // Use saturating subtraction to prevent underflow
-        let current = self.pending_bytes.load(Ordering::Relaxed);
-        let new_value = current.saturating_sub(bytes);
-        self.pending_bytes.store(new_value, Ordering::Relaxed);
+        // Use atomic fetch_update for safe concurrent subtraction
+        let _ = self
+            .pending_bytes
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |current| {
+                Some(current.saturating_sub(bytes))
+            });
     }
 
     /// Get current pending bytes count
