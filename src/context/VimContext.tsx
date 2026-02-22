@@ -120,6 +120,8 @@ const defaultState: VimState = {
   lastChange: null,
 };
 
+const MAX_COMMAND_HISTORY = 100;
+
 const VimContext = createContext<VimContextValue>();
 
 /** Storage key for persisting vim enabled state */
@@ -258,7 +260,7 @@ export function VimProvider(props: ParentProps) {
     setCommandHistory((history) => [
       ...history,
       { command, timestamp: Date.now() },
-    ]);
+    ].slice(-MAX_COMMAND_HISTORY));
     setLastCommand(command);
     
     // Dispatch command execution event

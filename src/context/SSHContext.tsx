@@ -186,6 +186,7 @@ export const SSHProvider: ParentComponent = (props) => {
   let unlistenOutput: UnlistenFn | null = null;
   let unlistenStatus: UnlistenFn | null = null;
   let unlistenProgress: UnlistenFn | null = null;
+  let isCleanedUp = false;
 
   // Mock output processor
   let mockOutputInterval: ReturnType<typeof setInterval> | null = null;
@@ -742,20 +743,26 @@ export const SSHProvider: ParentComponent = (props) => {
     // Load saved profiles
     await loadProfiles();
 
+    if (isCleanedUp) return;
+
     // Set up event listeners
     if (!MOCK_MODE) {
       try {
-        unlistenOutput = await listen<{ session_id: string; data: string }>(
+        const u1 = await listen<{ session_id: string; data: string }>(
           "ssh-terminal:output",
           (event) => handleOutputEvent(event.payload)
         );
+        if (isCleanedUp) { u1?.(); return; }
+        unlistenOutput = u1;
 
-        unlistenStatus = await listen<{
+        const u2 = await listen<{
           session_id: string;
           status: string | { error: { message: string } };
         }>("ssh-terminal:status", (event) => handleStatusEvent(event.payload));
+        if (isCleanedUp) { u2?.(); return; }
+        unlistenStatus = u2;
 
-        unlistenProgress = await listen<SSHProgressEvent>(
+        const u3 = await listen<SSHProgressEvent>(
           "ssh-terminal:progress",
           (event) => {
             const subscribers = progressSubscribers.get(event.payload.sessionId);
@@ -770,6 +777,8 @@ export const SSHProvider: ParentComponent = (props) => {
             }
           }
         );
+        if (isCleanedUp) { u3?.(); return; }
+        unlistenProgress = u3;
       } catch (e) {
         console.error("[SSH] Failed to set up event listeners:", e);
       }
@@ -787,6 +796,7 @@ export const SSHProvider: ParentComponent = (props) => {
   });
 
   onCleanup(() => {
+    isCleanedUp = true;
     // Clean up event listeners
     unlistenOutput?.();
     unlistenStatus?.();

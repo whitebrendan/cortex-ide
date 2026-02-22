@@ -85,12 +85,16 @@ const PluginAPIBridgeContext = createContext<PluginAPIBridgeContextValue>();
 // Provider
 // ============================================================================
 
+const MAX_MESSAGES = 100;
+const MAX_PROGRESS_INDICATORS = 50;
+
 export function PluginAPIBridgeProvider(props: ParentProps): JSX.Element {
   const [messages, setMessages] = createSignal<PluginMessage[]>([]);
   const [pendingPermissions, setPendingPermissions] = createSignal<PermissionRequest[]>([]);
   const [progressIndicators, setProgressIndicators] = createSignal<ProgressIndicator[]>([]);
   const [outputChannels, setOutputChannels] = createSignal<OutputChannel[]>([]);
   const unlistenFns: UnlistenFn[] = [];
+  let isCleanedUp = false;
 
   const respondToPermissionRequest = async (
     requestId: string,
@@ -130,8 +134,9 @@ export function PluginAPIBridgeProvider(props: ParentProps): JSX.Element {
           message: payload.message,
           actions: payload.actions,
           timestamp: Date.now(),
-        }]);
+        }].slice(-MAX_MESSAGES));
       });
+      if (isCleanedUp) { unlistenMessage?.(); return; }
       unlistenFns.push(unlistenMessage);
     } catch (e) {
       console.warn("[PluginAPIBridge] Failed to listen for show-message events:", e);
@@ -150,6 +155,7 @@ export function PluginAPIBridgeProvider(props: ParentProps): JSX.Element {
           timestamp: Date.now(),
         }]);
       });
+      if (isCleanedUp) { unlistenPermission?.(); return; }
       unlistenFns.push(unlistenPermission);
     } catch (e) {
       console.warn("[PluginAPIBridge] Failed to listen for permission-request events:", e);
@@ -170,6 +176,7 @@ export function PluginAPIBridgeProvider(props: ParentProps): JSX.Element {
           }),
         );
       });
+      if (isCleanedUp) { unlistenViewUpdate?.(); return; }
       unlistenFns.push(unlistenViewUpdate);
     } catch (e) {
       console.warn("[PluginAPIBridge] Failed to listen for contributed-view-update events:", e);
@@ -194,9 +201,10 @@ export function PluginAPIBridgeProvider(props: ParentProps): JSX.Element {
             progressId: p.progress_id, extensionId: p.extension_id,
             title: p.title, cancellable: p.cancellable,
             message: p.message, percentage: p.percentage, timestamp: Date.now(),
-          }];
+          }].slice(-MAX_PROGRESS_INDICATORS);
         });
       });
+      if (isCleanedUp) { unlistenProgress?.(); return; }
       unlistenFns.push(unlistenProgress);
     } catch (e) {
       console.warn("[PluginAPIBridge] Failed to listen for progress events:", e);
@@ -211,6 +219,7 @@ export function PluginAPIBridgeProvider(props: ParentProps): JSX.Element {
           channelId: p.channel_id, extensionId: p.extension_id, name: p.name,
         }]);
       });
+      if (isCleanedUp) { unlistenOutputChannel?.(); return; }
       unlistenFns.push(unlistenOutputChannel);
     } catch (e) {
       console.warn("[PluginAPIBridge] Failed to listen for output-channel events:", e);
@@ -230,6 +239,7 @@ export function PluginAPIBridgeProvider(props: ParentProps): JSX.Element {
           );
         },
       );
+      if (isCleanedUp) { unlistenOpenDoc?.(); return; }
       unlistenFns.push(unlistenOpenDoc);
     } catch (e) {
       console.warn("[PluginAPIBridge] Failed to listen for open-document events:", e);
@@ -246,6 +256,7 @@ export function PluginAPIBridgeProvider(props: ParentProps): JSX.Element {
           );
         },
       );
+      if (isCleanedUp) { unlistenSaveAll?.(); return; }
       unlistenFns.push(unlistenSaveAll);
     } catch (e) {
       console.warn("[PluginAPIBridge] Failed to listen for save-all events:", e);
@@ -253,6 +264,7 @@ export function PluginAPIBridgeProvider(props: ParentProps): JSX.Element {
   });
 
   onCleanup(() => {
+    isCleanedUp = true;
     for (const unlisten of unlistenFns) {
       unlisten();
     }

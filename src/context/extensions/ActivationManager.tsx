@@ -220,6 +220,8 @@ export function ActivationManagerProvider(
     return activatedExtensions().has(id);
   };
 
+  let isCleanedUp = false;
+
   const handleFileOpened = (event: CustomEvent<FileOpenedPayload>) => {
     const { path, language } = event.detail;
     const lang = language ?? languageFromExtension(path);
@@ -245,6 +247,8 @@ export function ActivationManagerProvider(
       handleCommandInvoked as EventListener,
     );
 
+    if (isCleanedUp) return;
+
     try {
       const unlistenFileOpened = await listen<FileOpenedPayload>(
         "editor:file-opened",
@@ -256,6 +260,7 @@ export function ActivationManagerProvider(
           }
         },
       );
+      if (isCleanedUp) { unlistenFileOpened?.(); return; }
       unlistenFns.push(unlistenFileOpened);
     } catch (e) {
       console.warn(
@@ -274,6 +279,7 @@ export function ActivationManagerProvider(
           });
         },
       );
+      if (isCleanedUp) { unlistenCommand?.(); return; }
       unlistenFns.push(unlistenCommand);
     } catch (e) {
       console.warn(
@@ -289,6 +295,7 @@ export function ActivationManagerProvider(
           triggerActivation({ type: "onDebug" });
         },
       );
+      if (isCleanedUp) { unlistenDebug?.(); return; }
       unlistenFns.push(unlistenDebug);
     } catch (e) {
       console.warn(
@@ -307,6 +314,7 @@ export function ActivationManagerProvider(
           });
         },
       );
+      if (isCleanedUp) { unlistenView?.(); return; }
       unlistenFns.push(unlistenView);
     } catch (e) {
       console.warn(
@@ -325,6 +333,7 @@ export function ActivationManagerProvider(
           });
         },
       );
+      if (isCleanedUp) { unlistenFs?.(); return; }
       unlistenFns.push(unlistenFs);
     } catch (e) {
       console.warn(
@@ -339,6 +348,7 @@ export function ActivationManagerProvider(
   });
 
   onCleanup(() => {
+    isCleanedUp = true;
     window.removeEventListener(
       "editor:file-opened",
       handleFileOpened as EventListener,

@@ -139,6 +139,15 @@ export function NodeExtensionHostProvider(props: ParentProps): JSX.Element {
   const [menus, setMenus] = createSignal<ContributedMenu[]>([]);
 
   const unlisteners: UnlistenFn[] = [];
+  let isCleanedUp = false;
+
+  onCleanup(() => {
+    isCleanedUp = true;
+    for (const unlisten of unlisteners) {
+      unlisten();
+    }
+    unlisteners.length = 0;
+  });
 
   // --------------------------------------------------------------------------
   // Host lifecycle
@@ -246,12 +255,15 @@ export function NodeExtensionHostProvider(props: ParentProps): JSX.Element {
   onMount(async () => {
     await refreshInstalled();
 
+    if (isCleanedUp) return;
+
     const u1 = await listen<{ payload: unknown }>(
       "extension-host:message",
       (event) => {
         handleHostMessage(event.payload);
       }
     );
+    if (isCleanedUp) { u1?.(); return; }
     unlisteners.push(u1);
 
     const u2 = await listen("extension-host:status", (event) => {
@@ -260,6 +272,7 @@ export function NodeExtensionHostProvider(props: ParentProps): JSX.Element {
       else if (s === "stopped") setStatus("stopped");
       else if (s === "error") setStatus("error");
     });
+    if (isCleanedUp) { u2?.(); return; }
     unlisteners.push(u2);
 
     const u3 = await listen<InstalledVscodeExtension>(
@@ -271,6 +284,7 @@ export function NodeExtensionHostProvider(props: ParentProps): JSX.Element {
         ]);
       }
     );
+    if (isCleanedUp) { u3?.(); return; }
     unlisteners.push(u3);
 
     const u4 = await listen<{ extensionId: string }>(
@@ -282,13 +296,8 @@ export function NodeExtensionHostProvider(props: ParentProps): JSX.Element {
         ]);
       }
     );
+    if (isCleanedUp) { u4?.(); return; }
     unlisteners.push(u4);
-  });
-
-  onCleanup(() => {
-    for (const unlisten of unlisteners) {
-      unlisten();
-    }
   });
 
   // --------------------------------------------------------------------------

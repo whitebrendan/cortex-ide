@@ -108,6 +108,7 @@ export function AIAgentProvider(props: ParentProps) {
   });
 
   const unlistenFns: UnlistenFn[] = [];
+  let isCleanedUp = false;
 
   const setupEventListeners = async () => {
     try {
@@ -127,6 +128,7 @@ export function AIAgentProvider(props: ParentProps) {
           );
         }
       );
+      if (isCleanedUp) { unlistenIndexProgress?.(); return; }
       unlistenFns.push(unlistenIndexProgress);
     } catch (e) {
       console.error("[AIAgentContext] Failed to setup event listeners:", e);
@@ -289,6 +291,7 @@ export function AIAgentProvider(props: ParentProps) {
   });
 
   onCleanup(() => {
+    isCleanedUp = true;
     for (const unlisten of unlistenFns) {
       unlisten();
     }

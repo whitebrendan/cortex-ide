@@ -598,9 +598,10 @@ export function SearchProvider(props: ParentProps) {
   // Listen for streaming search results from the backend
   onMount(() => {
     let unlistenStreamingResult: UnlistenFn | null = null;
+    let cleanedUp = false;
 
     const setupListeners = async () => {
-      unlistenStreamingResult = await listen("search:streaming-result", (event) => {
+      const fn = await listen("search:streaming-result", (event) => {
         const payload = event.payload as { file: string; matches: Array<{ line: number; column: number; text: string; matchStart: number; matchEnd: number }> };
         if (payload && payload.file && payload.matches) {
           const projectPath = getProjectPath();
@@ -629,11 +630,14 @@ export function SearchProvider(props: ParentProps) {
           setState("results", (prev) => [...prev, result]);
         }
       });
+      if (cleanedUp) { fn?.(); return; }
+      unlistenStreamingResult = fn;
     };
 
     setupListeners();
 
     onCleanup(() => {
+      cleanedUp = true;
       unlistenStreamingResult?.();
     });
   });

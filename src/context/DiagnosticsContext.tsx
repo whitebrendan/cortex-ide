@@ -407,6 +407,7 @@ export function DiagnosticsProvider(props: ParentProps) {
   let unlistenBuildOutput: UnlistenFn | undefined;
   let unlistenTaskOutput: UnlistenFn | undefined;
   let unlistenFileChange: UnlistenFn | undefined;
+  let isCleanedUp = false;
   let refreshDebounceTimer: number | undefined;
 
   // ============================================================================
@@ -502,6 +503,7 @@ export function DiagnosticsProvider(props: ParentProps) {
 
   // Register cleanup synchronously
   onCleanup(() => {
+    isCleanedUp = true;
     unlistenDiagRefreshed?.();
     unlistenDiagSummary?.();
     unlistenDiagUpdated?.();
@@ -519,7 +521,7 @@ export function DiagnosticsProvider(props: ParentProps) {
 
   onMount(async () => {
     // Listen for build output
-    unlistenBuildOutput = await listen<{ output: string; task_id?: string }>(
+    const u1 = await listen<{ output: string; task_id?: string }>(
       "build:output",
       (event) => {
         const parsed = parseBuildOutput(event.payload.output);
@@ -528,9 +530,11 @@ export function DiagnosticsProvider(props: ParentProps) {
         }
       }
     );
+    if (isCleanedUp) { u1?.(); return; }
+    unlistenBuildOutput = u1;
 
     // Listen for task output with problem matchers
-    unlistenTaskOutput = await listen<{
+    const u2 = await listen<{
       task_id: string;
       output: string;
       problem_matcher?: {
@@ -578,16 +582,20 @@ export function DiagnosticsProvider(props: ParentProps) {
         }
       }
     });
+    if (isCleanedUp) { u2?.(); return; }
+    unlistenTaskOutput = u2;
 
     // Listen for file changes to trigger refresh
-    unlistenFileChange = await listen<{ path: string }>("file:changed", (_event) => {
+    const u3 = await listen<{ path: string }>("file:changed", (_event) => {
       if (state.autoRefresh) {
         debouncedRefresh();
       }
     });
+    if (isCleanedUp) { u3?.(); return; }
+    unlistenFileChange = u3;
 
     // Listen for backend diagnostics events
-    unlistenDiagRefreshed = await listen<{
+    const u4 = await listen<{
       error_count: number;
       warning_count: number;
       information_count: number;
@@ -597,8 +605,10 @@ export function DiagnosticsProvider(props: ParentProps) {
       setState("isRefreshing", false);
       setState("lastRefresh", Date.now());
     });
+    if (isCleanedUp) { u4?.(); return; }
+    unlistenDiagRefreshed = u4;
 
-    unlistenDiagSummary = await listen<{
+    const u5 = await listen<{
       error_count: number;
       warning_count: number;
       info_count: number;
@@ -606,8 +616,10 @@ export function DiagnosticsProvider(props: ParentProps) {
     }>("diagnostics:summary", (event) => {
       diagnosticsLogger.debug("Diagnostics summary from backend:", event.payload);
     });
+    if (isCleanedUp) { u5?.(); return; }
+    unlistenDiagSummary = u5;
 
-    unlistenDiagUpdated = await listen<
+    const u6 = await listen<
       Array<{
         file_path: string;
         diagnostics: Array<{
@@ -646,6 +658,8 @@ export function DiagnosticsProvider(props: ParentProps) {
         })
       );
     });
+    if (isCleanedUp) { u6?.(); return; }
+    unlistenDiagUpdated = u6;
 
     // Register window event listeners
     window.addEventListener("problems:toggle", handleTogglePanel);

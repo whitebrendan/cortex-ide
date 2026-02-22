@@ -176,6 +176,7 @@ export function PluginUIContributionsProvider(
   });
 
   const unlistenFns: UnlistenFn[] = [];
+  let isCleanedUp = false;
 
   const getSidebarViews = (extensionId?: string) => {
     if (!extensionId) return contributions.sidebarViews;
@@ -238,6 +239,8 @@ export function PluginUIContributionsProvider(
   };
 
   const setupListeners = async () => {
+    if (isCleanedUp) return;
+
     try {
       const u1 = await listen<SidebarViewPayload>(
         "plugin:register-sidebar-view",
@@ -257,6 +260,7 @@ export function PluginUIContributionsProvider(
           );
         },
       );
+      if (isCleanedUp) { u1?.(); return; }
       unlistenFns.push(u1);
     } catch (e) {
       extensionLogger.warn("Failed to listen for sidebar view events:", e);
@@ -281,6 +285,7 @@ export function PluginUIContributionsProvider(
           );
         },
       );
+      if (isCleanedUp) { u2?.(); return; }
       unlistenFns.push(u2);
     } catch (e) {
       extensionLogger.warn("Failed to listen for panel tab events:", e);
@@ -315,6 +320,7 @@ export function PluginUIContributionsProvider(
           );
         },
       );
+      if (isCleanedUp) { u3?.(); return; }
       unlistenFns.push(u3);
     } catch (e) {
       extensionLogger.warn("Failed to listen for status bar events:", e);
@@ -343,6 +349,7 @@ export function PluginUIContributionsProvider(
           );
         },
       );
+      if (isCleanedUp) { u4?.(); return; }
       unlistenFns.push(u4);
     } catch (e) {
       extensionLogger.warn("Failed to listen for command palette events:", e);
@@ -373,6 +380,7 @@ export function PluginUIContributionsProvider(
           );
         },
       );
+      if (isCleanedUp) { u5?.(); return; }
       unlistenFns.push(u5);
     } catch (e) {
       extensionLogger.warn("Failed to listen for context menu events:", e);
@@ -397,6 +405,7 @@ export function PluginUIContributionsProvider(
           );
         },
       );
+      if (isCleanedUp) { u7?.(); return; }
       unlistenFns.push(u7);
     } catch (e) {
       extensionLogger.warn("Failed to listen for configuration section events:", e);
@@ -409,6 +418,7 @@ export function PluginUIContributionsProvider(
           removeContributions(event.payload.extension_id);
         },
       );
+      if (isCleanedUp) { u6?.(); return; }
       unlistenFns.push(u6);
     } catch (e) {
       extensionLogger.warn("Failed to listen for extension-removed events:", e);
@@ -420,6 +430,7 @@ export function PluginUIContributionsProvider(
   });
 
   onCleanup(() => {
+    isCleanedUp = true;
     for (const unlisten of unlistenFns) {
       unlisten();
     }

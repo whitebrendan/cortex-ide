@@ -158,6 +158,7 @@ export function AutoUpdateProvider(props: ParentProps) {
   });
   
   let unlisten: UnlistenFn | null = null;
+  let isCleanedUp = false;
 
   // Load saved settings from localStorage
   const loadSettings = () => {
@@ -191,7 +192,7 @@ export function AutoUpdateProvider(props: ParentProps) {
   // Listen for status updates from backend
   const setupEventListener = async () => {
     try {
-      unlisten = await listen<AutoUpdateEvent>("auto-update:status", (event) => {
+      const fn = await listen<AutoUpdateEvent>("auto-update:status", (event) => {
         const { status } = event.payload;
         setState("status", status);
         
@@ -215,6 +216,8 @@ export function AutoUpdateProvider(props: ParentProps) {
           toast.error(data.message, { title: "Update Error" });
         }
       });
+      if (isCleanedUp) { fn?.(); return; }
+      unlisten = fn;
     } catch (e) {
       console.error("Failed to setup auto-update event listener:", e);
     }
@@ -226,6 +229,7 @@ export function AutoUpdateProvider(props: ParentProps) {
     setupEventListener();
 
     onCleanup(() => {
+      isCleanedUp = true;
       if (unlisten) {
         unlisten();
       }

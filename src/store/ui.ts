@@ -82,6 +82,8 @@ export interface UIActions {
 // Helpers
 // ============================================================================
 
+const MAX_NOTIFICATIONS = 50;
+
 let notificationCounter = 0;
 let modalCounter = 0;
 
@@ -98,7 +100,7 @@ function generateModalId(): string {
 // ============================================================================
 
 export const useUIStore = create<UIState & UIActions>()(
-  immer((set) => ({
+  immer((set: (fn: (state: UIState & UIActions) => void) => void) => ({
     commandPaletteOpen: false,
     contextMenu: {
       visible: false,
@@ -110,71 +112,74 @@ export const useUIStore = create<UIState & UIActions>()(
     modals: [],
 
     openCommandPalette: () =>
-      set((state) => {
+      set((state: UIState & UIActions) => {
         state.commandPaletteOpen = true;
       }),
 
     closeCommandPalette: () =>
-      set((state) => {
+      set((state: UIState & UIActions) => {
         state.commandPaletteOpen = false;
       }),
 
     toggleCommandPalette: () =>
-      set((state) => {
+      set((state: UIState & UIActions) => {
         state.commandPaletteOpen = !state.commandPaletteOpen;
       }),
 
-    showContextMenu: (x, y, items) =>
-      set((state) => {
+    showContextMenu: (x: number, y: number, items: ContextMenuItem[]) =>
+      set((state: UIState & UIActions) => {
         state.contextMenu = { visible: true, x, y, items };
       }),
 
     hideContextMenu: () =>
-      set((state) => {
+      set((state: UIState & UIActions) => {
         state.contextMenu.visible = false;
         state.contextMenu.items = [];
       }),
 
-    addNotification: (notification) =>
-      set((state) => {
+    addNotification: (notification: Omit<Notification, "id" | "timestamp">) =>
+      set((state: UIState & UIActions) => {
         state.notifications.push({
           ...notification,
           id: generateNotificationId(),
           timestamp: Date.now(),
         });
+        if (state.notifications.length > MAX_NOTIFICATIONS) {
+          state.notifications = state.notifications.slice(-MAX_NOTIFICATIONS);
+        }
       }),
 
-    removeNotification: (id) =>
-      set((state) => {
-        const index = state.notifications.findIndex((n) => n.id === id);
+    removeNotification: (id: string) =>
+      set((state: UIState & UIActions) => {
+        const index = state.notifications.findIndex((n: Notification) => n.id === id);
         if (index !== -1) {
           state.notifications.splice(index, 1);
         }
       }),
 
     clearNotifications: () =>
-      set((state) => {
+      set((state: UIState & UIActions) => {
         state.notifications = [];
       }),
 
-    openModal: (modal) =>
-      set((state) => {
+    openModal: (modal: Omit<Modal, "id">) =>
+      set((state: UIState & UIActions) => {
         state.modals.push({
           ...modal,
           id: generateModalId(),
         });
       }),
 
-    closeModal: (id) =>
-      set((state) => {
-        const index = state.modals.findIndex((m) => m.id === id);
+    closeModal: (id: string) =>
+      set((state: UIState & UIActions) => {
+        const index = state.modals.findIndex((m: Modal) => m.id === id);
         if (index !== -1) {
           state.modals.splice(index, 1);
         }
       }),
 
     closeAllModals: () =>
-      set((state) => {
+      set((state: UIState & UIActions) => {
         state.modals = [];
       }),
   }))

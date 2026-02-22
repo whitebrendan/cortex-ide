@@ -243,6 +243,8 @@ const CollabContext = createContext<CollabContextValue>();
 // Provider
 // ============================================================================
 
+const MAX_CHAT_MESSAGES = 500;
+
 export function CollabProvider(props: ParentProps) {
   const [state, setState] = createStore<CollabState>({
     connectionState: "disconnected",
@@ -552,7 +554,7 @@ export function CollabProvider(props: ParentProps) {
 
     if (message.userId === state.currentUser?.id) return;
 
-    setState("chatMessages", (messages) => [...messages, message]);
+    setState("chatMessages", (messages) => [...messages, message].slice(-MAX_CHAT_MESSAGES));
     setState("unreadChatCount", (count) => count + 1);
   };
 
@@ -593,7 +595,7 @@ export function CollabProvider(props: ParentProps) {
         timestamp: Date.now(),
         isSystem: true,
       };
-      setState("chatMessages", (messages) => [...messages, systemMessage]);
+      setState("chatMessages", (messages) => [...messages, systemMessage].slice(-MAX_CHAT_MESSAGES));
     }
   };
 
@@ -618,7 +620,7 @@ export function CollabProvider(props: ParentProps) {
         timestamp: Date.now(),
         isSystem: true,
       };
-      setState("chatMessages", (messages) => [...messages, systemMessage]);
+      setState("chatMessages", (messages) => [...messages, systemMessage].slice(-MAX_CHAT_MESSAGES));
     }
   };
 
@@ -1075,7 +1077,7 @@ export function CollabProvider(props: ParentProps) {
       replyToId,
     };
 
-    setState("chatMessages", (messages) => [...messages, message]);
+    setState("chatMessages", (messages) => [...messages, message].slice(-MAX_CHAT_MESSAGES));
 
     sendMessage({
       type: "chat_message",

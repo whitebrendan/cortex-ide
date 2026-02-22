@@ -95,7 +95,7 @@ const DEFAULT_PANEL_HEIGHT = 200;
 // ============================================================================
 
 export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>()(
-  immer((set) => ({
+  immer((set: (fn: (state: WorkspaceState & WorkspaceActions) => void) => void) => ({
     activeProject: null,
     openFiles: {},
     activeFileId: null,
@@ -106,19 +106,19 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>()(
     activePanel: "terminal",
     activityBarSelection: "explorer",
 
-    setActiveProject: (path) =>
-      set((state) => {
+    setActiveProject: (path: string | null) =>
+      set((state: WorkspaceState & WorkspaceActions) => {
         state.activeProject = path;
       }),
 
-    openFile: (file) =>
-      set((state) => {
+    openFile: (file: FileState) =>
+      set((state: WorkspaceState & WorkspaceActions) => {
         state.openFiles[file.id] = file;
         state.activeFileId = file.id;
       }),
 
-    closeFile: (fileId) =>
-      set((state) => {
+    closeFile: (fileId: string) =>
+      set((state: WorkspaceState & WorkspaceActions) => {
         delete state.openFiles[fileId];
         if (state.activeFileId === fileId) {
           const remaining = Object.keys(state.openFiles);
@@ -126,13 +126,13 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>()(
         }
       }),
 
-    setActiveFile: (fileId) =>
-      set((state) => {
+    setActiveFile: (fileId: string | null) =>
+      set((state: WorkspaceState & WorkspaceActions) => {
         state.activeFileId = fileId;
       }),
 
-    updateFileContent: (fileId, content) =>
-      set((state) => {
+    updateFileContent: (fileId: string, content: string) =>
+      set((state: WorkspaceState & WorkspaceActions) => {
         const file = state.openFiles[fileId];
         if (file) {
           file.content = content;
@@ -140,62 +140,62 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>()(
         }
       }),
 
-    setFileModified: (fileId, modified) =>
-      set((state) => {
+    setFileModified: (fileId: string, modified: boolean) =>
+      set((state: WorkspaceState & WorkspaceActions) => {
         const file = state.openFiles[fileId];
         if (file) {
           file.modified = modified;
         }
       }),
 
-    updateFileCursor: (fileId, position) =>
-      set((state) => {
+    updateFileCursor: (fileId: string, position: CursorPosition) =>
+      set((state: WorkspaceState & WorkspaceActions) => {
         const file = state.openFiles[fileId];
         if (file) {
           file.cursorPosition = position;
         }
       }),
 
-    setSidebarWidth: (width) =>
-      set((state) => {
+    setSidebarWidth: (width: number) =>
+      set((state: WorkspaceState & WorkspaceActions) => {
         state.sidebarWidth = Math.max(150, Math.min(600, width));
       }),
 
     toggleSidebar: () =>
-      set((state) => {
+      set((state: WorkspaceState & WorkspaceActions) => {
         state.sidebarVisible = !state.sidebarVisible;
       }),
 
-    setSidebarVisible: (visible) =>
-      set((state) => {
+    setSidebarVisible: (visible: boolean) =>
+      set((state: WorkspaceState & WorkspaceActions) => {
         state.sidebarVisible = visible;
       }),
 
-    setPanelHeight: (height) =>
-      set((state) => {
+    setPanelHeight: (height: number) =>
+      set((state: WorkspaceState & WorkspaceActions) => {
         state.panelHeight = Math.max(100, Math.min(800, height));
       }),
 
     togglePanel: () =>
-      set((state) => {
+      set((state: WorkspaceState & WorkspaceActions) => {
         state.panelVisible = !state.panelVisible;
       }),
 
-    setPanelVisible: (visible) =>
-      set((state) => {
+    setPanelVisible: (visible: boolean) =>
+      set((state: WorkspaceState & WorkspaceActions) => {
         state.panelVisible = visible;
       }),
 
-    setActivePanel: (panel) =>
-      set((state) => {
+    setActivePanel: (panel: PanelId) =>
+      set((state: WorkspaceState & WorkspaceActions) => {
         state.activePanel = panel;
         if (!state.panelVisible) {
           state.panelVisible = true;
         }
       }),
 
-    setActivityBarSelection: (item) =>
-      set((state) => {
+    setActivityBarSelection: (item: ActivityBarItem) =>
+      set((state: WorkspaceState & WorkspaceActions) => {
         state.activityBarSelection = item;
         if (!state.sidebarVisible) {
           state.sidebarVisible = true;

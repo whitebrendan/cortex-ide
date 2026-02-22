@@ -77,47 +77,47 @@ const DEFAULT_SETTINGS: SettingsState = {
 // ============================================================================
 
 export const useSettingsStore = create<SettingsState & SettingsActions>()(
-  immer((set) => ({
+  immer((set: (fn: (state: SettingsState & SettingsActions) => void) => void) => ({
     ...DEFAULT_SETTINGS,
 
-    setTheme: (theme) =>
-      set((state) => {
+    setTheme: (theme: ThemeMode) =>
+      set((state: SettingsState & SettingsActions) => {
         state.theme = theme;
       }),
 
-    setFontSize: (size) =>
-      set((state) => {
+    setFontSize: (size: number) =>
+      set((state: SettingsState & SettingsActions) => {
         state.fontSize = Math.max(8, Math.min(72, size));
       }),
 
-    setFontFamily: (family) =>
-      set((state) => {
+    setFontFamily: (family: string) =>
+      set((state: SettingsState & SettingsActions) => {
         state.fontFamily = family;
       }),
 
-    setTabSize: (size) =>
-      set((state) => {
+    setTabSize: (size: number) =>
+      set((state: SettingsState & SettingsActions) => {
         state.tabSize = Math.max(1, Math.min(8, size));
       }),
 
-    setWordWrap: (mode) =>
-      set((state) => {
+    setWordWrap: (mode: WordWrapMode) =>
+      set((state: SettingsState & SettingsActions) => {
         state.wordWrap = mode;
       }),
 
-    setMinimap: (enabled) =>
-      set((state) => {
+    setMinimap: (enabled: boolean) =>
+      set((state: SettingsState & SettingsActions) => {
         state.minimap = enabled;
       }),
 
-    setAutoSave: (mode) =>
-      set((state) => {
+    setAutoSave: (mode: AutoSaveMode) =>
+      set((state: SettingsState & SettingsActions) => {
         state.autoSave = mode;
       }),
 
-    updateKeybinding: (command, key, when) =>
-      set((state) => {
-        const existingIndex = state.keybindings.findIndex((kb) => kb.command === command);
+    updateKeybinding: (command: string, key: string, when?: string) =>
+      set((state: SettingsState & SettingsActions) => {
+        const existingIndex = state.keybindings.findIndex((kb: Keybinding) => kb.command === command);
         if (existingIndex !== -1) {
           state.keybindings[existingIndex].key = key;
           state.keybindings[existingIndex].when = when;
@@ -126,15 +126,24 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
         }
       }),
 
-    removeKeybinding: (command) =>
-      set((state) => {
-        const index = state.keybindings.findIndex((kb) => kb.command === command);
+    removeKeybinding: (command: string) =>
+      set((state: SettingsState & SettingsActions) => {
+        const index = state.keybindings.findIndex((kb: Keybinding) => kb.command === command);
         if (index !== -1) {
           state.keybindings.splice(index, 1);
         }
       }),
 
     resetSettings: () =>
-      set(() => ({ ...DEFAULT_SETTINGS }), true),
+      set((state: SettingsState & SettingsActions) => {
+        state.theme = DEFAULT_SETTINGS.theme;
+        state.fontSize = DEFAULT_SETTINGS.fontSize;
+        state.fontFamily = DEFAULT_SETTINGS.fontFamily;
+        state.tabSize = DEFAULT_SETTINGS.tabSize;
+        state.wordWrap = DEFAULT_SETTINGS.wordWrap;
+        state.minimap = DEFAULT_SETTINGS.minimap;
+        state.autoSave = DEFAULT_SETTINGS.autoSave;
+        state.keybindings = [...DEFAULT_SETTINGS.keybindings];
+      }),
   }))
 );
