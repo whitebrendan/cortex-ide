@@ -10,7 +10,7 @@ interface LoggerOptions {
   enabled?: boolean;
 }
 
-const isDev = (import.meta as unknown as { env: { DEV: boolean } }).env.DEV;
+const isDev = import.meta.env.DEV;
 
 class Logger {
   private prefix: string;

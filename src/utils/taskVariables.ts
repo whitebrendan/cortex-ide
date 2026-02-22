@@ -1088,7 +1088,7 @@ export function parseInputDefinitions(
       input.command = raw.command;
     }
     
-    if (raw.args && typeof raw.args === 'object') {
+    if (raw.args && typeof raw.args === 'object' && !Array.isArray(raw.args)) {
       input.args = raw.args as Record<string, unknown>;
     }
     

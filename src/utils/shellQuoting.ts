@@ -145,9 +145,8 @@ export function strongQuote(value: string, quoteChar: string): string {
  */
 export function weakQuote(value: string, quoteChar: string, shellType: ShellType): string {
   const charsToEscape = CHARS_ESCAPE_IN_WEAK_QUOTES[shellType];
-  const escapeChar = typeof DEFAULT_SHELL_QUOTING[shellType].escape === 'string'
-    ? DEFAULT_SHELL_QUOTING[shellType].escape as string
-    : '\\';
+  const rawEscape = DEFAULT_SHELL_QUOTING[shellType].escape;
+  const escapeChar = typeof rawEscape === 'string' ? rawEscape : '\\';
   
   let result = '';
   
@@ -278,9 +277,8 @@ export function parseShellCommand(command: string, shellType: ShellType): string
   let inDoubleQuote = false;
   let escapeNext = false;
   
-  const escapeChar = typeof DEFAULT_SHELL_QUOTING[shellType].escape === 'string'
-    ? DEFAULT_SHELL_QUOTING[shellType].escape as string
-    : '\\';
+  const rawEscapeChar = DEFAULT_SHELL_QUOTING[shellType].escape;
+  const escapeChar = typeof rawEscapeChar === 'string' ? rawEscapeChar : '\\';
   
   for (let i = 0; i < command.length; i++) {
     const char = command[i];

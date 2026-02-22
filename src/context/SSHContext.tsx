@@ -43,7 +43,7 @@ const PROFILES_STORAGE_KEY = "orion_ssh_profiles";
 const MOCK_MODE = false;
 
 // Build-time assertion - will fail if MOCK_MODE is true in production
-if ((import.meta as unknown as { env: { PROD: boolean } }).env.PROD && MOCK_MODE) {
+if (import.meta.env.PROD && MOCK_MODE) {
   throw new Error("SECURITY ERROR: MOCK_MODE must be disabled in production builds");
 }
 

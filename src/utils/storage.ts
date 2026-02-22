@@ -2,6 +2,7 @@
 // Uses localStorage for simplicity, can be upgraded to IndexedDB for larger data
 
 import { Message, Session } from "@/context/SDKContext";
+import { safeJsonParse } from "@/utils/json";
 
 const STORAGE_PREFIX = "cortex_";
 const SESSIONS_KEY = `${STORAGE_PREFIX}sessions`;
@@ -13,12 +14,10 @@ export interface StoredSession extends Session {
 
 // Get all session IDs
 export function getSessionIds(): string[] {
-  try {
-    const data = localStorage.getItem(SESSIONS_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
+  const data = localStorage.getItem(SESSIONS_KEY);
+  if (!data) return [];
+  const parsed = safeJsonParse<unknown>(data, null);
+  return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [];
 }
 
 // Get all sessions (without messages)
@@ -29,12 +28,13 @@ export function getSessions(): Session[] {
 
 // Get a session by ID
 export function getSession(sessionId: string): Session | null {
-  try {
-    const data = localStorage.getItem(`${STORAGE_PREFIX}session_${sessionId}`);
-    return data ? JSON.parse(data) : null;
-  } catch {
-    return null;
+  const data = localStorage.getItem(`${STORAGE_PREFIX}session_${sessionId}`);
+  if (!data) return null;
+  const parsed = safeJsonParse<unknown>(data, null);
+  if (parsed && typeof parsed === 'object' && 'id' in parsed) {
+    return parsed as Session;
   }
+  return null;
 }
 
 // Save a session
@@ -69,12 +69,10 @@ export function deleteSession(sessionId: string): void {
 
 // Get messages for a session
 export function getMessages(sessionId: string): Message[] {
-  try {
-    const data = localStorage.getItem(`${MESSAGES_KEY}${sessionId}`);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
+  const data = localStorage.getItem(`${MESSAGES_KEY}${sessionId}`);
+  if (!data) return [];
+  const parsed = safeJsonParse<unknown>(data, null);
+  return Array.isArray(parsed) ? (parsed as Message[]) : [];
 }
 
 // Save messages for a session
@@ -141,23 +139,18 @@ export function exportData(): string {
 
 // Import data (from backup)
 export function importData(json: string): void {
-  let data: StoredSession[];
-  try {
-    data = JSON.parse(json) as StoredSession[];
-  } catch (e) {
-    console.error("[Storage] Failed to parse import data:", e);
-    return;
-  }
+  const parsed = safeJsonParse<unknown>(json, null);
   
-  if (!Array.isArray(data)) {
+  if (!Array.isArray(parsed)) {
     console.error("[Storage] Invalid import data: expected array");
     return;
   }
   
-  data.forEach(session => {
-    if (session && session.id) {
-      saveSession(session);
-      saveMessages(session.id, session.messages || []);
+  for (const session of parsed) {
+    if (session && typeof session === 'object' && 'id' in session) {
+      const s = session as StoredSession;
+      saveSession(s);
+      saveMessages(s.id, Array.isArray(s.messages) ? s.messages : []);
     }
-  });
+  }
 }

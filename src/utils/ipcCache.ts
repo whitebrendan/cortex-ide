@@ -60,8 +60,10 @@ class IpcCache {
 
   private evictIfNeeded(): void {
     while (this.cache.size >= this.maxSize && this.accessOrder.length > 0) {
-      const oldest = this.accessOrder.shift()!;
-      this.cache.delete(oldest);
+      const oldest = this.accessOrder.shift();
+      if (oldest !== undefined) {
+        this.cache.delete(oldest);
+      }
     }
   }
 
