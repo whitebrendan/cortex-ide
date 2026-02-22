@@ -30,8 +30,12 @@ pub async fn lsp_start_server(
     }
 
     // Create and start the client
-    let client = LspClient::new(config, Some(state.diagnostics_tx.clone()))
-        .map_err(|e| format!("Failed to start language server: {}", e))?;
+    let client = LspClient::new_with_crash_notify(
+        config,
+        Some(state.diagnostics_tx.clone()),
+        Some(state.crash_tx.clone()),
+    )
+    .map_err(|e| format!("Failed to start language server: {}", e))?;
 
     // Initialize the server
     client
@@ -132,8 +136,12 @@ pub async fn lsp_restart(
     }
 
     // Start a new server with the same config
-    let client = LspClient::new(config.clone(), Some(state.diagnostics_tx.clone()))
-        .map_err(|e| format!("Failed to start language server: {}", e))?;
+    let client = LspClient::new_with_crash_notify(
+        config.clone(),
+        Some(state.diagnostics_tx.clone()),
+        Some(state.crash_tx.clone()),
+    )
+    .map_err(|e| format!("Failed to start language server: {}", e))?;
 
     // Initialize the server
     client

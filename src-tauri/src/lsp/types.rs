@@ -31,6 +31,7 @@ pub enum ServerStatus {
     Running,
     Stopped,
     Error,
+    Crashed,
 }
 
 /// Information about a running language server

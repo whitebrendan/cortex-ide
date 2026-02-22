@@ -26,17 +26,22 @@ pub struct LspState {
     server_logs: Mutex<HashMap<String, Vec<String>>>,
     pub(crate) diagnostics_tx: mpsc::UnboundedSender<DiagnosticsEvent>,
     diagnostics_rx: Mutex<Option<mpsc::UnboundedReceiver<DiagnosticsEvent>>>,
+    pub(crate) crash_tx: mpsc::UnboundedSender<String>,
+    crash_rx: Mutex<Option<mpsc::UnboundedReceiver<String>>>,
 }
 
 impl LspState {
     pub fn new() -> Self {
         let (tx, rx) = mpsc::unbounded_channel();
+        let (crash_tx, crash_rx) = mpsc::unbounded_channel();
         Self {
             clients: Mutex::new(HashMap::new()),
             language_clients: Mutex::new(HashMap::new()),
             server_logs: Mutex::new(HashMap::new()),
             diagnostics_tx: tx,
             diagnostics_rx: Mutex::new(Some(rx)),
+            crash_tx,
+            crash_rx: Mutex::new(Some(crash_rx)),
         }
     }
 
@@ -68,6 +73,11 @@ impl LspState {
     /// Take the diagnostics receiver (can only be done once)
     pub fn take_diagnostics_receiver(&self) -> Option<mpsc::UnboundedReceiver<DiagnosticsEvent>> {
         self.diagnostics_rx.lock().take()
+    }
+
+    /// Take the crash receiver (can only be done once)
+    pub fn take_crash_receiver(&self) -> Option<mpsc::UnboundedReceiver<String>> {
+        self.crash_rx.lock().take()
     }
 
     /// Stop all language servers synchronously (for cleanup on exit)

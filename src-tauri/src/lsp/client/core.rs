@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Write};
 use std::process::{Child, Stdio};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicI32, Ordering};
+use std::sync::atomic::{AtomicI64, Ordering};
 use std::thread;
 
 use anyhow::{Context, Result, anyhow};
@@ -23,11 +23,12 @@ use crate::lsp::types::*;
 
 const JSON_RPC_VERSION: &str = "2.0";
 const CONTENT_LENGTH_HEADER: &str = "Content-Length: ";
+const MAX_CONTENT_LENGTH: usize = 64 * 1024 * 1024; // 64 MB sanity limit
 
 /// Message sent to the writer thread
 pub(super) enum OutgoingMessage {
     Request {
-        id: i32,
+        id: i64,
         method: String,
         params: Value,
         response_tx: oneshot::Sender<Result<Value>>,
@@ -50,13 +51,14 @@ pub struct LspClient {
     pub config: LanguageServerConfig,
     pub(super) status: Arc<Mutex<ServerStatus>>,
     pub(super) capabilities: Arc<Mutex<Option<ServerCapabilities>>>,
-    pub(super) next_request_id: AtomicI32,
+    pub(super) next_request_id: AtomicI64,
     pub(super) outgoing_tx: mpsc::UnboundedSender<OutgoingMessage>,
-    pub(super) pending_requests: Arc<Mutex<HashMap<i32, oneshot::Sender<Result<Value>>>>>,
+    pub(super) pending_requests: Arc<Mutex<HashMap<i64, oneshot::Sender<Result<Value>>>>>,
     notification_handlers: Arc<Mutex<HashMap<String, NotificationHandler>>>,
     pub(super) process: Arc<Mutex<Option<Child>>>,
     pub(super) diagnostics_tx: Option<mpsc::UnboundedSender<DiagnosticsEvent>>,
     pub(super) semantic_tokens_legend: Arc<Mutex<Option<SemanticTokensLegend>>>,
+    crash_tx: Option<mpsc::UnboundedSender<String>>,
 }
 
 impl LspClient {
@@ -64,6 +66,15 @@ impl LspClient {
     pub fn new(
         config: LanguageServerConfig,
         diagnostics_tx: Option<mpsc::UnboundedSender<DiagnosticsEvent>>,
+    ) -> Result<Self> {
+        Self::new_with_crash_notify(config, diagnostics_tx, None)
+    }
+
+    /// Create a new LSP client with an optional crash notification channel
+    pub fn new_with_crash_notify(
+        config: LanguageServerConfig,
+        diagnostics_tx: Option<mpsc::UnboundedSender<DiagnosticsEvent>>,
+        crash_tx: Option<mpsc::UnboundedSender<String>>,
     ) -> Result<Self> {
         let id = config.id.clone();
         let name = config.name.clone();
@@ -94,24 +105,27 @@ impl LspClient {
             .ok_or_else(|| anyhow!("Failed to open stderr"))?;
 
         let (outgoing_tx, outgoing_rx) = mpsc::unbounded_channel();
-        let pending_requests: Arc<Mutex<HashMap<i32, oneshot::Sender<Result<Value>>>>> =
+        let pending_requests: Arc<Mutex<HashMap<i64, oneshot::Sender<Result<Value>>>>> =
             Arc::new(Mutex::new(HashMap::new()));
         let notification_handlers: Arc<Mutex<HashMap<String, NotificationHandler>>> =
             Arc::new(Mutex::new(HashMap::new()));
+
+        let status = Arc::new(Mutex::new(ServerStatus::Starting));
 
         let client = Self {
             id: id.clone(),
             name: name.clone(),
             config,
-            status: Arc::new(Mutex::new(ServerStatus::Starting)),
+            status: status.clone(),
             capabilities: Arc::new(Mutex::new(None)),
-            next_request_id: AtomicI32::new(1),
+            next_request_id: AtomicI64::new(1),
             outgoing_tx,
             pending_requests: pending_requests.clone(),
             notification_handlers: notification_handlers.clone(),
             process: Arc::new(Mutex::new(Some(process))),
             diagnostics_tx,
             semantic_tokens_legend: Arc::new(Mutex::new(None)),
+            crash_tx,
         };
 
         // Start the writer thread
@@ -130,10 +144,37 @@ impl LspClient {
         let reader_handlers = notification_handlers;
         let server_id = id.clone();
         let diag_tx = client.diagnostics_tx.clone();
+        let reader_status = status.clone();
+        let reader_crash_tx = client.crash_tx.clone();
+        let reader_server_name = name.clone();
         let reader_id = id.clone();
         thread::spawn(move || {
             if let Err(e) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                Self::reader_thread(stdout, reader_pending, reader_handlers, server_id, diag_tx);
+                Self::reader_thread(
+                    stdout,
+                    reader_pending.clone(),
+                    reader_handlers,
+                    server_id.clone(),
+                    diag_tx,
+                );
+                // Reader exited — the LSP process stdout is closed.
+                // If status is still Running, the server crashed.
+                let current_status = reader_status.lock().clone();
+                if current_status == ServerStatus::Running {
+                    error!("Language server {} exited unexpectedly", reader_server_name);
+                    *reader_status.lock() = ServerStatus::Crashed;
+
+                    // Drain all pending requests so callers don't hang
+                    let pending: Vec<_> = reader_pending.lock().drain().collect();
+                    for (_, tx) in pending {
+                        let _ = tx.send(Err(anyhow!("Language server crashed")));
+                    }
+
+                    // Notify crash channel
+                    if let Some(ref tx) = reader_crash_tx {
+                        let _ = tx.send(server_id);
+                    }
+                }
             })) {
                 tracing::error!("LSP reader thread for '{}' panicked: {:?}", reader_id, e);
             }
@@ -157,7 +198,7 @@ impl LspClient {
     fn writer_thread(
         mut stdin: std::process::ChildStdin,
         mut rx: mpsc::UnboundedReceiver<OutgoingMessage>,
-        pending: Arc<Mutex<HashMap<i32, oneshot::Sender<Result<Value>>>>>,
+        pending: Arc<Mutex<HashMap<i64, oneshot::Sender<Result<Value>>>>>,
     ) {
         while let Some(msg) = rx.blocking_recv() {
             match msg {
@@ -200,6 +241,7 @@ impl LspClient {
                 }
             }
         }
+        // stdin is dropped here, closing the pipe to the LSP process
     }
 
     /// Write a JSON-RPC message to the output stream
@@ -219,7 +261,7 @@ impl LspClient {
     /// Reader thread that receives messages from the language server
     fn reader_thread(
         stdout: std::process::ChildStdout,
-        pending: Arc<Mutex<HashMap<i32, oneshot::Sender<Result<Value>>>>>,
+        pending: Arc<Mutex<HashMap<i64, oneshot::Sender<Result<Value>>>>>,
         handlers: Arc<Mutex<HashMap<String, NotificationHandler>>>,
         server_id: String,
         diagnostics_tx: Option<mpsc::UnboundedSender<DiagnosticsEvent>>,
@@ -242,6 +284,25 @@ impl LspClient {
                     break;
                 }
             };
+
+            // Reject absurdly large messages to prevent OOM
+            if content_length > MAX_CONTENT_LENGTH {
+                error!(
+                    "LSP message content length {} exceeds maximum {}, skipping",
+                    content_length, MAX_CONTENT_LENGTH
+                );
+                // Try to skip the bytes
+                let mut discard = vec![0u8; std::cmp::min(content_length, 4096)];
+                let mut remaining = content_length;
+                while remaining > 0 {
+                    let to_read = std::cmp::min(remaining, discard.len());
+                    if std::io::Read::read_exact(&mut reader, &mut discard[..to_read]).is_err() {
+                        break;
+                    }
+                    remaining -= to_read;
+                }
+                continue;
+            }
 
             // Read content
             let mut content = vec![0u8; content_length];
@@ -271,23 +332,42 @@ impl LspClient {
 
             // Handle the message
             if let Some(id) = message.get("id") {
-                // This is a response
-                if let Some(id) = id.as_i64() {
-                    if let Some(tx) = pending.lock().remove(&(id as i32)) {
-                        if let Some(error) = message.get("error") {
-                            let error_msg = error
-                                .get("message")
-                                .and_then(|m| m.as_str())
-                                .unwrap_or("Unknown error");
-                            let _ = tx.send(Err(anyhow!("{}", error_msg)));
+                // Check if this is a response (has "result" or "error") vs a server request
+                if message.get("result").is_some() || message.get("error").is_some() {
+                    // This is a response to one of our requests
+                    let id_i64 = match id {
+                        Value::Number(n) => n.as_i64(),
+                        Value::String(s) => s.parse::<i64>().ok(),
+                        _ => None,
+                    };
+                    if let Some(id_val) = id_i64 {
+                        if let Some(tx) = pending.lock().remove(&id_val) {
+                            if let Some(error) = message.get("error") {
+                                let error_msg = error
+                                    .get("message")
+                                    .and_then(|m| m.as_str())
+                                    .unwrap_or("Unknown LSP error");
+                                let _ = tx.send(Err(anyhow!("{}", error_msg)));
+                            } else {
+                                let result = message.get("result").cloned().unwrap_or(Value::Null);
+                                let _ = tx.send(Ok(result));
+                            }
                         } else {
-                            let result = message.get("result").cloned().unwrap_or(Value::Null);
-                            let _ = tx.send(Ok(result));
+                            warn!("Received response for unknown request id {}", id_val);
                         }
+                    } else {
+                        warn!("Received response with non-numeric id: {}", id);
+                    }
+                } else if let Some(method) = message.get("method").and_then(|m| m.as_str()) {
+                    // Server-initiated request (has id + method but no result/error)
+                    debug!("Received server request: {} (id: {})", method, id);
+                    let params = message.get("params").cloned().unwrap_or(Value::Null);
+                    if let Some(handler) = handlers.lock().get(method) {
+                        handler(method.to_string(), params);
                     }
                 }
             } else if let Some(method) = message.get("method").and_then(|m| m.as_str()) {
-                // This is a notification
+                // This is a notification (no id)
                 let params = message.get("params").cloned().unwrap_or(Value::Null);
 
                 // Handle diagnostics specially
@@ -338,7 +418,12 @@ impl LspClient {
             }
 
             if let Some(len_str) = line.strip_prefix(CONTENT_LENGTH_HEADER) {
-                content_length = Some(len_str.trim().parse()?);
+                content_length = Some(
+                    len_str
+                        .trim()
+                        .parse()
+                        .map_err(|e| anyhow!("Invalid Content-Length value: {}", e))?,
+                );
             }
         }
 
@@ -379,7 +464,7 @@ impl LspClient {
                 params,
                 response_tx,
             })
-            .map_err(|_| anyhow!("Failed to send request"))?;
+            .map_err(|_| anyhow!("Failed to send request: writer thread closed"))?;
 
         let result = response_rx
             .await
@@ -397,7 +482,7 @@ impl LspClient {
                 method: method.to_string(),
                 params,
             })
-            .map_err(|_| anyhow!("Failed to send notification"))?;
+            .map_err(|_| anyhow!("Failed to send notification: writer thread closed"))?;
 
         Ok(())
     }
@@ -464,9 +549,16 @@ impl LspClient {
         // Signal writer thread to stop
         let _ = self.outgoing_tx.send(OutgoingMessage::Shutdown);
 
-        // Kill the process
+        // Drain pending requests so callers don't hang
+        let pending: Vec<_> = self.pending_requests.lock().drain().collect();
+        for (_, tx) in pending {
+            let _ = tx.send(Err(anyhow!("Language server shutting down")));
+        }
+
+        // Kill the process and wait for it to avoid zombies
         if let Some(mut process) = self.process.lock().take() {
             let _ = process.kill();
+            let _ = process.wait();
         }
 
         info!("Language server {} shut down", self.name);
@@ -512,8 +604,16 @@ impl LspClient {
 impl Drop for LspClient {
     fn drop(&mut self) {
         let _ = self.outgoing_tx.send(OutgoingMessage::Shutdown);
+
+        // Drain pending requests so callers don't hang
+        let pending: Vec<_> = self.pending_requests.lock().drain().collect();
+        for (_, tx) in pending {
+            let _ = tx.send(Err(anyhow!("Language server dropped")));
+        }
+
         if let Some(mut process) = self.process.lock().take() {
             let _ = process.kill();
+            let _ = process.wait();
         }
     }
 }
