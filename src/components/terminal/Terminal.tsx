@@ -286,6 +286,8 @@ export function Terminal(props: TerminalProps) {
   let containerRef: HTMLDivElement | undefined;
   let handle: TerminalHandle | undefined;
   let resizeObserver: ResizeObserver | null = null;
+  let disposed = false;
+  let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
 
   onMount(() => {
     if (!containerRef) return;
@@ -445,9 +447,6 @@ export function Terminal(props: TerminalProps) {
       props.callbacks.onResize(props.terminalInfo.id, cols, rows);
     });
 
-    // ResizeObserver for auto-fit
-    let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
-
     const handleResize = () => {
       if (
         containerRef &&
@@ -465,10 +464,12 @@ export function Terminal(props: TerminalProps) {
     };
 
     resizeObserver = new ResizeObserver((entries) => {
+      if (disposed) return;
       if (resizeTimeout) {
         clearTimeout(resizeTimeout);
       }
       resizeTimeout = setTimeout(() => {
+        if (disposed) return;
         for (const entry of entries) {
           if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
             handleResize();
@@ -501,6 +502,14 @@ export function Terminal(props: TerminalProps) {
         terminal.write(data);
       },
       dispose: () => {
+        if (disposed) return;
+        disposed = true;
+        if (resizeTimeout) {
+          clearTimeout(resizeTimeout);
+          resizeTimeout = null;
+        }
+        resizeObserver?.disconnect();
+        resizeObserver = null;
         if (webglAddon && typeof (webglAddon as { dispose?: () => void }).dispose === "function") {
           try {
             (webglAddon as { dispose: () => void }).dispose();
@@ -508,8 +517,10 @@ export function Terminal(props: TerminalProps) {
             console.debug("WebGL addon disposal failed:", err);
           }
         }
-        resizeObserver?.disconnect();
-        resizeObserver = null;
+        try { searchAddon.dispose(); } catch { /* already disposed */ }
+        try { fitAddon.dispose(); } catch { /* already disposed */ }
+        try { webLinksAddon.dispose(); } catch { /* already disposed */ }
+        try { unicode11Addon.dispose(); } catch { /* already disposed */ }
         terminal.dispose();
         props.onDisposed?.(props.terminalInfo.id);
       },
@@ -519,6 +530,10 @@ export function Terminal(props: TerminalProps) {
   });
 
   onCleanup(() => {
+    if (resizeTimeout) {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = null;
+    }
     resizeObserver?.disconnect();
     resizeObserver = null;
     if (handle) {

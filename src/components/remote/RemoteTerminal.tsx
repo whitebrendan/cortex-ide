@@ -110,6 +110,10 @@ export function RemoteTerminal(props: RemoteTerminalProps) {
   let unlistenStatus: UnlistenFn | null = null;
   let pendingAckBytes = 0;
   let uptimeInterval: ReturnType<typeof setInterval> | null = null;
+  let resizeDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
+  let focusHandler: (() => void) | null = null;
+  let blurHandler: (() => void) | null = null;
+  let textareaEl: Element | null = null;
 
   const ACK_BATCH_SIZE = 32768;
 
@@ -228,10 +232,12 @@ export function RemoteTerminal(props: RemoteTerminalProps) {
     });
 
     // Track focus using textarea element events
-    const textareaEl = terminal.element?.querySelector('.xterm-helper-textarea');
+    textareaEl = terminal.element?.querySelector('.xterm-helper-textarea') ?? null;
     if (textareaEl) {
-      textareaEl.addEventListener('focus', () => setIsFocused(true));
-      textareaEl.addEventListener('blur', () => setIsFocused(false));
+      focusHandler = () => setIsFocused(true);
+      blurHandler = () => setIsFocused(false);
+      textareaEl.addEventListener('focus', focusHandler);
+      textareaEl.addEventListener('blur', blurHandler);
     }
 
     // Initial fit
@@ -239,17 +245,22 @@ export function RemoteTerminal(props: RemoteTerminalProps) {
       fitAddon?.fit();
     });
 
-    // Set up resize observer
+    // Set up resize observer with debounce
     resizeObserver = new ResizeObserver(() => {
-      requestAnimationFrame(() => {
+      if (resizeDebounceTimeout) {
+        clearTimeout(resizeDebounceTimeout);
+      }
+      resizeDebounceTimeout = setTimeout(() => {
+        resizeDebounceTimeout = null;
         if (
+          terminal &&
           containerRef &&
           containerRef.offsetWidth > 0 &&
           containerRef.offsetHeight > 0
         ) {
           fitAddon?.fit();
         }
-      });
+      }, 16);
     });
     resizeObserver.observe(containerRef);
   };
@@ -492,10 +503,27 @@ export function RemoteTerminal(props: RemoteTerminalProps) {
   onCleanup(() => {
     unlistenOutput?.();
     unlistenStatus?.();
+
+    if (resizeDebounceTimeout) {
+      clearTimeout(resizeDebounceTimeout);
+      resizeDebounceTimeout = null;
+    }
+
     resizeObserver?.disconnect();
+    resizeObserver = null;
 
     if (uptimeInterval) {
       clearInterval(uptimeInterval);
+      uptimeInterval = null;
+    }
+
+    // Clean up focus/blur listeners
+    if (textareaEl) {
+      if (focusHandler) textareaEl.removeEventListener('focus', focusHandler);
+      if (blurHandler) textareaEl.removeEventListener('blur', blurHandler);
+      textareaEl = null;
+      focusHandler = null;
+      blurHandler = null;
     }
 
     // Flush remaining acks
@@ -507,6 +535,8 @@ export function RemoteTerminal(props: RemoteTerminalProps) {
     }
 
     webglAddon?.dispose();
+    searchAddon?.dispose();
+    fitAddon?.dispose();
     terminal?.dispose();
     terminal = null;
     fitAddon = null;

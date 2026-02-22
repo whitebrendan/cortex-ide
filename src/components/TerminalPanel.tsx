@@ -751,7 +751,7 @@ export function TerminalPanel() {
     setTerminalTotalLines(terminalId, totalLines);
   };
 
-  // Update tab order when terminals change
+  // Update tab order when terminals change and clean up stale instances
   createEffect(() => {
     const terminalIds = state.terminals.map(t => t.id);
     const currentOrder = tabOrder();
@@ -761,6 +761,39 @@ export function TerminalPanel() {
     
     if (newIds.length > 0 || validOrder.length !== currentOrder.length) {
       setTabOrder([...validOrder, ...newIds]);
+    }
+
+    // Clean up instances for terminals that no longer exist
+    const activeIds = new Set(terminalIds);
+    for (const [id, instance] of terminalInstances) {
+      if (!activeIds.has(id)) {
+        instance.unsubscribe();
+        if (instance.scrollHandler && instance.viewportElement) {
+          instance.viewportElement.removeEventListener("scroll", instance.scrollHandler);
+          instance.scrollHandler = null;
+          instance.viewportElement = null;
+        }
+        if (instance.resizeObserver) {
+          instance.resizeObserver.disconnect();
+          instance.resizeObserver = null;
+        }
+        if (instance.webglAddon && typeof (instance.webglAddon as { dispose?: () => void }).dispose === 'function') {
+          try {
+            (instance.webglAddon as { dispose: () => void }).dispose();
+          } catch { /* already disposed */ }
+        }
+        instance.outputBuffer.length = 0;
+        instance.terminal?.dispose?.();
+        terminalInstances.delete(id);
+
+        const processor = outputProcessors.get(id);
+        if (processor) {
+          processor.dispose();
+          outputProcessors.delete(id);
+        }
+        stickyScrollTrackers.delete(id);
+        terminalDecorations.delete(id);
+      }
     }
   });
 
@@ -1906,6 +1939,12 @@ export function TerminalPanel() {
           instance.viewportElement = null;
         }
         
+        // Clean up ResizeObserver
+        if (instance.resizeObserver) {
+          instance.resizeObserver.disconnect();
+          instance.resizeObserver = null;
+        }
+        
         if (instance.webglAddon && typeof (instance.webglAddon as { dispose?: () => void }).dispose === 'function') {
           try {
             (instance.webglAddon as { dispose: () => void }).dispose();
@@ -1921,6 +1960,12 @@ export function TerminalPanel() {
         processor.dispose();
       });
       outputProcessors.clear();
+      
+      // Clean up sticky scroll trackers
+      stickyScrollTrackers.clear();
+      
+      // Clean up terminal decorations
+      terminalDecorations.clear();
       
       // Cancel window resize debouncer
       windowResizeDebouncer?.cancel();
