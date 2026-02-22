@@ -85,6 +85,16 @@ export {
   type TerminalColorPickerProps,
 } from "./TerminalColorPicker";
 
+// Terminal xterm.js wrapper component
+export {
+  Terminal,
+  loadWebglAddon,
+  type TerminalProps,
+  type TerminalSettings as TerminalComponentSettings,
+  type TerminalCallbacks,
+  type TerminalHandle,
+} from "./Terminal";
+
 // Terminal link provider (URL, file path, error location detection)
 export {
   useTerminalLinkProvider,
