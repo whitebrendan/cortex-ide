@@ -790,10 +790,10 @@ pub fn handle_run_event(app: &AppHandle, event: RunEvent) {
             {
                 let collab_state = app.state::<LazyState<CollabState>>();
                 if collab_state.is_initialized() {
-                    let collab = collab_state.get().0.clone();
+                    let collab_inner = collab_state.get().0.clone();
                     tauri::async_runtime::block_on(async {
-                        let mut manager = collab.lock().await;
-                        manager.stop_server();
+                        let mut manager = collab_inner.lock().await;
+                        manager.shutdown();
                     });
                     info!("Collaboration server stopped on app exit");
                 }

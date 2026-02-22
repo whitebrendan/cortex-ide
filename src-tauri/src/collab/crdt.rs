@@ -7,10 +7,13 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use tokio::sync::RwLock;
-use tracing::info;
+use tracing::{info, warn};
 use yrs::updates::decoder::Decode;
 use yrs::updates::encoder::Encode;
 use yrs::{Doc, GetString, ReadTxn, Text, Transact, Update};
+
+/// Maximum number of CRDT documents allowed per session to prevent unbounded growth
+const MAX_DOCUMENTS_PER_SESSION: usize = 500;
 
 /// A single CRDT document backed by a Yrs Doc
 pub struct CrdtDocument {
@@ -146,13 +149,36 @@ impl DocumentStore {
         self.documents.remove(file_id).is_some()
     }
 
+    /// Remove all documents
+    pub fn clear(&mut self) {
+        self.documents.clear();
+    }
+
+    /// Get the number of documents in the store
+    pub fn document_count(&self) -> usize {
+        self.documents.len()
+    }
+
     /// List all document file IDs
     pub fn file_ids(&self) -> Vec<String> {
         self.documents.keys().cloned().collect()
     }
 
-    /// Apply an update to a specific document, creating it if needed
+    /// Apply an update to a specific document, creating it if needed.
+    /// Rejects the operation if the document limit has been reached.
     pub fn apply_update(&mut self, file_id: &str, update_data: &[u8]) -> Result<(), String> {
+        if !self.documents.contains_key(file_id)
+            && self.documents.len() >= MAX_DOCUMENTS_PER_SESSION
+        {
+            warn!(
+                "Document limit ({}) reached, rejecting new document '{}'",
+                MAX_DOCUMENTS_PER_SESSION, file_id
+            );
+            return Err(format!(
+                "Document limit ({}) reached, cannot create document for '{}'",
+                MAX_DOCUMENTS_PER_SESSION, file_id
+            ));
+        }
         let doc = self.get_or_create(file_id);
         doc.apply_update(update_data)
     }
@@ -219,6 +245,24 @@ impl SharedDocumentStore {
     pub async fn file_ids(&self) -> Vec<String> {
         let store = self.0.read().await;
         store.file_ids()
+    }
+
+    /// Remove a document from the store
+    pub async fn remove_document(&self, file_id: &str) -> bool {
+        let mut store = self.0.write().await;
+        store.remove(file_id)
+    }
+
+    /// Get the number of documents in the store
+    pub async fn document_count(&self) -> usize {
+        let store = self.0.read().await;
+        store.document_count()
+    }
+
+    /// Remove all documents from the store
+    pub async fn clear(&self) {
+        let mut store = self.0.write().await;
+        store.clear();
     }
 }
 

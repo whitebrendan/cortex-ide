@@ -299,6 +299,12 @@ impl RoomManager {
         self.user_sessions.remove(token);
     }
 
+    /// Clear all rooms and session tokens. Used during shutdown.
+    pub fn clear_all(&mut self) {
+        self.rooms.clear();
+        self.user_sessions.clear();
+    }
+
     /// Update a participant's permission.
     pub fn update_permission(
         &mut self,

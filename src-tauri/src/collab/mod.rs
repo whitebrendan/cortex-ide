@@ -77,6 +77,13 @@ impl CollabManager {
     pub fn server_port(&self) -> u16 {
         self.server.port()
     }
+
+    /// Shut down the collaboration server and clean up all sessions
+    pub fn shutdown(&mut self) {
+        self.server.stop();
+        self.session_manager.cleanup_all();
+        info!("Collaboration manager shut down");
+    }
 }
 
 impl Default for CollabManager {

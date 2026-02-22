@@ -289,6 +289,18 @@ impl SessionManager {
     pub fn session_count(&self) -> usize {
         self.sessions.len()
     }
+
+    /// Clean up all sessions, awareness states, and document stores.
+    /// Used during application shutdown.
+    pub fn cleanup_all(&mut self) {
+        let session_count = self.sessions.len();
+        self.sessions.clear();
+        self.awareness.clear();
+        self.document_stores.clear();
+        if session_count > 0 {
+            info!("Cleaned up {} collaboration session(s)", session_count);
+        }
+    }
 }
 
 impl Default for SessionManager {

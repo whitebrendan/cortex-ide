@@ -13,6 +13,7 @@ use futures::{SinkExt, StreamExt};
 use tauri::{AppHandle, Emitter};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{Mutex as TokioMutex, RwLock, broadcast};
+use tokio::time::{Duration, Instant};
 use tokio_tungstenite::WebSocketStream;
 use tokio_tungstenite::tungstenite::Message;
 use tracing::{error, info, warn};
@@ -21,14 +22,25 @@ use crate::collab::types::CollabMessage;
 
 type WsSink = SplitSink<WebSocketStream<TcpStream>, Message>;
 
+/// Maximum allowed WebSocket text message size (10 MB)
+const MAX_MESSAGE_SIZE: usize = 10 * 1024 * 1024;
+
+/// Interval between server-side heartbeat sweeps
+const PING_INTERVAL: Duration = Duration::from_secs(30);
+
+/// Peers with no activity for this duration are considered stale
+const PEER_TIMEOUT: Duration = Duration::from_secs(90);
+
 /// Represents a connected peer
 struct PeerConnection {
     user_id: String,
     session_id: Option<String>,
     sink: Arc<TokioMutex<WsSink>>,
+    last_activity: Instant,
 }
 
 /// Room-level broadcast channel
+#[allow(dead_code)]
 struct RoomBroadcast {
     tx: broadcast::Sender<String>,
 }
@@ -38,7 +50,7 @@ pub struct CollabServer {
     port: u16,
     peers: Arc<RwLock<HashMap<SocketAddr, PeerConnection>>>,
     rooms: Arc<RwLock<HashMap<String, RoomBroadcast>>>,
-    shutdown_tx: Option<tokio::sync::oneshot::Sender<()>>,
+    shutdown_tx: Option<broadcast::Sender<()>>,
     is_running: bool,
 }
 
@@ -72,8 +84,8 @@ impl CollabServer {
         self.port = actual_port;
         self.is_running = true;
 
-        let (shutdown_tx, mut shutdown_rx) = tokio::sync::oneshot::channel();
-        self.shutdown_tx = Some(shutdown_tx);
+        let (shutdown_tx, _) = broadcast::channel(1);
+        self.shutdown_tx = Some(shutdown_tx.clone());
 
         let peers = self.peers.clone();
         let rooms = self.rooms.clone();
@@ -83,6 +95,8 @@ impl CollabServer {
             actual_port
         );
 
+        // Accept loop
+        let mut shutdown_rx = shutdown_tx.subscribe();
         tokio::spawn(async move {
             loop {
                 tokio::select! {
@@ -103,7 +117,7 @@ impl CollabServer {
                             }
                         }
                     }
-                    _ = &mut shutdown_rx => {
+                    _ = shutdown_rx.recv() => {
                         info!("Collaboration WebSocket server shutting down");
                         break;
                     }
@@ -111,15 +125,40 @@ impl CollabServer {
             }
         });
 
+        // Heartbeat loop — removes stale peers and cleans up empty rooms
+        let peers_hb = self.peers.clone();
+        let rooms_hb = self.rooms.clone();
+        let mut shutdown_rx_hb = shutdown_tx.subscribe();
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(PING_INTERVAL);
+            loop {
+                tokio::select! {
+                    _ = interval.tick() => {
+                        remove_stale_peers(&peers_hb).await;
+                        cleanup_empty_rooms(&peers_hb, &rooms_hb).await;
+                    }
+                    _ = shutdown_rx_hb.recv() => break,
+                }
+            }
+        });
+
         Ok(actual_port)
     }
 
-    /// Stop the WebSocket server
+    /// Stop the WebSocket server and clear all connection state
     pub fn stop(&mut self) {
         if let Some(tx) = self.shutdown_tx.take() {
             let _ = tx.send(());
         }
         self.is_running = false;
+
+        let peers = self.peers.clone();
+        let rooms = self.rooms.clone();
+        tokio::spawn(async move {
+            peers.write().await.clear();
+            rooms.write().await.clear();
+        });
+
         info!("Collaboration WebSocket server stopped");
     }
 
@@ -175,6 +214,54 @@ impl Default for CollabServer {
     }
 }
 
+/// Remove peers that have not sent any messages within `PEER_TIMEOUT`
+async fn remove_stale_peers(peers: &Arc<RwLock<HashMap<SocketAddr, PeerConnection>>>) {
+    let mut peers_guard = peers.write().await;
+    let stale_addrs: Vec<SocketAddr> = peers_guard
+        .iter()
+        .filter(|(_, peer)| peer.last_activity.elapsed() > PEER_TIMEOUT)
+        .map(|(addr, _)| *addr)
+        .collect();
+
+    for addr in &stale_addrs {
+        if let Some(peer) = peers_guard.remove(addr) {
+            warn!(
+                "Removing stale peer {} (user: {})",
+                addr,
+                if peer.user_id.is_empty() {
+                    "unknown"
+                } else {
+                    &peer.user_id
+                }
+            );
+        }
+    }
+}
+
+/// Remove rooms that have no peers associated with them
+async fn cleanup_empty_rooms(
+    peers: &Arc<RwLock<HashMap<SocketAddr, PeerConnection>>>,
+    rooms: &Arc<RwLock<HashMap<String, RoomBroadcast>>>,
+) {
+    let peers_guard = peers.read().await;
+    let active_sessions: std::collections::HashSet<&str> = peers_guard
+        .values()
+        .filter_map(|p| p.session_id.as_deref())
+        .collect();
+
+    let mut rooms_guard = rooms.write().await;
+    let empty_rooms: Vec<String> = rooms_guard
+        .keys()
+        .filter(|room_id| !active_sessions.contains(room_id.as_str()))
+        .cloned()
+        .collect();
+
+    for room_id in &empty_rooms {
+        rooms_guard.remove(room_id);
+        info!("Removed empty room broadcast channel: {}", room_id);
+    }
+}
+
 /// Handle a single WebSocket connection
 async fn handle_connection(
     stream: TcpStream,
@@ -201,6 +288,7 @@ async fn handle_connection(
                 user_id: String::new(),
                 session_id: None,
                 sink: sink.clone(),
+                last_activity: Instant::now(),
             },
         );
     }
@@ -208,26 +296,65 @@ async fn handle_connection(
     // Process incoming messages
     while let Some(msg_result) = stream.next().await {
         match msg_result {
-            Ok(Message::Text(text)) => match serde_json::from_str::<CollabMessage>(&text) {
-                Ok(collab_msg) => {
-                    handle_collab_message(&collab_msg, addr, &peers, &rooms, &sink).await;
-                }
-                Err(e) => {
-                    warn!("Invalid message from {}: {}", addr, e);
-                    let error_msg = CollabMessage::Error {
-                        message: format!("Invalid message format: {}", e),
-                    };
+            Ok(Message::Text(ref text)) if text.len() > MAX_MESSAGE_SIZE => {
+                warn!(
+                    "Rejecting oversized message ({} bytes) from {}",
+                    text.len(),
+                    addr
+                );
+                let error_msg = CollabMessage::Error {
+                    message: format!("Message too large ({} bytes)", text.len()),
+                };
+                if let Ok(json) = serde_json::to_string(&error_msg) {
                     let mut sink_guard = sink.lock().await;
-                    let _ = sink_guard
-                        .send(Message::Text(
-                            serde_json::to_string(&error_msg).unwrap_or_default(),
-                        ))
-                        .await;
+                    let _ = sink_guard.send(Message::Text(json)).await;
                 }
-            },
+            }
+            Ok(Message::Text(text)) => {
+                // Update activity timestamp
+                {
+                    let mut peers_guard = peers.write().await;
+                    if let Some(peer) = peers_guard.get_mut(&addr) {
+                        peer.last_activity = Instant::now();
+                    }
+                }
+
+                match serde_json::from_str::<CollabMessage>(&text) {
+                    Ok(collab_msg) => {
+                        handle_collab_message(&collab_msg, addr, &peers, &rooms, &sink).await;
+                    }
+                    Err(e) => {
+                        warn!("Invalid message from {}: {}", addr, e);
+                        let error_msg = CollabMessage::Error {
+                            message: format!("Invalid message format: {}", e),
+                        };
+                        if let Ok(json) = serde_json::to_string(&error_msg) {
+                            let mut sink_guard = sink.lock().await;
+                            let _ = sink_guard.send(Message::Text(json)).await;
+                        }
+                    }
+                }
+            }
             Ok(Message::Ping(data)) => {
+                // Update activity timestamp
+                {
+                    let mut peers_guard = peers.write().await;
+                    if let Some(peer) = peers_guard.get_mut(&addr) {
+                        peer.last_activity = Instant::now();
+                    }
+                }
                 let mut sink_guard = sink.lock().await;
                 let _ = sink_guard.send(Message::Pong(data)).await;
+            }
+            Ok(Message::Pong(_)) => {
+                // Update activity timestamp on pong responses
+                let mut peers_guard = peers.write().await;
+                if let Some(peer) = peers_guard.get_mut(&addr) {
+                    peer.last_activity = Instant::now();
+                }
+            }
+            Ok(Message::Binary(_)) => {
+                warn!("Received unsupported binary message from {}", addr);
             }
             Ok(Message::Close(_)) => {
                 info!("WebSocket connection closed by peer: {}", addr);
@@ -242,35 +369,49 @@ async fn handle_connection(
     }
 
     // Clean up peer on disconnect
-    let mut peers_guard = peers.write().await;
-    if let Some(peer) = peers_guard.remove(&addr) {
-        info!(
-            "Peer disconnected: {} (user: {})",
-            addr,
-            if peer.user_id.is_empty() {
-                "unknown"
+    let session_id_and_user = {
+        let mut peers_guard = peers.write().await;
+        if let Some(peer) = peers_guard.remove(&addr) {
+            info!(
+                "Peer disconnected: {} (user: {})",
+                addr,
+                if peer.user_id.is_empty() {
+                    "unknown"
+                } else {
+                    &peer.user_id
+                }
+            );
+
+            if peer.session_id.is_some() && !peer.user_id.is_empty() {
+                Some((peer.session_id.clone(), peer.user_id.clone()))
             } else {
-                &peer.user_id
+                None
             }
+        } else {
+            None
+        }
+    };
+
+    // Notify room about user leaving (lock released above to avoid holding across broadcast)
+    if let Some((Some(session_id), user_id)) = session_id_and_user {
+        let leave_msg = CollabMessage::UserLeft {
+            user_id: user_id.clone(),
+        };
+
+        let peers_guard = peers.read().await;
+        broadcast_to_peers(&peers_guard, &session_id, &leave_msg, Some(addr));
+        drop(peers_guard);
+
+        let _ = app.emit(
+            "collab:user-left",
+            serde_json::json!({
+                "sessionId": session_id,
+                "userId": user_id,
+            }),
         );
 
-        // Notify room about user leaving
-        if let Some(session_id) = &peer.session_id {
-            if !peer.user_id.is_empty() {
-                let leave_msg = CollabMessage::UserLeft {
-                    user_id: peer.user_id.clone(),
-                };
-                broadcast_to_peers(&peers_guard, session_id, &leave_msg, Some(addr));
-
-                let _ = app.emit(
-                    "collab:user-left",
-                    serde_json::json!({
-                        "sessionId": session_id,
-                        "userId": peer.user_id,
-                    }),
-                );
-            }
-        }
+        // Clean up empty rooms after peer leaves
+        cleanup_empty_rooms(&peers, &rooms).await;
     }
 
     Ok(())
@@ -283,7 +424,13 @@ fn broadcast_to_peers(
     message: &CollabMessage,
     exclude: Option<SocketAddr>,
 ) {
-    let msg_json = serde_json::to_string(message).unwrap_or_default();
+    let msg_json = match serde_json::to_string(message) {
+        Ok(json) => json,
+        Err(e) => {
+            warn!("Failed to serialize broadcast message: {}", e);
+            return;
+        }
+    };
 
     for (peer_addr, peer) in peers.iter() {
         if peer.session_id.as_deref() == Some(session_id) {
@@ -361,6 +508,10 @@ async fn handle_collab_message(
 
             let peers_guard = peers.read().await;
             broadcast_to_peers(&peers_guard, session_id, &leave_msg, Some(addr));
+            drop(peers_guard);
+
+            // Clean up empty rooms after user leaves
+            cleanup_empty_rooms(peers, rooms).await;
         }
 
         CollabMessage::CursorUpdate { .. }
@@ -382,12 +533,10 @@ async fn handle_collab_message(
 
         CollabMessage::Ping => {
             let pong = CollabMessage::Pong;
-            let mut sink_guard = sink.lock().await;
-            let _ = sink_guard
-                .send(Message::Text(
-                    serde_json::to_string(&pong).unwrap_or_default(),
-                ))
-                .await;
+            if let Ok(json) = serde_json::to_string(&pong) {
+                let mut sink_guard = sink.lock().await;
+                let _ = sink_guard.send(Message::Text(json)).await;
+            }
         }
 
         _ => {}

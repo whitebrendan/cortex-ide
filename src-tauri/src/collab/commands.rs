@@ -227,12 +227,14 @@ pub async fn collab_sync_document(
     file_id: String,
     update: Vec<u8>,
 ) -> Result<Vec<u8>, String> {
-    let manager = state.get().0.lock().await;
-
-    let doc_store = manager
-        .session_manager
-        .get_document_store(&session_id)
-        .ok_or_else(|| format!("Session '{}' not found", session_id))?;
+    let doc_store = {
+        let manager = state.get().0.lock().await;
+        manager
+            .session_manager
+            .get_document_store(&session_id)
+            .ok_or_else(|| format!("Session '{}' not found", session_id))?
+            .clone()
+    };
 
     doc_store.apply_update(&file_id, &update).await?;
 
@@ -249,12 +251,18 @@ pub async fn collab_init_document(
     file_id: String,
     content: String,
 ) -> Result<(), String> {
-    let manager = state.get().0.lock().await;
+    let doc_store = {
+        let manager = state.get().0.lock().await;
+        manager
+            .session_manager
+            .get_document_store(&session_id)
+            .ok_or_else(|| format!("Session '{}' not found", session_id))?
+            .clone()
+    };
 
-    manager
-        .session_manager
-        .init_document(&session_id, &file_id, &content)
-        .await?;
+    let mut inner = doc_store.0.write().await;
+    inner.get_or_create_with_text(&file_id, &content);
+    drop(inner);
 
     info!(
         "Initialized CRDT document '{}' in session '{}'",
