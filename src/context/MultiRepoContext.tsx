@@ -797,7 +797,10 @@ export function MultiRepoProvider(props: ParentProps) {
     if (repoIndex === -1) return;
 
     const doRefresh = async () => {
-      setState("repositories", repoIndex, "status", "loading");
+      const loadingIndex = state.repositories.findIndex(r => r.id === id);
+      if (loadingIndex !== -1) {
+        setState("repositories", loadingIndex, "status", "loading");
+      }
 
       try {
         const updates = await fetchRepositoryStatus(id);
