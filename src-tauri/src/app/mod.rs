@@ -435,6 +435,7 @@ pub fn register_state(
         .manage(crate::mcp::McpState::<tauri::Wry>::new(
             crate::mcp::McpConfig::new("Cortex Desktop").tcp("127.0.0.1", 4000),
         ))
+        .manage(crate::mcp::bridge::McpBridgeState::new())
         .manage(crate::themes::ThemeState::new())
         .manage(crate::keybindings::KeybindingsState::new())
         .manage(crate::wsl::WSLState::new())
@@ -722,6 +723,18 @@ pub fn handle_run_event(app: &AppHandle, event: RunEvent) {
                 let mcp_state = app.state::<crate::mcp::McpState<tauri::Wry>>();
                 let _ = mcp_state.stop();
                 info!("MCP socket server stopped on app exit");
+            }
+
+            {
+                let bridge_state = app.state::<crate::mcp::bridge::McpBridgeState>();
+                let bridge_state_clone = bridge_state.0.clone();
+                tauri::async_runtime::block_on(async {
+                    let mut guard = bridge_state_clone.lock().await;
+                    if let Some(bridge) = guard.take() {
+                        let _ = bridge.stop().await;
+                        info!("MCP bridge stopped on app exit");
+                    }
+                });
             }
 
             {

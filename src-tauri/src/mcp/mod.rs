@@ -12,6 +12,7 @@
 //! - JavaScript execution
 //! - LocalStorage management
 
+pub mod bridge;
 pub mod commands;
 mod socket_server;
 mod tools;

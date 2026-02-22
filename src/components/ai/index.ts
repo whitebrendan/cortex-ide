@@ -22,6 +22,7 @@ export {
 } from "./SlashCommandMenu";
 export { SupermavenStatus, SupermavenStatusIndicator, CompletionPreview } from "./SupermavenStatus";
 export { ACPToolsPanel, ACPToolSelector } from "./ACPToolsPanel";
+export { MCPToolsPanel } from "./MCPToolsPanel";
 export { ThreadList, type Thread, type Message, type ThreadListProps } from "./ThreadList";
 export { SubAgentStatus, SubAgentStatusCompact } from "./SubAgentStatus";
 export type { SubAgentStatusProps, SubAgentStatusCompactProps, SubAgent, AgentTask, AgentStatus } from "./SubAgentStatus";

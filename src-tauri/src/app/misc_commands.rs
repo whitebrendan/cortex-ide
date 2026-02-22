@@ -146,6 +146,11 @@ macro_rules! misc_commands {
             $crate::mcp::commands::mcp_start,
             $crate::mcp::commands::mcp_stop,
             $crate::mcp::commands::mcp_get_config,
+            // MCP Bridge commands (Node.js workspace tools server)
+            $crate::mcp::commands::mcp_bridge_start,
+            $crate::mcp::commands::mcp_bridge_stop,
+            $crate::mcp::commands::mcp_bridge_list_tools,
+            $crate::mcp::commands::mcp_bridge_call_tool,
             // Window management commands
             $crate::window::create_new_window,
             $crate::window::create_auxiliary_window,
