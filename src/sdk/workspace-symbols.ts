@@ -5,7 +5,7 @@
  * for workspace-wide symbol search, indexing, and statistics.
  */
 
-import { invoke } from "@tauri-apps/api/core";
+import { safeInvoke } from "./safe-invoke";
 
 export type SymbolKind =
   | "file" | "module" | "namespace" | "package" | "class"
@@ -42,16 +42,11 @@ export async function workspaceSymbolsSearch(
   query: string,
   maxResults?: number,
 ): Promise<WorkspaceSymbolEntry[]> {
-  try {
-    return await invoke<WorkspaceSymbolEntry[]>("workspace_symbols_search", {
-      workspacePath,
-      query,
-      maxResults: maxResults ?? 100,
-    });
-  } catch (error) {
-    console.debug("[workspace-symbols] Search failed (backend may not be wired):", error);
-    return [];
-  }
+  return safeInvoke<WorkspaceSymbolEntry[]>("workspace_symbols_search", {
+    workspacePath,
+    query,
+    maxResults: maxResults ?? 100,
+  }, { fallback: [], silent: true });
 }
 
 /**
@@ -61,12 +56,10 @@ export async function workspaceSymbolsSearch(
 export async function workspaceSymbolsIndex(
   workspacePath: string,
 ): Promise<IndexStats> {
-  try {
-    return await invoke<IndexStats>("workspace_symbols_index", { workspacePath });
-  } catch (error) {
-    console.debug("[workspace-symbols] Index failed:", error);
-    return { totalSymbols: 0, totalFiles: 0, lastIndexed: null, indexed: false };
-  }
+  return safeInvoke<IndexStats>("workspace_symbols_index", { workspacePath }, {
+    fallback: { totalSymbols: 0, totalFiles: 0, lastIndexed: null, indexed: false },
+    silent: true,
+  });
 }
 
 /**
@@ -75,11 +68,10 @@ export async function workspaceSymbolsIndex(
 export async function workspaceSymbolsClear(
   workspacePath: string,
 ): Promise<void> {
-  try {
-    await invoke<void>("workspace_symbols_clear", { workspacePath });
-  } catch (error) {
-    console.debug("[workspace-symbols] Clear failed:", error);
-  }
+  return safeInvoke<void>("workspace_symbols_clear", { workspacePath }, {
+    fallback: undefined,
+    silent: true,
+  });
 }
 
 /**
@@ -88,10 +80,8 @@ export async function workspaceSymbolsClear(
 export async function workspaceSymbolsGetStats(
   workspacePath: string,
 ): Promise<IndexStats> {
-  try {
-    return await invoke<IndexStats>("workspace_symbols_get_stats", { workspacePath });
-  } catch (error) {
-    console.debug("[workspace-symbols] GetStats failed:", error);
-    return { totalSymbols: 0, totalFiles: 0, lastIndexed: null, indexed: false };
-  }
+  return safeInvoke<IndexStats>("workspace_symbols_get_stats", { workspacePath }, {
+    fallback: { totalSymbols: 0, totalFiles: 0, lastIndexed: null, indexed: false },
+    silent: true,
+  });
 }

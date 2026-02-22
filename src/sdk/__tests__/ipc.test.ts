@@ -1261,7 +1261,7 @@ describe("IPC Wrappers", () => {
 
         await extensionListInstalled();
 
-        expect(invoke).toHaveBeenCalledWith("list_installed_extensions");
+        expect(invoke).toHaveBeenCalledWith("list_installed_extensions", undefined);
       });
 
       it("should return empty array on error", async () => {
@@ -1346,7 +1346,7 @@ describe("IPC Wrappers", () => {
 
         await getDiagnosticsSummary();
 
-        expect(invoke).toHaveBeenCalledWith("diagnostics_get_summary");
+        expect(invoke).toHaveBeenCalledWith("diagnostics_get_summary", undefined);
       });
 
       it("should return zero-value summary on error", async () => {
@@ -1479,7 +1479,7 @@ describe("IPC Wrappers", () => {
 
         await getTerminalProfiles();
 
-        expect(invoke).toHaveBeenCalledWith("terminal_get_profiles");
+        expect(invoke).toHaveBeenCalledWith("terminal_get_profiles", undefined);
       });
 
       it("should return empty array on error", async () => {

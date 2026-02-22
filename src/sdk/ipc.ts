@@ -1,5 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
-import { editorLogger } from "@/utils/logger";
+import { safeInvoke } from "./safe-invoke";
 
 export interface LspPosition {
   line: number;
@@ -234,27 +233,15 @@ export async function lspCodeAction(
   range: LspRange,
   context: CodeActionContext,
 ): Promise<CodeAction[]> {
-  try {
-    return await invoke<CodeAction[]>("lsp_code_action", { serverId, uri, range, context });
-  } catch {
-    return [];
-  }
+  return safeInvoke<CodeAction[]>("lsp_code_action", { serverId, uri, range, context }, { fallback: [], silent: true });
 }
 
 export async function lspCodeLens(serverId: string, uri: string): Promise<CodeLens[]> {
-  try {
-    return await invoke<CodeLens[]>("lsp_code_lens", { serverId, uri });
-  } catch {
-    return [];
-  }
+  return safeInvoke<CodeLens[]>("lsp_code_lens", { serverId, uri }, { fallback: [], silent: true });
 }
 
 export async function lspResolveCodeLens(serverId: string, codeLens: CodeLens): Promise<CodeLens> {
-  try {
-    return await invoke<CodeLens>("lsp_resolve_code_lens", { serverId, codeLens });
-  } catch {
-    return codeLens;
-  }
+  return safeInvoke<CodeLens>("lsp_resolve_code_lens", { serverId, codeLens }, { fallback: codeLens, silent: true });
 }
 
 export async function lspFormatDocument(
@@ -262,11 +249,7 @@ export async function lspFormatDocument(
   uri: string,
   options: FormattingOptions,
 ): Promise<TextEdit[]> {
-  try {
-    return await invoke<TextEdit[]>("lsp_format_document", { serverId, uri, options });
-  } catch {
-    return [];
-  }
+  return safeInvoke<TextEdit[]>("lsp_format_document", { serverId, uri, options }, { fallback: [], silent: true });
 }
 
 export async function lspFormatRange(
@@ -275,11 +258,7 @@ export async function lspFormatRange(
   range: LspRange,
   options: FormattingOptions,
 ): Promise<TextEdit[]> {
-  try {
-    return await invoke<TextEdit[]>("lsp_format_range", { serverId, uri, range, options });
-  } catch {
-    return [];
-  }
+  return safeInvoke<TextEdit[]>("lsp_format_range", { serverId, uri, range, options }, { fallback: [], silent: true });
 }
 
 export async function lspRename(
@@ -288,11 +267,7 @@ export async function lspRename(
   position: LspPosition,
   newName: string,
 ): Promise<WorkspaceEdit | null> {
-  try {
-    return await invoke<WorkspaceEdit>("lsp_rename", { serverId, uri, position, newName });
-  } catch {
-    return null;
-  }
+  return safeInvoke<WorkspaceEdit | null>("lsp_rename", { serverId, uri, position, newName }, { fallback: null, silent: true });
 }
 
 export async function lspPrepareRename(
@@ -300,11 +275,7 @@ export async function lspPrepareRename(
   uri: string,
   position: LspPosition,
 ): Promise<PrepareRenameResult | null> {
-  try {
-    return await invoke<PrepareRenameResult>("lsp_prepare_rename", { serverId, uri, position });
-  } catch {
-    return null;
-  }
+  return safeInvoke<PrepareRenameResult | null>("lsp_prepare_rename", { serverId, uri, position }, { fallback: null, silent: true });
 }
 
 export async function lspSignatureHelp(
@@ -312,11 +283,7 @@ export async function lspSignatureHelp(
   uri: string,
   position: LspPosition,
 ): Promise<SignatureHelp | null> {
-  try {
-    return await invoke<SignatureHelp>("lsp_signature_help", { serverId, uri, position });
-  } catch {
-    return null;
-  }
+  return safeInvoke<SignatureHelp | null>("lsp_signature_help", { serverId, uri, position }, { fallback: null, silent: true });
 }
 
 export async function lspInlayHints(
@@ -324,11 +291,7 @@ export async function lspInlayHints(
   uri: string,
   range: LspRange,
 ): Promise<InlayHint[]> {
-  try {
-    return await invoke<InlayHint[]>("lsp_inlay_hints", { serverId, uri, range });
-  } catch {
-    return [];
-  }
+  return safeInvoke<InlayHint[]>("lsp_inlay_hints", { serverId, uri, range }, { fallback: [], silent: true });
 }
 
 export async function lspCallHierarchyPrepare(
@@ -336,33 +299,21 @@ export async function lspCallHierarchyPrepare(
   uri: string,
   position: LspPosition,
 ): Promise<CallHierarchyItem[]> {
-  try {
-    return await invoke<CallHierarchyItem[]>("lsp_call_hierarchy_prepare", { serverId, uri, position });
-  } catch {
-    return [];
-  }
+  return safeInvoke<CallHierarchyItem[]>("lsp_call_hierarchy_prepare", { serverId, uri, position }, { fallback: [], silent: true });
 }
 
 export async function lspCallHierarchyIncoming(
   serverId: string,
   item: CallHierarchyItem,
 ): Promise<CallHierarchyIncomingCall[]> {
-  try {
-    return await invoke<CallHierarchyIncomingCall[]>("lsp_call_hierarchy_incoming", { serverId, item });
-  } catch {
-    return [];
-  }
+  return safeInvoke<CallHierarchyIncomingCall[]>("lsp_call_hierarchy_incoming", { serverId, item }, { fallback: [], silent: true });
 }
 
 export async function lspCallHierarchyOutgoing(
   serverId: string,
   item: CallHierarchyItem,
 ): Promise<CallHierarchyOutgoingCall[]> {
-  try {
-    return await invoke<CallHierarchyOutgoingCall[]>("lsp_call_hierarchy_outgoing", { serverId, item });
-  } catch {
-    return [];
-  }
+  return safeInvoke<CallHierarchyOutgoingCall[]>("lsp_call_hierarchy_outgoing", { serverId, item }, { fallback: [], silent: true });
 }
 
 export async function lspTypeHierarchyPrepare(
@@ -370,33 +321,21 @@ export async function lspTypeHierarchyPrepare(
   uri: string,
   position: LspPosition,
 ): Promise<TypeHierarchyItem[]> {
-  try {
-    return await invoke<TypeHierarchyItem[]>("lsp_type_hierarchy_prepare", { serverId, uri, position });
-  } catch {
-    return [];
-  }
+  return safeInvoke<TypeHierarchyItem[]>("lsp_type_hierarchy_prepare", { serverId, uri, position }, { fallback: [], silent: true });
 }
 
 export async function lspTypeHierarchySupertypes(
   serverId: string,
   item: TypeHierarchyItem,
 ): Promise<TypeHierarchyItem[]> {
-  try {
-    return await invoke<TypeHierarchyItem[]>("lsp_type_hierarchy_supertypes", { serverId, item });
-  } catch {
-    return [];
-  }
+  return safeInvoke<TypeHierarchyItem[]>("lsp_type_hierarchy_supertypes", { serverId, item }, { fallback: [], silent: true });
 }
 
 export async function lspTypeHierarchySubtypes(
   serverId: string,
   item: TypeHierarchyItem,
 ): Promise<TypeHierarchyItem[]> {
-  try {
-    return await invoke<TypeHierarchyItem[]>("lsp_type_hierarchy_subtypes", { serverId, item });
-  } catch {
-    return [];
-  }
+  return safeInvoke<TypeHierarchyItem[]>("lsp_type_hierarchy_subtypes", { serverId, item }, { fallback: [], silent: true });
 }
 
 export async function dapSetConditionalBreakpoint(
@@ -405,14 +344,10 @@ export async function dapSetConditionalBreakpoint(
   line: number,
   condition: string,
 ): Promise<DapBreakpoint | null> {
-  try {
-    const result = await invoke<DapBreakpoint[]>("debug_set_breakpoints", {
-      sessionId, path: source, breakpoints: [{ path: source, line, condition }],
-    });
-    return result?.[0] ?? null;
-  } catch {
-    return null;
-  }
+  const result = await safeInvoke<DapBreakpoint[] | null>("debug_set_breakpoints", {
+    sessionId, path: source, breakpoints: [{ path: source, line, condition }],
+  }, { fallback: null, silent: true });
+  return result?.[0] ?? null;
 }
 
 export async function dapSetLogpoint(
@@ -421,14 +356,10 @@ export async function dapSetLogpoint(
   line: number,
   logMessage: string,
 ): Promise<DapBreakpoint | null> {
-  try {
-    const result = await invoke<DapBreakpoint[]>("debug_set_breakpoints", {
-      sessionId, path: source, breakpoints: [{ path: source, line, logMessage }],
-    });
-    return result?.[0] ?? null;
-  } catch {
-    return null;
-  }
+  const result = await safeInvoke<DapBreakpoint[] | null>("debug_set_breakpoints", {
+    sessionId, path: source, breakpoints: [{ path: source, line, logMessage }],
+  }, { fallback: null, silent: true });
+  return result?.[0] ?? null;
 }
 
 export async function dapSetDataBreakpoint(
@@ -436,27 +367,17 @@ export async function dapSetDataBreakpoint(
   variableName: string,
   accessType: "read" | "write" | "readWrite",
 ): Promise<DapDataBreakpoint | null> {
-  try {
-    const result = await invoke<{ breakpoints: DapDataBreakpoint[] }>("debug_set_data_breakpoints", {
-      sessionId, breakpoints: [{ dataId: variableName, accessType }],
-    });
-    return result?.breakpoints?.[0] ?? null;
-  } catch {
-    return null;
-  }
+  const result = await safeInvoke<{ breakpoints: DapDataBreakpoint[] } | null>("debug_set_data_breakpoints", {
+    sessionId, breakpoints: [{ dataId: variableName, accessType }],
+  }, { fallback: null, silent: true });
+  return result?.breakpoints?.[0] ?? null;
 }
 
 export async function dapAddWatchExpression(
   _sessionId: string,
   expression: string,
 ): Promise<WatchExpression | null> {
-  try {
-    return await invoke<WatchExpression>("debug_add_watch", {
-      expression,
-    });
-  } catch {
-    return null;
-  }
+  return safeInvoke<WatchExpression | null>("debug_add_watch", { expression }, { fallback: null, silent: true });
 }
 
 export async function dapRemoveWatchExpression(
@@ -464,7 +385,7 @@ export async function dapRemoveWatchExpression(
   id: string,
 ): Promise<boolean> {
   try {
-    await invoke("debug_remove_watch", { watchId: id });
+    await safeInvoke<void>("debug_remove_watch", { watchId: id }, { silent: true });
     return true;
   } catch {
     return false;
@@ -476,13 +397,9 @@ export async function dapEvaluateWatch(
   expression: string,
   _frameId?: number,
 ): Promise<EvalResult | null> {
-  try {
-    return await invoke<EvalResult>("debug_evaluate", {
-      sessionId, expression, context: "watch",
-    });
-  } catch {
-    return null;
-  }
+  return safeInvoke<EvalResult | null>("debug_evaluate", {
+    sessionId, expression, context: "watch",
+  }, { fallback: null, silent: true });
 }
 
 export async function dapDebugConsoleEval(
@@ -490,13 +407,9 @@ export async function dapDebugConsoleEval(
   expression: string,
   _context: "repl" | "watch" | "hover" = "repl",
 ): Promise<EvalResult | null> {
-  try {
-    return await invoke<EvalResult>("debug_evaluate_repl", {
-      sessionId, expression,
-    });
-  } catch {
-    return null;
-  }
+  return safeInvoke<EvalResult | null>("debug_evaluate_repl", {
+    sessionId, expression,
+  }, { fallback: null, silent: true });
 }
 
 export async function dapDisassemble(
@@ -505,26 +418,18 @@ export async function dapDisassemble(
   offset: number,
   instructionCount: number,
 ): Promise<DisassembledInstruction[]> {
-  try {
-    return await invoke<DisassembledInstruction[]>("debug_disassemble", {
-      sessionId, memoryReference, offset, instructionCount,
-    });
-  } catch {
-    return [];
-  }
+  return safeInvoke<DisassembledInstruction[]>("debug_disassemble", {
+    sessionId, memoryReference, offset, instructionCount,
+  }, { fallback: [], silent: true });
 }
 
 export async function extensionInstall(path: string): Promise<ExtensionInfo | null> {
-  try {
-    return await invoke<ExtensionInfo>("install_extension_from_path", { path });
-  } catch {
-    return null;
-  }
+  return safeInvoke<ExtensionInfo | null>("install_extension_from_path", { path }, { fallback: null });
 }
 
 export async function extensionUninstall(extensionId: string): Promise<boolean> {
   try {
-    await invoke("uninstall_extension", { extensionId });
+    await safeInvoke<void>("uninstall_extension", { extensionId });
     return true;
   } catch {
     return false;
@@ -533,7 +438,7 @@ export async function extensionUninstall(extensionId: string): Promise<boolean> 
 
 export async function extensionEnable(extensionId: string): Promise<boolean> {
   try {
-    await invoke("enable_extension", { extensionId });
+    await safeInvoke<void>("enable_extension", { extensionId });
     return true;
   } catch {
     return false;
@@ -542,7 +447,7 @@ export async function extensionEnable(extensionId: string): Promise<boolean> {
 
 export async function extensionDisable(extensionId: string): Promise<boolean> {
   try {
-    await invoke("disable_extension", { extensionId });
+    await safeInvoke<void>("disable_extension", { extensionId });
     return true;
   } catch {
     return false;
@@ -550,11 +455,9 @@ export async function extensionDisable(extensionId: string): Promise<boolean> {
 }
 
 export async function extensionGetPermissions(extensionId: string): Promise<ExtensionPermissions> {
-  try {
-    return await invoke<ExtensionPermissions>("get_extension_permissions", { extensionId });
-  } catch {
-    return { fileSystem: false, network: false, process: false, clipboard: false, env: false };
-  }
+  return safeInvoke<ExtensionPermissions>("get_extension_permissions", { extensionId }, {
+    fallback: { fileSystem: false, network: false, process: false, clipboard: false, env: false },
+  });
 }
 
 export async function extensionSetPermissions(
@@ -562,7 +465,7 @@ export async function extensionSetPermissions(
   permissions: ExtensionPermissions,
 ): Promise<boolean> {
   try {
-    await invoke("set_extension_permissions", { extensionId, permissions });
+    await safeInvoke<void>("set_extension_permissions", { extensionId, permissions });
     return true;
   } catch {
     return false;
@@ -570,11 +473,9 @@ export async function extensionSetPermissions(
 }
 
 export async function extensionGetLifecycleState(extensionId: string): Promise<ExtensionLifecycleState> {
-  try {
-    return await invoke<ExtensionLifecycleState>("get_extension_lifecycle_state", { extensionId });
-  } catch {
-    return { state: "error", lastError: "Failed to get lifecycle state" };
-  }
+  return safeInvoke<ExtensionLifecycleState>("get_extension_lifecycle_state", { extensionId }, {
+    fallback: { state: "error", lastError: "Failed to get lifecycle state" },
+  });
 }
 
 export async function extensionTriggerHostFunction(
@@ -582,69 +483,43 @@ export async function extensionTriggerHostFunction(
   functionName: string,
   args: unknown[],
 ): Promise<unknown> {
-  try {
-    return await invoke("trigger_extension_host_function", {
-      extensionId, functionName, args,
-    });
-  } catch {
-    return null;
-  }
+  return safeInvoke<unknown>("trigger_extension_host_function", {
+    extensionId, functionName, args,
+  }, { fallback: null });
 }
 
 export async function extensionListInstalled(): Promise<ExtensionInfo[]> {
-  try {
-    return await invoke<ExtensionInfo[]>("list_installed_extensions");
-  } catch {
-    return [];
-  }
+  return safeInvoke<ExtensionInfo[]>("list_installed_extensions", undefined, { fallback: [] });
 }
 
 export async function getDiagnosticsByFile(uri: string): Promise<DiagnosticEntry[]> {
-  try {
-    return await invoke<DiagnosticEntry[]>("diagnostics_get_by_file", { uri });
-  } catch {
-    return [];
-  }
+  return safeInvoke<DiagnosticEntry[]>("diagnostics_get_by_file", { uri }, { fallback: [], silent: true });
 }
 
 export async function getDiagnosticsSummary(): Promise<DiagnosticsSummary> {
-  try {
-    return await invoke<DiagnosticsSummary>("diagnostics_get_summary");
-  } catch {
-    return { totalErrors: 0, totalWarnings: 0, totalInformation: 0, totalHints: 0, fileCount: 0 };
-  }
+  return safeInvoke<DiagnosticsSummary>("diagnostics_get_summary", undefined, {
+    fallback: { totalErrors: 0, totalWarnings: 0, totalInformation: 0, totalHints: 0, fileCount: 0 },
+  });
 }
 
 export async function filterDiagnostics(filter: DiagnosticsFilter): Promise<DiagnosticEntry[]> {
-  try {
-    return await invoke<DiagnosticEntry[]>("diagnostics_filter", { filter });
-  } catch {
-    return [];
-  }
+  return safeInvoke<DiagnosticEntry[]>("diagnostics_filter", { filter }, { fallback: [], silent: true });
 }
 
 export async function searchTerminal(
   terminalId: string,
   query: string,
 ): Promise<TerminalSearchResult[]> {
-  try {
-    return await invoke<TerminalSearchResult[]>("terminal_search", { terminalId, query });
-  } catch {
-    return [];
-  }
+  return safeInvoke<TerminalSearchResult[]>("terminal_search", { terminalId, query }, { fallback: [], silent: true });
 }
 
 export async function getTerminalProfiles(): Promise<TerminalProfile[]> {
-  try {
-    return await invoke<TerminalProfile[]>("terminal_get_profiles");
-  } catch {
-    return [];
-  }
+  return safeInvoke<TerminalProfile[]>("terminal_get_profiles", undefined, { fallback: [] });
 }
 
 export async function saveTerminalProfile(profile: TerminalProfile): Promise<boolean> {
   try {
-    await invoke("terminal_save_profile", { profile });
+    await safeInvoke<void>("terminal_save_profile", { profile });
     return true;
   } catch {
     return false;
@@ -652,11 +527,7 @@ export async function saveTerminalProfile(profile: TerminalProfile): Promise<boo
 }
 
 export async function detectTerminalLinks(terminalId: string): Promise<TerminalLink[]> {
-  try {
-    return await invoke<TerminalLink[]>("terminal_detect_links", { terminalId });
-  } catch {
-    return [];
-  }
+  return safeInvoke<TerminalLink[]>("terminal_detect_links", { terminalId }, { fallback: [], silent: true });
 }
 
 // ============================================================================
@@ -755,17 +626,12 @@ export async function renameAcrossFiles(
   newName: string,
   filePaths: string[],
 ): Promise<RenameResult | null> {
-  try {
-    return await invoke<RenameResult>("rename_across_files", {
-      workspacePath,
-      oldName,
-      newName,
-      filePaths,
-    });
-  } catch (error) {
-    editorLogger.warn("[ipc] renameAcrossFiles failed:", error);
-    return null;
-  }
+  return safeInvoke<RenameResult | null>("rename_across_files", {
+    workspacePath,
+    oldName,
+    newName,
+    filePaths,
+  }, { fallback: null });
 }
 
 export async function extractVariable(
@@ -776,19 +642,14 @@ export async function extractVariable(
   endColumn: number,
   variableName: string,
 ): Promise<ExtractResult | null> {
-  try {
-    return await invoke<ExtractResult>("extract_variable", {
-      content,
-      startLine,
-      startColumn,
-      endLine,
-      endColumn,
-      variableName,
-    });
-  } catch (error) {
-    editorLogger.warn("[ipc] extractVariable failed:", error);
-    return null;
-  }
+  return safeInvoke<ExtractResult | null>("extract_variable", {
+    content,
+    startLine,
+    startColumn,
+    endLine,
+    endColumn,
+    variableName,
+  }, { fallback: null });
 }
 
 export async function extractMethod(
@@ -799,31 +660,21 @@ export async function extractMethod(
   endColumn: number,
   methodName: string,
 ): Promise<ExtractResult | null> {
-  try {
-    return await invoke<ExtractResult>("extract_method", {
-      content,
-      startLine,
-      startColumn,
-      endLine,
-      endColumn,
-      methodName,
-    });
-  } catch (error) {
-    editorLogger.warn("[ipc] extractMethod failed:", error);
-    return null;
-  }
+  return safeInvoke<ExtractResult | null>("extract_method", {
+    content,
+    startLine,
+    startColumn,
+    endLine,
+    endColumn,
+    methodName,
+  }, { fallback: null });
 }
 
 export async function computeFoldingRanges(
   content: string,
   language: string,
 ): Promise<FoldingRange[]> {
-  try {
-    return await invoke<FoldingRange[]>("compute_folding_ranges", { content, language });
-  } catch (error) {
-    editorLogger.warn("[ipc] computeFoldingRanges failed:", error);
-    return [];
-  }
+  return safeInvoke<FoldingRange[]>("compute_folding_ranges", { content, language }, { fallback: [], silent: true });
 }
 
 export async function getWorkspaceSymbols(
@@ -831,40 +682,25 @@ export async function getWorkspaceSymbols(
   query: string,
   maxResults?: number,
 ): Promise<EditorSymbolEntry[]> {
-  try {
-    return await invoke<EditorSymbolEntry[]>("get_workspace_symbols", {
-      workspacePath,
-      query,
-      maxResults: maxResults ?? 100,
-    });
-  } catch (error) {
-    editorLogger.warn("[ipc] getWorkspaceSymbols failed:", error);
-    return [];
-  }
+  return safeInvoke<EditorSymbolEntry[]>("get_workspace_symbols", {
+    workspacePath,
+    query,
+    maxResults: maxResults ?? 100,
+  }, { fallback: [], silent: true });
 }
 
 export async function expandSnippet(
   body: string[],
   variables: Record<string, string>,
 ): Promise<ExpandedSnippet | null> {
-  try {
-    return await invoke<ExpandedSnippet>("expand_snippet", { body, variables });
-  } catch (error) {
-    editorLogger.warn("[ipc] expandSnippet failed:", error);
-    return null;
-  }
+  return safeInvoke<ExpandedSnippet | null>("expand_snippet", { body, variables }, { fallback: null, silent: true });
 }
 
 export async function computeInlineDiff(
   original: string,
   modified: string,
 ): Promise<InlineDiffResult | null> {
-  try {
-    return await invoke<InlineDiffResult>("compute_inline_diff", { original, modified });
-  } catch (error) {
-    editorLogger.warn("[ipc] computeInlineDiff failed:", error);
-    return null;
-  }
+  return safeInvoke<InlineDiffResult | null>("compute_inline_diff", { original, modified }, { fallback: null, silent: true });
 }
 
 export async function getBreadcrumbPath(
@@ -872,12 +708,7 @@ export async function getBreadcrumbPath(
   line: number,
   column: number,
 ): Promise<BreadcrumbSegment[]> {
-  try {
-    return await invoke<BreadcrumbSegment[]>("get_breadcrumb_path", { filePath, line, column });
-  } catch (error) {
-    editorLogger.warn("[ipc] getBreadcrumbPath failed:", error);
-    return [];
-  }
+  return safeInvoke<BreadcrumbSegment[]>("get_breadcrumb_path", { filePath, line, column }, { fallback: [], silent: true });
 }
 
 export async function getStickyScrollLines(
@@ -885,14 +716,9 @@ export async function getStickyScrollLines(
   language: string,
   visibleStartLine: number,
 ): Promise<StickyScrollLineEntry[]> {
-  try {
-    return await invoke<StickyScrollLineEntry[]>("get_sticky_scroll_lines", {
-      content,
-      language,
-      visibleStartLine,
-    });
-  } catch (error) {
-    editorLogger.warn("[ipc] getStickyScrollLines failed:", error);
-    return [];
-  }
+  return safeInvoke<StickyScrollLineEntry[]>("get_sticky_scroll_lines", {
+    content,
+    language,
+    visibleStartLine,
+  }, { fallback: [], silent: true });
 }

@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { safeInvoke } from "./safe-invoke";
 
 export interface DiagnosticPosition {
   line: number;
@@ -61,79 +61,41 @@ export interface DiagnosticsExportOptions {
 }
 
 export async function refreshDiagnostics(options?: DiagnosticsRefreshOptions): Promise<void> {
-  try {
-    await invoke("diagnostics_refresh", {
-      uri: options?.uri,
-      force: options?.force ?? false,
-    });
-  } catch (error) {
-    console.error("[diagnostics] Failed to refresh:", error);
-  }
+  return safeInvoke<void>("diagnostics_refresh", {
+    uri: options?.uri,
+    force: options?.force ?? false,
+  }, { fallback: undefined });
 }
 
 export async function getDiagnostics(uri?: string): Promise<DiagnosticCollection[]> {
-  try {
-    const result = await invoke<DiagnosticCollection[]>("diagnostics_get", { uri });
-    return result;
-  } catch (error) {
-    console.error("[diagnostics] Failed to get diagnostics:", error);
-    return [];
-  }
+  return safeInvoke<DiagnosticCollection[]>("diagnostics_get", { uri }, { fallback: [] });
 }
 
 export async function getDiagnosticsForFile(uri: string): Promise<Diagnostic[]> {
-  try {
-    const result = await invoke<Diagnostic[]>("diagnostics_get_for_file", { uri });
-    return result;
-  } catch (error) {
-    console.error("[diagnostics] Failed to get diagnostics for file:", error);
-    return [];
-  }
+  return safeInvoke<Diagnostic[]>("diagnostics_get_for_file", { uri }, { fallback: [] });
 }
 
 export async function clearDiagnostics(uri?: string): Promise<void> {
-  try {
-    await invoke("diagnostics_clear", { uri });
-  } catch (error) {
-    console.error("[diagnostics] Failed to clear:", error);
-  }
+  return safeInvoke<void>("diagnostics_clear", { uri }, { fallback: undefined });
 }
 
 export async function getCodeActions(uri: string, range: DiagnosticRange): Promise<CodeAction[]> {
-  try {
-    const result = await invoke<CodeAction[]>("diagnostics_get_code_actions", {
-      uri,
-      range,
-    });
-    return result;
-  } catch (error) {
-    console.error("[diagnostics] Failed to get code actions:", error);
-    return [];
-  }
+  return safeInvoke<CodeAction[]>("diagnostics_get_code_actions", {
+    uri,
+    range,
+  }, { fallback: [] });
 }
 
 export async function applyCodeAction(action: CodeAction): Promise<boolean> {
-  try {
-    await invoke("diagnostics_apply_code_action", { action });
-    return true;
-  } catch (error) {
-    console.error("[diagnostics] Failed to apply code action:", error);
-    return false;
-  }
+  return safeInvoke<boolean>("diagnostics_apply_code_action", { action }, { fallback: false });
 }
 
 export async function exportDiagnostics(options: DiagnosticsExportOptions): Promise<string> {
-  try {
-    const result = await invoke<string>("diagnostics_export", {
-      format: options.format,
-      uri: options.uri,
-      include_hints: options.includeHints ?? false,
-    });
-    return result;
-  } catch (error) {
-    console.error("[diagnostics] Failed to export:", error);
-    return "";
-  }
+  return safeInvoke<string>("diagnostics_export", {
+    format: options.format,
+    uri: options.uri,
+    include_hints: options.includeHints ?? false,
+  }, { fallback: "" });
 }
 
 export async function getDiagnosticCounts(uri?: string): Promise<{
@@ -143,34 +105,20 @@ export async function getDiagnosticCounts(uri?: string): Promise<{
   hint: number;
   total: number;
 }> {
-  try {
-    const result = await invoke<{
-      error: number;
-      warning: number;
-      information: number;
-      hint: number;
-      total: number;
-    }>("diagnostics_get_counts", { uri });
-    return result;
-  } catch (error) {
-    console.error("[diagnostics] Failed to get counts:", error);
-    return { error: 0, warning: 0, information: 0, hint: 0, total: 0 };
-  }
+  return safeInvoke("diagnostics_get_counts", { uri }, {
+    fallback: { error: 0, warning: 0, information: 0, hint: 0, total: 0 },
+  });
 }
 
 export async function navigateToDiagnostic(
   uri: string,
   range: DiagnosticRange
 ): Promise<void> {
-  try {
-    await invoke("diagnostics_navigate_to", {
-      uri,
-      line: range.start.line,
-      column: range.start.character,
-    });
-  } catch (error) {
-    console.error("[diagnostics] Failed to navigate:", error);
-  }
+  return safeInvoke<void>("diagnostics_navigate_to", {
+    uri,
+    line: range.start.line,
+    column: range.start.character,
+  }, { fallback: undefined });
 }
 
 export async function setDiagnosticsFilter(filter: {
@@ -180,9 +128,5 @@ export async function setDiagnosticsFilter(filter: {
   showHints?: boolean;
   sources?: string[];
 }): Promise<void> {
-  try {
-    await invoke("diagnostics_set_filter", { filter });
-  } catch (error) {
-    console.error("[diagnostics] Failed to set filter:", error);
-  }
+  return safeInvoke<void>("diagnostics_set_filter", { filter }, { fallback: undefined });
 }

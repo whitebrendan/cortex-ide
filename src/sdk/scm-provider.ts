@@ -6,7 +6,7 @@
  * registered via the plugin API.
  */
 
-import { invoke } from "@tauri-apps/api/core";
+import { safeInvoke } from "./safe-invoke";
 export interface SCMProviderInfo {
   id: string;
   extensionId: string;
@@ -123,11 +123,11 @@ export function createGitSCMProvider(
 
     async getResourceGroups(): Promise<SCMResourceGroupData[]> {
       try {
-        const status = await invoke<{
+        const status = await safeInvoke<{
           staged: Array<{ path: string; status: string }>;
           unstaged: Array<{ path: string; status: string }>;
           conflicts: Array<{ path: string; status: string }>;
-        }>("git_status", { path: repoPath });
+        }>("git_status", { path: repoPath }, { silent: true });
 
         const groups: SCMResourceGroupData[] = [];
 
@@ -175,7 +175,7 @@ export function createGitSCMProvider(
     },
 
     async acceptInput(message: string): Promise<void> {
-      await invoke("git_commit", { path: repoPath, message });
+      await safeInvoke<void>("git_commit", { path: repoPath, message });
     },
 
     dispose(): void {

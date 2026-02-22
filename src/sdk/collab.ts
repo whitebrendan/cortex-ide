@@ -7,7 +7,7 @@
  * @module @cortex/sdk/collab
  */
 
-import { invoke } from "@tauri-apps/api/core";
+import { safeInvoke } from "./safe-invoke";
 
 export interface CollabParticipant {
   id: string;
@@ -53,7 +53,7 @@ export async function collabCreateSession(
   name: string,
   userName: string,
 ): Promise<CollabSessionInfo> {
-  return invoke<CollabSessionInfo>("collab_create_session", {
+  return safeInvoke<CollabSessionInfo>("collab_create_session", {
     name,
     userName,
   });
@@ -66,7 +66,7 @@ export async function collabJoinSession(
   sessionId: string,
   userName: string,
 ): Promise<CollabSessionInfo> {
-  return invoke<CollabSessionInfo>("collab_join_session", {
+  return safeInvoke<CollabSessionInfo>("collab_join_session", {
     sessionId,
     userName,
   });
@@ -79,7 +79,7 @@ export async function collabLeaveSession(
   sessionId: string,
   userId: string,
 ): Promise<void> {
-  return invoke<void>("collab_leave_session", {
+  return safeInvoke<void>("collab_leave_session", {
     sessionId,
     userId,
   });
@@ -95,7 +95,7 @@ export async function collabBroadcastCursor(
   line: number,
   column: number,
 ): Promise<void> {
-  return invoke<void>("collab_broadcast_cursor", {
+  return safeInvoke<void>("collab_broadcast_cursor", {
     sessionId,
     userId,
     fileId,
@@ -113,7 +113,7 @@ export async function collabSyncDocument(
   fileId: string,
   update: number[],
 ): Promise<number[]> {
-  return invoke<number[]>("collab_sync_document", {
+  return safeInvoke<number[]>("collab_sync_document", {
     sessionId,
     fileId,
     update,
