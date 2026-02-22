@@ -42,6 +42,11 @@ export function ViewNavigationHandlers(props: ViewNavigationHandlersProps) {
         props.setShowFileFinder(true);
       }) as EventListener,
 
+      "view:toggle-agent-panel": (() => {
+        props.setSidebarTab("agents");
+        props.setSidebarCollapsed(false);
+      }) as EventListener,
+
       // ── Go events ────────────────────────────────────────────────────
       "goto:file": (() => {
         props.setShowFileFinder(true);

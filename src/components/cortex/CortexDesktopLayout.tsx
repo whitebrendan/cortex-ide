@@ -209,6 +209,7 @@ export function CortexDesktopLayout(props: ParentProps) {
       "view:search": (() => { setSidebarTab("search"); setSidebarCollapsed(false); }) as EventListener,
       "view:git": (() => { setSidebarTab("git"); setSidebarCollapsed(false); }) as EventListener,
       "view:extensions": (() => { setSidebarTab("extensions"); setSidebarCollapsed(false); }) as EventListener,
+      "view:agents": (() => { setSidebarTab("agents"); setSidebarCollapsed(false); }) as EventListener,
       "sidebar:toggle": (() => setSidebarCollapsed(!sidebarCollapsed())) as EventListener,
       "selection:select-all": (() => document.execCommand("selectAll")) as EventListener,
       "help:docs": (() => window.open("https://docs.cortex.dev", "_blank")) as EventListener,

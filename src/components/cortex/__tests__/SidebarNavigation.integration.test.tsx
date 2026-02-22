@@ -84,8 +84,8 @@ vi.mock("@/components/cortex/CortexExtensionsPanel", () => ({
   CortexExtensionsPanel: () => <div data-testid="panel-extensions">Extensions Panel</div>,
 }));
 
-vi.mock("@/components/cortex/CortexAgentsPanel", () => ({
-  CortexAgentsPanel: () => <div data-testid="panel-agents">Agents Panel</div>,
+vi.mock("@/components/ai/AgentPanel", () => ({
+  AgentPanel: () => <div data-testid="panel-agents">Agents Panel</div>,
 }));
 
 vi.mock("@/components/cortex/CortexFactoryPanel", () => ({

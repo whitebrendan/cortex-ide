@@ -6,8 +6,8 @@ import type { CortexSidebarContainerProps } from "../CortexSidebarContainer";
 import type { SidebarTab } from "../types";
 import { SIDEBAR_MIN_WIDTH, SIDEBAR_MAX_WIDTH } from "../types";
 
-vi.mock("@/components/cortex/CortexAgentsPanel", () => ({
-  CortexAgentsPanel: () => <div data-testid="agents-panel">Agents</div>,
+vi.mock("@/components/ai/AgentPanel", () => ({
+  AgentPanel: () => <div data-testid="agents-panel">Agents</div>,
 }));
 
 vi.mock("@/components/cortex/CortexFactoryPanel", () => ({

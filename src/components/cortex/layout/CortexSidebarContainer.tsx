@@ -2,7 +2,7 @@ import { JSX, Show, Suspense, lazy } from "solid-js";
 import type { SidebarTab } from "./types";
 import { SidebarSkeleton, SIDEBAR_MIN_WIDTH, SIDEBAR_MAX_WIDTH } from "./types";
 
-const CortexAgentsPanel = lazy(() => import("@/components/cortex/CortexAgentsPanel").then(m => ({ default: m.CortexAgentsPanel })));
+const AgentPanel = lazy(() => import("@/components/ai/AgentPanel").then(m => ({ default: m.AgentPanel })));
 const RealFileExplorer = lazy(() => import("@/components/FileExplorer").then(m => ({ default: m.FileExplorer })));
 const CortexGitPanel = lazy(() => import("@/components/cortex/CortexGitPanel").then(m => ({ default: m.CortexGitPanel })));
 const CortexSearchPanel = lazy(() => import("@/components/cortex/CortexSearchPanel").then(m => ({ default: m.CortexSearchPanel })));
@@ -134,7 +134,7 @@ export function CortexSidebarContainer(props: CortexSidebarContainerProps) {
 
           <Show when={props.sidebarTab === "agents"}>
             <Suspense fallback={<SidebarSkeleton />}>
-              <CortexAgentsPanel />
+              <AgentPanel />
             </Suspense>
           </Show>
 
