@@ -1442,9 +1442,11 @@ export const DebugProvider: ParentComponent = (props) => {
   };
 
   let listenersRegistered = false;
+  let disposed = false;
 
   // Register cleanup synchronously — guard against deferred init not yet completed
   onCleanup(() => {
+    disposed = true;
     // Tauri unlisten functions are safe to call unconditionally (null-guarded)
     unlistenEvent?.();
     unlistenProject?.();
@@ -1464,6 +1466,8 @@ export const DebugProvider: ParentComponent = (props) => {
     // DEFERRED - Yield to main thread before registering IPC listeners and event handlers.
     // Debug events won't fire until user starts debugging, so this is safe to defer.
     queueMicrotask(async () => {
+      if (disposed) return;
+
       // Register window event listeners
       window.addEventListener("settings:workspace-loaded", handleWorkspaceLoaded);
       window.addEventListener("settings:changed", handleSettingsChanged);
@@ -1477,9 +1481,21 @@ export const DebugProvider: ParentComponent = (props) => {
         handleDebugEvent(event.payload);
       });
 
+      if (disposed) {
+        unlistenEvent();
+        unlistenEvent = null;
+        return;
+      }
+
       unlistenProject = await listen<{ path: string }>("project:opened", async (event) => {
         await loadWorkspaceConfigurations(event.payload.path);
       });
+
+      if (disposed) {
+        unlistenProject();
+        unlistenProject = undefined;
+        return;
+      }
 
       setInitialized(true);
     });
@@ -1648,6 +1664,7 @@ export const DebugProvider: ParentComponent = (props) => {
           // Notify listeners
           if (terminatedSessionId) {
             notifySessionStopped(terminatedSessionId);
+            window.dispatchEvent(new CustomEvent("debug:session-ended", { detail: { sessionId: terminatedSessionId, reason: "terminated" } }));
           }
         }
         break;
@@ -1706,6 +1723,7 @@ export const DebugProvider: ParentComponent = (props) => {
           // Notify listeners
           if (exitedSessionId) {
             notifySessionStopped(exitedSessionId, exitCode);
+            window.dispatchEvent(new CustomEvent("debug:session-ended", { detail: { sessionId: exitedSessionId, exitCode, reason: "exited" } }));
           }
         }
         break;
@@ -1952,7 +1970,14 @@ export const DebugProvider: ParentComponent = (props) => {
 
   // Session management
   const startSession = async (config: DebugSessionConfig): Promise<DebugSessionInfo> => {
-    const session = await invoke<DebugSessionInfo>("debug_start_session", { config });
+    let session: DebugSessionInfo;
+    try {
+      session = await invoke<DebugSessionInfo>("debug_start_session", { config });
+    } catch (error) {
+      console.error("Failed to start debug session:", error);
+      window.dispatchEvent(new CustomEvent("debug:error", { detail: { message: `Failed to start debug session: ${error}` } }));
+      throw error;
+    }
     setState(
       produce((s) => {
         s.sessions.push(session);
@@ -2360,11 +2385,17 @@ export const DebugProvider: ParentComponent = (props) => {
     }
 
     // Only send enabled breakpoints to the adapter (DAP supports column in SourceBreakpoint)
-    const result = await invoke<Breakpoint[]>("debug_set_breakpoints", {
-      sessionId: state.activeSessionId,
-      path,
-      breakpoints: enabledBreakpoints,
-    });
+    let result: Breakpoint[];
+    try {
+      result = await invoke<Breakpoint[]>("debug_set_breakpoints", {
+        sessionId: state.activeSessionId,
+        path,
+        breakpoints: enabledBreakpoints,
+      });
+    } catch (error) {
+      console.error("Failed to set breakpoints:", error);
+      return state.breakpoints[path] || [];
+    }
 
     // Merge results with disabled breakpoints
     const allBreakpoints: Breakpoint[] = breakpoints.map((bp) => {
@@ -3054,11 +3085,16 @@ export const DebugProvider: ParentComponent = (props) => {
   const getVariables = async (): Promise<Variable[]> => {
     if (!state.activeSessionId) return [];
 
-    const variables = await invoke<Variable[]>("debug_get_variables", {
-      sessionId: state.activeSessionId,
-    });
-    setState("variables", variables);
-    return variables;
+    try {
+      const variables = await invoke<Variable[]>("debug_get_variables", {
+        sessionId: state.activeSessionId,
+      });
+      setState("variables", variables);
+      return variables;
+    } catch (error) {
+      console.error("Failed to get variables:", error);
+      return [];
+    }
   };
 
   const getScopes = async (): Promise<Scope[]> => {
@@ -3100,10 +3136,15 @@ export const DebugProvider: ParentComponent = (props) => {
   const expandVariable = async (variablesReference: number): Promise<Variable[]> => {
     if (!state.activeSessionId) return [];
 
-    return await invoke<Variable[]>("debug_expand_variable", {
-      sessionId: state.activeSessionId,
-      variablesReference,
-    });
+    try {
+      return await invoke<Variable[]>("debug_expand_variable", {
+        sessionId: state.activeSessionId,
+        variablesReference,
+      });
+    } catch (error) {
+      console.error("Failed to expand variable:", error);
+      return [];
+    }
   };
 
   /**
@@ -3120,12 +3161,17 @@ export const DebugProvider: ParentComponent = (props) => {
   ): Promise<Variable[]> => {
     if (!state.activeSessionId) return [];
 
-    return await invoke<Variable[]>("debug_expand_variable_paged", {
-      sessionId: state.activeSessionId,
-      variablesReference,
-      start: start ?? null,
-      count: count ?? null,
-    });
+    try {
+      return await invoke<Variable[]>("debug_expand_variable_paged", {
+        sessionId: state.activeSessionId,
+        variablesReference,
+        start: start ?? null,
+        count: count ?? null,
+      });
+    } catch (error) {
+      console.error("Failed to expand variable (paged):", error);
+      return [];
+    }
   };
 
   const setVariable = async (
@@ -3137,17 +3183,22 @@ export const DebugProvider: ParentComponent = (props) => {
       throw new Error("No active debug session");
     }
 
-    const result = await invoke<SetVariableResult>("debug_set_variable", {
-      sessionId: state.activeSessionId,
-      variablesReference,
-      name,
-      value,
-    });
+    try {
+      const result = await invoke<SetVariableResult>("debug_set_variable", {
+        sessionId: state.activeSessionId,
+        variablesReference,
+        name,
+        value,
+      });
 
-    // Refresh variables after setting
-    await getVariables();
+      // Refresh variables after setting
+      await getVariables();
 
-    return result;
+      return result;
+    } catch (error) {
+      console.error("Failed to set variable:", error);
+      throw error;
+    }
   };
 
   // Watch expressions
@@ -3233,11 +3284,16 @@ export const DebugProvider: ParentComponent = (props) => {
     if (!state.activeSessionId) {
       throw new Error("No active debug session");
     }
-    return await invoke<EvaluateResult>("debug_evaluate", {
-      sessionId: state.activeSessionId,
-      expression,
-      context: context || "repl",
-    });
+    try {
+      return await invoke<EvaluateResult>("debug_evaluate", {
+        sessionId: state.activeSessionId,
+        expression,
+        context: context || "repl",
+      });
+    } catch (error) {
+      console.error("Debug evaluate failed:", error);
+      throw error;
+    }
   };
 
   /**
@@ -3501,19 +3557,24 @@ export const DebugProvider: ParentComponent = (props) => {
         ...config,
         id: `debug-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       };
-      const session = await invoke<DebugSessionInfo>("debug_start_session", { config: sessionConfig });
-      setState(
-        produce((s) => {
-          s.sessions.push(session);
-          s.compoundSessionIds.push(session.id);
-          if (!s.activeSessionId) {
-            s.activeSessionId = session.id;
-          }
-          s.isDebugging = true;
-          s.isPaused = false;
-        })
-      );
-      return session;
+      try {
+        const session = await invoke<DebugSessionInfo>("debug_start_session", { config: sessionConfig });
+        setState(
+          produce((s) => {
+            s.sessions.push(session);
+            s.compoundSessionIds.push(session.id);
+            if (!s.activeSessionId) {
+              s.activeSessionId = session.id;
+            }
+            s.isDebugging = true;
+            s.isPaused = false;
+          })
+        );
+        return session;
+      } catch (error) {
+        console.error(`Failed to start compound session for "${config.name}":`, error);
+        throw error;
+      }
     });
 
     const sessions = await Promise.all(launchPromises);

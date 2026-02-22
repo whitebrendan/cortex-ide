@@ -103,11 +103,6 @@ export function DebugStatusBar(props: DebugStatusBarProps) {
     return `${topFrame.name} (${fileName}:${topFrame.line})`;
   });
   
-  // Don't render anything if not debugging
-  if (!props.session) {
-    return null;
-  }
-  
   // Item styles matching StatusBar conventions
   const itemBaseClass = "flex items-center gap-1 cursor-pointer";
   const itemHoverStyle = `hover:bg-[${tokens.colors.interactive.hover}]`;
@@ -119,157 +114,161 @@ export function DebugStatusBar(props: DebugStatusBarProps) {
   };
 
   return (
-    <div 
-      class="debug-status-bar flex items-center"
-      style={{ height: "22px" }}
-    >
-      {/* Debug indicator with status color */}
-      <div
-        class={`${itemBaseClass}`}
-        style={{
-          ...itemStyle,
-          background: statusColor(),
-          color: "white",
-          gap: tokens.spacing.sm,
-        }}
-        title={`Debug: ${props.session.name} - ${statusLabel()}`}
-        onClick={() => window.dispatchEvent(new CustomEvent("layout:focus-debug"))}
-      >
-        {/* Status icon */}
-        <Show 
-          when={status() !== "initializing"} 
-          fallback={<Icon name="spinner" class="w-3.5 h-3.5 animate-spin" />}
+    <Show when={props.session}>
+      {(session) => (
+        <div 
+          class="debug-status-bar flex items-center"
+          style={{ height: "22px" }}
         >
-          <Icon name="bug" class="w-3.5 h-3.5" />
-        </Show>
-        
-        {/* Session name */}
-        <span 
-          class="text-xs font-medium truncate"
-          style={{ "max-width": "120px" }}
-        >
-          {props.session.name}
-        </span>
-        
-        {/* Status badge */}
-        <span 
-          class="text-xs uppercase"
-          style={{ 
-            opacity: 0.9,
-            "font-size": "9px",
-            "letter-spacing": "0.5px",
-          }}
-        >
-          {statusLabel()}
-        </span>
-      </div>
-      
-      {/* Quick action buttons */}
-      <div 
-        class="flex items-center"
-        style={{ 
-          background: "var(--surface-sunken)",
-          "border-radius": "0 2px 2px 0",
-        }}
-      >
-        {/* Continue/Pause button */}
-        <Show
-          when={status() === "paused"}
-          fallback={
+          {/* Debug indicator with status color */}
+          <div
+            class={`${itemBaseClass}`}
+            style={{
+              ...itemStyle,
+              background: statusColor(),
+              color: "white",
+              gap: tokens.spacing.sm,
+            }}
+            title={`Debug: ${session().name} - ${statusLabel()}`}
+            onClick={() => window.dispatchEvent(new CustomEvent("layout:focus-debug"))}
+          >
+            {/* Status icon */}
+            <Show 
+              when={status() !== "initializing"} 
+              fallback={<Icon name="spinner" class="w-3.5 h-3.5 animate-spin" />}
+            >
+              <Icon name="bug" class="w-3.5 h-3.5" />
+            </Show>
+            
+            {/* Session name */}
+            <span 
+              class="text-xs font-medium truncate"
+              style={{ "max-width": "120px" }}
+            >
+              {session().name}
+            </span>
+            
+            {/* Status badge */}
+            <span 
+              class="text-xs uppercase"
+              style={{ 
+                opacity: 0.9,
+                "font-size": "9px",
+                "letter-spacing": "0.5px",
+              }}
+            >
+              {statusLabel()}
+            </span>
+          </div>
+          
+          {/* Quick action buttons */}
+          <div 
+            class="flex items-center"
+            style={{ 
+              background: "var(--surface-sunken)",
+              "border-radius": "0 2px 2px 0",
+            }}
+          >
+            {/* Continue/Pause button */}
+            <Show
+              when={status() === "paused"}
+              fallback={
+                <IconButton
+                  size="sm"
+                  variant="ghost"
+                  onClick={props.onPause}
+                  disabled={status() === "initializing"}
+                  tooltip="Pause (F6)"
+                  style={{ 
+                    width: "22px", 
+                    height: "22px",
+                    color: "var(--debug-icon-pause-foreground)",
+                  }}
+                >
+                  <Icon name="pause" class="w-3.5 h-3.5" />
+                </IconButton>
+              }
+            >
+              <IconButton
+                size="sm"
+                variant="ghost"
+                onClick={props.onContinue}
+                tooltip="Continue (F5)"
+                style={{ 
+                  width: "22px", 
+                  height: "22px",
+                  color: "var(--debug-icon-continue-foreground)",
+                }}
+              >
+                <Icon name="play" class="w-3.5 h-3.5" />
+              </IconButton>
+            </Show>
+            
+            {/* Restart button */}
             <IconButton
               size="sm"
               variant="ghost"
-              onClick={props.onPause}
-              disabled={status() === "initializing"}
-              tooltip="Pause (F6)"
+              onClick={props.onRestart}
+              tooltip="Restart (Ctrl+Shift+F5)"
               style={{ 
                 width: "22px", 
                 height: "22px",
-                color: "var(--debug-icon-pause-foreground)",
+                color: "var(--debug-icon-restart-foreground)",
               }}
             >
-              <Icon name="pause" class="w-3.5 h-3.5" />
+              <Icon name="rotate" class="w-3 h-3" />
             </IconButton>
-          }
-        >
-          <IconButton
-            size="sm"
-            variant="ghost"
-            onClick={props.onContinue}
-            tooltip="Continue (F5)"
-            style={{ 
-              width: "22px", 
-              height: "22px",
-              color: "var(--debug-icon-continue-foreground)",
-            }}
-          >
-            <Icon name="play" class="w-3.5 h-3.5" />
-          </IconButton>
-        </Show>
-        
-        {/* Restart button */}
-        <IconButton
-          size="sm"
-          variant="ghost"
-          onClick={props.onRestart}
-          tooltip="Restart (Ctrl+Shift+F5)"
-          style={{ 
-            width: "22px", 
-            height: "22px",
-            color: "var(--debug-icon-restart-foreground)",
-          }}
-        >
-          <Icon name="rotate" class="w-3 h-3" />
-        </IconButton>
-        
-        {/* Stop button */}
-        <IconButton
-          size="sm"
-          variant="ghost"
-          onClick={props.onStop}
-          tooltip="Stop (Shift+F5)"
-          style={{ 
-            width: "22px", 
-            height: "22px",
-            color: "var(--debug-icon-stop-foreground)",
-          }}
-        >
-          <Icon name="stop" class="w-3 h-3" />
-        </IconButton>
-      </div>
-      
-      {/* Current location (when paused) */}
-      <Show when={status() === "paused" && currentLocation()}>
-        <div
-          class={`${itemBaseClass} ${itemHoverStyle}`}
-          style={{ 
-            ...itemStyle, 
-            color: tokens.colors.text.muted,
-            "font-size": "11px",
-            "max-width": "200px",
-          }}
-          title={`Current location: ${currentLocation()}`}
-          onClick={() => {
-            // Navigate to current frame location
-            const frames = debug.state.stackFrames;
-            if (frames.length > 0 && frames[0].source?.path) {
-              window.dispatchEvent(new CustomEvent("editor:goto", {
-                detail: {
-                  path: frames[0].source.path,
-                  line: frames[0].line,
-                  column: frames[0].column || 1,
-                  focus: true,
+            
+            {/* Stop button */}
+            <IconButton
+              size="sm"
+              variant="ghost"
+              onClick={props.onStop}
+              tooltip="Stop (Shift+F5)"
+              style={{ 
+                width: "22px", 
+                height: "22px",
+                color: "var(--debug-icon-stop-foreground)",
+              }}
+            >
+              <Icon name="stop" class="w-3 h-3" />
+            </IconButton>
+          </div>
+          
+          {/* Current location (when paused) */}
+          <Show when={status() === "paused" && currentLocation()}>
+            <div
+              class={`${itemBaseClass} ${itemHoverStyle}`}
+              style={{ 
+                ...itemStyle, 
+                color: tokens.colors.text.muted,
+                "font-size": "11px",
+                "max-width": "200px",
+              }}
+              title={`Current location: ${currentLocation()}`}
+              onClick={() => {
+                // Navigate to current frame location
+                const frames = debug.state.stackFrames;
+                if (frames.length > 0 && frames[0].source?.path) {
+                  window.dispatchEvent(new CustomEvent("editor:goto", {
+                    detail: {
+                      path: frames[0].source.path,
+                      line: frames[0].line,
+                      column: frames[0].column || 1,
+                      focus: true,
+                    }
+                  }));
                 }
-              }));
-            }
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.color = tokens.colors.text.primary}
-          onMouseLeave={(e) => e.currentTarget.style.color = tokens.colors.text.muted}
-        >
-          <span class="truncate">{currentLocation()}</span>
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.color = tokens.colors.text.primary}
+              onMouseLeave={(e) => e.currentTarget.style.color = tokens.colors.text.muted}
+            >
+              <span class="truncate">{currentLocation()}</span>
+            </div>
+          </Show>
         </div>
-      </Show>
-    </div>
+      )}
+    </Show>
   );
 }
 

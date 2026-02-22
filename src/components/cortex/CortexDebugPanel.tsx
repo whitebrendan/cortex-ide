@@ -76,7 +76,13 @@ export const CortexDebugPanel: Component = () => {
   const startSelected = async () => {
     const name = selectedConfig();
     const config = savedConfigs().find((c) => c.name === name);
-    if (config && debug) await debug.startSession(config);
+    if (config && debug) {
+      try {
+        await debug.startSession(config);
+      } catch (error) {
+        console.error("Failed to start debug session:", error);
+      }
+    }
   };
 
   const addWatch = () => {

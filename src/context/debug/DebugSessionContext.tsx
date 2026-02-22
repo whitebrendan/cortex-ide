@@ -35,26 +35,35 @@ export const DebugSessionProvider: ParentComponent = (props) => {
   const startSession = async (
     config: DebugSessionConfig,
   ): Promise<DebugSessionInfo> => {
-    const result = await invoke<DebugSessionInfo>("debug_start_session", {
-      config,
-    });
-    setState(
-      produce((s) => {
-        s.sessions.push(result);
-        s.activeSessionId = result.id;
-        s.isDebugging = true;
-      }),
-    );
-    return result;
+    try {
+      const result = await invoke<DebugSessionInfo>("debug_start_session", {
+        config,
+      });
+      setState(
+        produce((s) => {
+          s.sessions.push(result);
+          s.activeSessionId = result.id;
+          s.isDebugging = true;
+        }),
+      );
+      return result;
+    } catch (error) {
+      console.error("Failed to start debug session:", error);
+      throw error;
+    }
   };
 
   const stopSession = async (sessionId?: string, terminate?: boolean) => {
     const id = sessionId || state.activeSessionId;
     if (!id) return;
-    await invoke("debug_stop_session", {
-      sessionId: id,
-      terminate: terminate ?? true,
-    });
+    try {
+      await invoke("debug_stop_session", {
+        sessionId: id,
+        terminate: terminate ?? true,
+      });
+    } catch (error) {
+      console.error("Failed to stop debug session:", error);
+    }
     setState(
       produce((s) => {
         s.sessions = s.sessions.filter((ss) => ss.id !== id);
@@ -69,7 +78,11 @@ export const DebugSessionProvider: ParentComponent = (props) => {
   const restartSession = async (sessionId?: string) => {
     const id = sessionId || state.activeSessionId;
     if (!id) return;
-    await invoke("debug_restart", { sessionId: id });
+    try {
+      await invoke("debug_restart", { sessionId: id });
+    } catch (error) {
+      console.error("Failed to restart debug session:", error);
+    }
   };
 
   const getActiveSession = () =>

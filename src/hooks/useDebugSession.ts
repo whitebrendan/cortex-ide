@@ -122,13 +122,18 @@ export function useDebugSession(): UseDebugSessionReturn {
   const [sessionId, setSessionId] = createSignal<string | null>(null);
 
   const startSession = async (config: DebugSessionConfig): Promise<void> => {
-    const id = await invoke<string>("debug_start_session", { config });
+    try {
+      const id = await invoke<string>("debug_start_session", { config });
 
-    batch(() => {
-      setSessionId(id);
-      setIsActive(true);
-      setIsPaused(false);
-    });
+      batch(() => {
+        setSessionId(id);
+        setIsActive(true);
+        setIsPaused(false);
+      });
+    } catch (error) {
+      console.error("Failed to start debug session:", error);
+      throw error;
+    }
   };
 
   const stopSession = async (): Promise<void> => {
@@ -137,7 +142,11 @@ export function useDebugSession(): UseDebugSessionReturn {
       return;
     }
 
-    await invoke("debug_stop_session", { sessionId: currentId, terminateDebuggee: true });
+    try {
+      await invoke("debug_stop_session", { sessionId: currentId, terminateDebuggee: true });
+    } catch (error) {
+      console.error("Failed to stop debug session:", error);
+    }
 
     batch(() => {
       setIsActive(false);
@@ -152,12 +161,16 @@ export function useDebugSession(): UseDebugSessionReturn {
       return;
     }
 
-    if (isPaused()) {
-      await invoke("debug_continue", { sessionId: currentId });
-      setIsPaused(false);
-    } else {
-      await invoke("debug_pause", { sessionId: currentId });
-      setIsPaused(true);
+    try {
+      if (isPaused()) {
+        await invoke("debug_continue", { sessionId: currentId });
+        setIsPaused(false);
+      } else {
+        await invoke("debug_pause", { sessionId: currentId });
+        setIsPaused(true);
+      }
+    } catch (error) {
+      console.error("Failed to toggle pause:", error);
     }
   };
 
@@ -167,7 +180,11 @@ export function useDebugSession(): UseDebugSessionReturn {
       return;
     }
 
-    await invoke("debug_step_over", { sessionId: currentId });
+    try {
+      await invoke("debug_step_over", { sessionId: currentId });
+    } catch (error) {
+      console.error("Failed to step over:", error);
+    }
   };
 
   const stepInto = async (): Promise<void> => {
@@ -176,7 +193,11 @@ export function useDebugSession(): UseDebugSessionReturn {
       return;
     }
 
-    await invoke("debug_step_into", { sessionId: currentId });
+    try {
+      await invoke("debug_step_into", { sessionId: currentId });
+    } catch (error) {
+      console.error("Failed to step into:", error);
+    }
   };
 
   const stepOut = async (): Promise<void> => {
@@ -185,7 +206,11 @@ export function useDebugSession(): UseDebugSessionReturn {
       return;
     }
 
-    await invoke("debug_step_out", { sessionId: currentId });
+    try {
+      await invoke("debug_step_out", { sessionId: currentId });
+    } catch (error) {
+      console.error("Failed to step out:", error);
+    }
   };
 
   onCleanup(() => {
