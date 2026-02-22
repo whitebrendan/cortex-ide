@@ -27,23 +27,40 @@ impl DebuggerState {
 
     /// Stop all debug sessions synchronously (for cleanup on exit)
     pub fn stop_all_sessions(&self) {
-        // Use blocking to wait for the async lock
-        let rt = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build();
-
-        if let Ok(rt) = rt {
-            rt.block_on(async {
-                let mut sessions = self.sessions.write().await;
-                for (session_id, session) in sessions.drain() {
-                    let session_guard = session.write().await;
-                    if let Err(e) = session_guard.stop(true).await {
-                        tracing::warn!("Failed to stop debug session {}: {}", session_id, e);
-                    } else {
-                        tracing::info!("Debug session {} stopped", session_id);
-                    }
-                }
+        // Check if we're already inside a tokio runtime. If so, we cannot
+        // create a nested runtime — use block_in_place instead.
+        if let Ok(handle) = tokio::runtime::Handle::try_current() {
+            // We're inside a tokio context — use block_in_place to run
+            // the async cleanup without creating a nested runtime.
+            tokio::task::block_in_place(|| {
+                handle.block_on(async {
+                    self.stop_all_sessions_async().await;
+                });
             });
+        } else {
+            // No runtime active — create a temporary one
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build();
+
+            if let Ok(rt) = rt {
+                rt.block_on(async {
+                    self.stop_all_sessions_async().await;
+                });
+            }
+        }
+    }
+
+    /// Async implementation for stopping all sessions
+    async fn stop_all_sessions_async(&self) {
+        let mut sessions = self.sessions.write().await;
+        for (session_id, session) in sessions.drain() {
+            let mut session_guard = session.write().await;
+            if let Err(e) = session_guard.stop(true).await {
+                tracing::warn!("Failed to stop debug session {}: {}", session_id, e);
+            } else {
+                tracing::info!("Debug session {} stopped", session_id);
+            }
         }
     }
 }

@@ -18,15 +18,43 @@ impl DebugSession {
 
     /// Get variables for current frame
     pub async fn get_variables(&self) -> Result<Vec<Variable>> {
-        let frame_id = self.active_frame_id.read().await;
-        let frame_id = frame_id.context("No active frame")?;
+        let frame_id = {
+            let id = self.active_frame_id.read().await;
+            id.context("No active frame")?
+        };
+
+        // Verify the session is in a stopped state before fetching variables
+        {
+            let state = self.state.read().await;
+            match &*state {
+                super::types::DebugSessionState::Stopped { .. } => {}
+                other => {
+                    anyhow::bail!(
+                        "Cannot get variables: session is not stopped (state: {:?})",
+                        other
+                    );
+                }
+            }
+        }
 
         let scopes = self.client.scopes(frame_id).await?;
         let mut all_variables = Vec::new();
 
         for scope in scopes {
-            let variables = self.client.variables(scope.variables_reference).await?;
-            all_variables.extend(variables);
+            // Check state is still stopped before each scope fetch — a step
+            // or continue may have occurred between scope requests.
+            {
+                let state = self.state.read().await;
+                if !matches!(&*state, super::types::DebugSessionState::Stopped { .. }) {
+                    anyhow::bail!("Session state changed during variable fetch — aborting");
+                }
+            }
+            match self.client.variables(scope.variables_reference).await {
+                Ok(variables) => all_variables.extend(variables),
+                Err(e) => {
+                    tracing::warn!("Failed to get variables for scope '{}': {}", scope.name, e);
+                }
+            }
         }
 
         self.external_event_tx

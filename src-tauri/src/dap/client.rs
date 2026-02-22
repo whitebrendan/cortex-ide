@@ -6,12 +6,15 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::Duration;
 
 use anyhow::{Context, Result};
 use tokio::sync::{Mutex, RwLock, mpsc, oneshot};
 
 use super::protocol::*;
 use super::transport::Transport;
+
+const DAP_REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 
 type ResponseCallback = oneshot::Sender<Result<DapResponse>>;
 type EventHandler = Box<dyn Fn(DapEvent) + Send + Sync>;
@@ -70,7 +73,28 @@ impl DapClient {
                     }
                 }
             }
+
+            // Receive loop exited — clean up pending requests so callers don't hang
+            self.fail_pending_requests("Debug adapter connection closed")
+                .await;
+
+            // Notify via event channel that the adapter has disconnected
+            let crash_event = DapEvent {
+                seq: 0,
+                event: "terminated".to_string(),
+                body: None,
+            };
+            self.event_tx.send(crash_event).ok();
         })
+    }
+
+    /// Fail all pending requests with an error message
+    async fn fail_pending_requests(&self, reason: &str) {
+        let mut pending = self.pending_requests.write().await;
+        for (seq, callback) in pending.drain() {
+            tracing::debug!("Failing pending DAP request seq={}: {}", seq, reason);
+            callback.send(Err(anyhow::anyhow!("{}", reason))).ok();
+        }
     }
 
     /// Handle a received DAP message
@@ -123,10 +147,32 @@ impl DapClient {
 
         {
             let mut transport = self.transport.lock().await;
-            transport.send(&request).await?;
+            transport.send(&request).await.context(format!(
+                "Failed to send '{}' request to debug adapter",
+                command
+            ))?;
         }
 
-        let response = rx.await.context("Response channel closed")??;
+        let response = match tokio::time::timeout(DAP_REQUEST_TIMEOUT, rx).await {
+            Ok(Ok(result)) => result?,
+            Ok(Err(_)) => {
+                // oneshot channel was dropped (receive loop exited)
+                self.pending_requests.write().await.remove(&seq);
+                anyhow::bail!(
+                    "Debug adapter disconnected while waiting for '{}' response",
+                    command
+                );
+            }
+            Err(_) => {
+                // Timeout elapsed
+                self.pending_requests.write().await.remove(&seq);
+                anyhow::bail!(
+                    "Request '{}' timed out after {}s",
+                    command,
+                    DAP_REQUEST_TIMEOUT.as_secs()
+                );
+            }
+        };
 
         if !response.success {
             anyhow::bail!(

@@ -77,8 +77,13 @@ impl DebugSession {
     }
 
     /// Stop the debug session
-    pub async fn stop(&self, terminate_debuggee: bool) -> Result<()> {
-        self.client.disconnect(false, terminate_debuggee).await?;
+    pub async fn stop(&mut self, terminate_debuggee: bool) -> Result<()> {
+        // Best-effort disconnect from the adapter
+        self.client.disconnect(false, terminate_debuggee).await.ok();
+
+        // Clean up background tasks and transport
+        self.cleanup().await;
+
         *self.state.write().await = DebugSessionState::Ended;
         self.external_event_tx
             .send(DebugSessionEvent::StateChanged {
@@ -93,7 +98,10 @@ impl DebugSession {
         // Stop current session
         self.client.terminate(true).await.ok();
 
-        // Wait a bit
+        // Clean up background tasks and transport from the old session
+        self.cleanup().await;
+
+        // Wait a bit for the adapter to clean up
         tokio::time::sleep(std::time::Duration::from_millis(500)).await;
 
         // Start again

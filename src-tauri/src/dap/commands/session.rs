@@ -90,7 +90,7 @@ pub async fn debug_stop_session(
         .get(&session_id)
         .ok_or_else(|| format!("Session not found: {}", session_id))?;
 
-    let session = session.read().await;
+    let mut session = session.write().await;
     session
         .stop(terminate_debuggee)
         .await
@@ -170,7 +170,7 @@ pub async fn debug_terminate(
         .get(&session_id)
         .ok_or_else(|| format!("Session not found: {}", session_id))?;
 
-    let session = session.read().await;
+    let mut session = session.write().await;
     session
         .stop(true) // terminate_debuggee = true
         .await
@@ -196,7 +196,7 @@ pub async fn debug_disconnect(
         .get(&session_id)
         .ok_or_else(|| format!("Session not found: {}", session_id))?;
 
-    let session = session.read().await;
+    let mut session = session.write().await;
     session
         .stop(false) // terminate_debuggee = false
         .await

@@ -77,27 +77,39 @@ impl DebugSession {
 
     /// Toggle a breakpoint at a specific line
     pub async fn toggle_breakpoint(&self, path: &str, line: i64) -> Result<Vec<SessionBreakpoint>> {
-        let mut breakpoints = self.breakpoints.write().await;
-        let file_bps = breakpoints.entry(path.to_string()).or_insert_with(Vec::new);
+        // Compute the desired lines while holding the read lock, then release
+        // before calling the adapter. set_breakpoints will re-acquire the
+        // write lock atomically when it stores the result.
+        let lines = {
+            let breakpoints = self.breakpoints.read().await;
+            let file_bps = breakpoints.get(path);
 
-        // Check if breakpoint exists at this line
-        let existing_idx = file_bps.iter().position(|bp| bp.line == line);
+            let existing = file_bps
+                .and_then(|bps| bps.iter().position(|bp| bp.line == line))
+                .is_some();
 
-        let lines: Vec<i64> = if let Some(idx) = existing_idx {
-            // Remove existing breakpoint
-            file_bps.remove(idx);
-            file_bps.iter().map(|bp| bp.line).collect()
-        } else {
-            // Add new breakpoint
-            let mut lines: Vec<i64> = file_bps.iter().map(|bp| bp.line).collect();
-            lines.push(line);
-            lines.sort();
-            lines
+            if existing {
+                // Remove the line
+                file_bps
+                    .map(|bps| {
+                        bps.iter()
+                            .filter(|bp| bp.line != line)
+                            .map(|bp| bp.line)
+                            .collect::<Vec<_>>()
+                    })
+                    .unwrap_or_default()
+            } else {
+                // Add the line
+                let mut lines: Vec<i64> = file_bps
+                    .map(|bps| bps.iter().map(|bp| bp.line).collect())
+                    .unwrap_or_default();
+                lines.push(line);
+                lines.sort();
+                lines
+            }
         };
 
-        drop(breakpoints);
-
-        // Set breakpoints on adapter
+        // Set breakpoints on adapter — this acquires the write lock internally
         self.set_breakpoints(path, lines, None, None, None).await
     }
 

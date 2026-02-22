@@ -13,6 +13,8 @@ use tokio::process::{
 
 use super::protocol::DapMessage;
 
+const MAX_DAP_MESSAGE_SIZE: usize = 32 * 1024 * 1024; // 32 MB
+
 /// Transport abstraction for DAP communication
 #[allow(clippy::large_enum_variant)]
 pub enum Transport {
@@ -62,6 +64,14 @@ impl Transport {
         }
     }
 
+    /// Kill the transport synchronously (best-effort, for Drop contexts)
+    pub fn kill_sync(&mut self) {
+        match self {
+            Self::Stdio(t) => t.kill_sync(),
+            Self::Tcp(_) => {}
+        }
+    }
+
     /// Check if transport is still alive
     pub fn is_alive(&self) -> bool {
         match self {
@@ -77,6 +87,7 @@ pub struct StdioTransport {
     stdin: TokioChildStdin,
     stdout: TokioBufReader<TokioChildStdout>,
     read_buffer: String,
+    stderr_task: Option<tokio::task::JoinHandle<()>>,
 }
 
 impl StdioTransport {
@@ -115,11 +126,37 @@ impl StdioTransport {
             .take()
             .context("Failed to open stdout of debug adapter")?;
 
+        let stderr_task = if let Some(stderr) = process.stderr.take() {
+            Some(tokio::spawn(async move {
+                let mut reader = TokioBufReader::new(stderr);
+                let mut line = String::new();
+                loop {
+                    line.clear();
+                    match reader.read_line(&mut line).await {
+                        Ok(0) => break,
+                        Ok(_) => {
+                            let trimmed = line.trim();
+                            if !trimmed.is_empty() {
+                                tracing::debug!("DAP adapter stderr: {}", trimmed);
+                            }
+                        }
+                        Err(e) => {
+                            tracing::debug!("DAP adapter stderr read error: {}", e);
+                            break;
+                        }
+                    }
+                }
+            }))
+        } else {
+            None
+        };
+
         Ok(Self {
             process,
             stdin,
             stdout: TokioBufReader::new(stdout),
             read_buffer: String::new(),
+            stderr_task,
         })
     }
 
@@ -162,6 +199,14 @@ impl StdioTransport {
         let content_length =
             content_length.context("Missing Content-Length header in DAP message")?;
 
+        if content_length > MAX_DAP_MESSAGE_SIZE {
+            anyhow::bail!(
+                "DAP message Content-Length {} exceeds maximum allowed size of {} bytes",
+                content_length,
+                MAX_DAP_MESSAGE_SIZE
+            );
+        }
+
         // Read content
         let mut content = vec![0u8; content_length];
         self.stdout.read_exact(&mut content).await?;
@@ -169,13 +214,25 @@ impl StdioTransport {
         let json = String::from_utf8(content)?;
         tracing::debug!("DAP <- {}", json);
 
-        let message: DapMessage = serde_json::from_str(&json)?;
+        let message: DapMessage =
+            serde_json::from_str(&json).context("Failed to parse DAP message as JSON")?;
         Ok(message)
     }
 
     pub async fn kill(&mut self) -> Result<()> {
+        if let Some(task) = self.stderr_task.take() {
+            task.abort();
+        }
         self.process.kill().await.ok();
+        self.process.wait().await.ok();
         Ok(())
+    }
+
+    pub fn kill_sync(&mut self) {
+        if let Some(task) = self.stderr_task.take() {
+            task.abort();
+        }
+        let _ = self.process.start_kill();
     }
 
     pub fn is_alive(&self) -> bool {
@@ -246,6 +303,14 @@ impl TcpTransport {
         let content_length =
             content_length.context("Missing Content-Length header in DAP message")?;
 
+        if content_length > MAX_DAP_MESSAGE_SIZE {
+            anyhow::bail!(
+                "DAP message Content-Length {} exceeds maximum allowed size of {} bytes",
+                content_length,
+                MAX_DAP_MESSAGE_SIZE
+            );
+        }
+
         // Read content
         let mut content = vec![0u8; content_length];
         reader.read_exact(&mut content).await?;
@@ -253,7 +318,8 @@ impl TcpTransport {
         let json = String::from_utf8(content)?;
         tracing::debug!("DAP <- {}", json);
 
-        let message: DapMessage = serde_json::from_str(&json)?;
+        let message: DapMessage =
+            serde_json::from_str(&json).context("Failed to parse DAP message as JSON")?;
         Ok(message)
     }
 

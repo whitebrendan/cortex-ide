@@ -39,6 +39,8 @@ pub struct DebugSession {
     pub(super) external_event_tx: mpsc::UnboundedSender<DebugSessionEvent>,
     /// Adapter capabilities
     capabilities: Arc<RwLock<Option<Capabilities>>>,
+    /// Handle to the background receive loop task
+    receive_loop_handle: Option<tokio::task::JoinHandle<()>>,
 }
 
 impl DebugSession {
@@ -72,6 +74,7 @@ impl DebugSession {
             event_rx,
             external_event_tx,
             capabilities: Arc::new(RwLock::new(None)),
+            receive_loop_handle: None,
         })
     }
 
@@ -79,7 +82,8 @@ impl DebugSession {
     pub async fn start(&mut self) -> Result<()> {
         // Start the message receive loop
         let client = self.client.clone();
-        client.start_receive_loop();
+        let handle = client.start_receive_loop();
+        self.receive_loop_handle = Some(handle);
 
         // Initialize the adapter
         let capabilities = self.client.initialize(&self.config.type_).await?;
@@ -93,13 +97,10 @@ impl DebugSession {
             self.client.launch(adapter_config).await?;
         }
 
-        // Send configuration done if supported
-        if capabilities
-            .supports_configuration_done_request
-            .unwrap_or(false)
-        {
-            self.client.configuration_done().await?;
-        }
+        // Always send configurationDone — most adapters require it, and the
+        // DAP spec says the client should send it after all configuration
+        // requests (breakpoints, exception filters, etc.) have been issued.
+        self.client.configuration_done().await.ok();
 
         // Update state
         *self.state.write().await = DebugSessionState::Running;
@@ -110,6 +111,16 @@ impl DebugSession {
             .ok();
 
         Ok(())
+    }
+
+    /// Clean up session resources (abort background tasks, kill transport)
+    pub(super) async fn cleanup(&mut self) {
+        if let Some(handle) = self.receive_loop_handle.take() {
+            handle.abort();
+        }
+        if let Err(e) = self.client.kill().await {
+            tracing::debug!("Error killing DAP client transport: {}", e);
+        }
     }
 
     /// Process events from the adapter
@@ -165,5 +176,13 @@ impl DebugSession {
     /// Get adapter capabilities
     pub async fn capabilities(&self) -> Option<Capabilities> {
         self.capabilities.read().await.clone()
+    }
+}
+
+impl Drop for DebugSession {
+    fn drop(&mut self) {
+        if let Some(handle) = self.receive_loop_handle.take() {
+            handle.abort();
+        }
     }
 }
