@@ -150,3 +150,13 @@ export type { SnippetManagerProps, SnippetPlaceholder } from "./SnippetManager";
 // Bracket Pair Colorizer
 export { BracketPairColorizer } from "./BracketPairColorizer";
 export type { BracketPairColorizerProps } from "./BracketPairColorizer";
+
+// Editor Tab System
+export { EditorTab } from "./EditorTab";
+export type { EditorTabProps } from "./EditorTab";
+export { EditorTabs } from "./EditorTabs";
+export type { EditorTabsProps } from "./EditorTabs";
+export { EditorArea } from "./EditorArea";
+export type { EditorAreaProps } from "./EditorArea";
+export { WelcomeTab } from "./WelcomeTab";
+export type { WelcomeTabProps } from "./WelcomeTab";

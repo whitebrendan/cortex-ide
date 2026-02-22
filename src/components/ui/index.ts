@@ -180,3 +180,7 @@ export type {
 // Virtualization
 export { VirtualList, VirtualListVariable } from "./VirtualList";
 export type { VirtualListProps, VirtualListVariableProps } from "./VirtualList";
+
+// Confirm Dialog
+export { ConfirmDialog } from "./ConfirmDialog";
+export type { ConfirmDialogProps } from "./ConfirmDialog";
