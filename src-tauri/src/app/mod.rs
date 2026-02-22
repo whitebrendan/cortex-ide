@@ -24,7 +24,7 @@ use tauri_plugin_clipboard_manager::ClipboardExt;
 use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_shell::process::CommandChild;
 use tokio::sync::mpsc;
-use tracing::{info, warn};
+use tracing::{error, info, warn};
 
 use crate::LazyState;
 use crate::activity::ActivityState;
@@ -265,7 +265,7 @@ pub async fn repl_list_kernel_specs(app: AppHandle) -> Result<Vec<KernelSpec>, S
     if guard.is_none() {
         let (tx, mut rx) = mpsc::unbounded_channel::<KernelEvent>();
         let app_clone = app.clone();
-        tauri::async_runtime::spawn(async move {
+        let _repl_fwd = tauri::async_runtime::spawn(async move {
             while let Some(event) = rx.recv().await {
                 let _ = app_clone.emit("repl:event", &event);
             }
@@ -290,7 +290,7 @@ pub async fn repl_start_kernel(app: AppHandle, spec_id: String) -> Result<Kernel
     if guard.is_none() {
         let (tx, mut rx) = mpsc::unbounded_channel::<KernelEvent>();
         let app_clone = app.clone();
-        tauri::async_runtime::spawn(async move {
+        let _repl_fwd = tauri::async_runtime::spawn(async move {
             while let Some(event) = rx.recv().await {
                 let _ = app_clone.emit("repl:event", &event);
             }
@@ -477,7 +477,7 @@ static PHASE_B_INIT: OnceLock<()> = OnceLock::new();
 /// Runs heavy operations (extensions, LSP, AI, MCP, SSH, auto-update) in
 /// parallel without blocking time-to-window.
 fn run_phase_b(app_handle: AppHandle, remote_manager: Arc<RemoteManager>) {
-    tauri::async_runtime::spawn(async move {
+    let handle = tauri::async_runtime::spawn(async move {
         info!("Phase B: starting deferred initialization");
         let phase_b_start = std::time::Instant::now();
 
@@ -557,6 +557,11 @@ fn run_phase_b(app_handle: AppHandle, remote_manager: Arc<RemoteManager>) {
             warn!("Failed to emit backend:phase_b_ready event: {}", e);
         }
     });
+    tauri::async_runtime::spawn(async move {
+        if let Err(e) = handle.await {
+            error!("Phase B initialization task panicked: {:?}", e);
+        }
+    });
 }
 
 /// Frontend calls this command after first meaningful paint to trigger
@@ -590,7 +595,7 @@ pub fn setup_app(
         use tauri_plugin_deep_link::DeepLinkExt;
 
         let app_handle_for_deep_link = app_handle.clone();
-        tauri::async_runtime::spawn(async move {
+        let _deep_link_handle = tauri::async_runtime::spawn(async move {
             tokio::time::sleep(std::time::Duration::from_millis(500)).await;
             if let Ok(Some(urls)) = app_handle_for_deep_link.deep_link().get_current() {
                 let url_strings: Vec<String> = urls.iter().map(|u| u.to_string()).collect();
@@ -611,7 +616,7 @@ pub fn setup_app(
 
     // Phase A: Minimal initialization needed before window becomes visible.
     // Only settings preload and window restore — the minimum for the frontend shell.
-    tauri::async_runtime::spawn(async move {
+    let phase_a_handle = tauri::async_runtime::spawn(async move {
         info!("Phase A: starting critical-path initialization");
         let init_start = std::time::Instant::now();
 
@@ -644,6 +649,11 @@ pub fn setup_app(
             warn!("Failed to emit backend:ready event: {}", e);
         } else {
             info!("Backend ready - shell data preloaded");
+        }
+    });
+    tauri::async_runtime::spawn(async move {
+        if let Err(e) = phase_a_handle.await {
+            error!("Phase A initialization task panicked: {:?}", e);
         }
     });
 
@@ -818,6 +828,9 @@ pub fn handle_run_event(app: &AppHandle, event: RunEvent) {
                 }
                 info!("Window sessions saved on app exit");
             }
+
+            crate::git::watcher::stop_all_git_watchers();
+            info!("All git watchers stopped on app exit");
 
             info!("All child processes cleaned up, exiting application");
         }

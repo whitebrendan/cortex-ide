@@ -451,7 +451,7 @@ pub fn set_skipped_version(_version: Option<String>) -> Result<(), String> {
 pub fn init_auto_update<R: Runtime>(app: &AppHandle<R>, check_on_startup: bool) {
     if check_on_startup {
         let app_clone = app.clone();
-        tauri::async_runtime::spawn(async move {
+        let _update_handle = tauri::async_runtime::spawn(async move {
             #[cfg(not(any(target_os = "android", target_os = "ios")))]
             {
                 let state = app_clone.state::<Arc<AutoUpdateState>>();

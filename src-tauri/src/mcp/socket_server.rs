@@ -196,7 +196,11 @@ impl<R: Runtime> SocketServer<R> {
         let config = self.config.clone();
 
         thread::spawn(move || {
-            Self::run_server(listener, app, running, config);
+            if let Err(e) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                Self::run_server(listener, app, running, config);
+            })) {
+                error!("[MCP] Server thread panicked: {:?}", e);
+            }
         });
 
         info!("[MCP] Socket server started successfully");
@@ -227,10 +231,14 @@ impl<R: Runtime> SocketServer<R> {
                             let stream = UnifiedStream::Ipc(stream);
 
                             thread::spawn(move || {
-                                if let Err(e) = Self::handle_client(stream, app_clone) {
-                                    if !e.contains("pipe") && !e.contains("broken") {
-                                        error!("[MCP] Client error: {}", e);
+                                if let Err(e) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                                    if let Err(e) = Self::handle_client(stream, app_clone) {
+                                        if !e.contains("pipe") && !e.contains("broken") {
+                                            error!("[MCP] Client error: {}", e);
+                                        }
                                     }
+                                })) {
+                                    error!("[MCP] IPC client handler panicked: {:?}", e);
                                 }
                             });
                         }
@@ -261,8 +269,12 @@ impl<R: Runtime> SocketServer<R> {
                             let stream = UnifiedStream::Tcp(stream);
 
                             thread::spawn(move || {
-                                if let Err(e) = Self::handle_client(stream, app_clone) {
-                                    error!("[MCP] TCP client error: {}", e);
+                                if let Err(e) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                                    if let Err(e) = Self::handle_client(stream, app_clone) {
+                                        error!("[MCP] TCP client error: {}", e);
+                                    }
+                                })) {
+                                    error!("[MCP] TCP client handler panicked: {:?}", e);
                                 }
                             });
                         }

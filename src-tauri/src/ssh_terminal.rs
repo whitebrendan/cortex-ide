@@ -317,14 +317,19 @@ impl SSHTerminalState {
         let app_handle_clone = app_handle.clone();
         let session_id_clone = session_id.clone();
 
+        let sid_for_log = session_id.clone();
         let reader_handle = thread::spawn(move || {
-            Self::reader_loop_shared(
-                channel_for_read,
-                session_id_clone,
-                app_handle_clone,
-                running_clone,
-                flow_controller_clone,
-            );
+            if let Err(e) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                Self::reader_loop_shared(
+                    channel_for_read,
+                    session_id_clone,
+                    app_handle_clone,
+                    running_clone,
+                    flow_controller_clone,
+                );
+            })) {
+                tracing::error!("SSH terminal reader thread for '{}' panicked: {:?}", sid_for_log, e);
+            }
         });
 
         // Store session

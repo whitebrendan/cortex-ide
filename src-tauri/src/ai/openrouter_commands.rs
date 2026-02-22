@@ -127,7 +127,7 @@ pub async fn openrouter_stream_chat(
     let thread_id_clone = thread_id.clone();
     let app_clone = app.clone();
 
-    tauri::async_runtime::spawn(async move {
+    let _stream_handle = tauri::async_runtime::spawn(async move {
         while let Some(chunk) = rx.recv().await {
             let event_payload = OpenRouterStreamPayload {
                 thread_id: thread_id_clone.clone(),

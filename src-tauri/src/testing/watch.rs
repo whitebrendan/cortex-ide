@@ -81,7 +81,8 @@ pub async fn testing_watch(
     let path_clone = path.clone();
 
     // Spawn watcher task
-    tokio::spawn(async move {
+    let watcher_id_log = watcher_id.clone();
+    let _watcher_handle = tokio::spawn(async move {
         // Determine test file patterns based on framework
         let test_patterns = match framework_clone.to_lowercase().as_str() {
             "jest" | "vitest" => vec![
@@ -216,6 +217,11 @@ pub async fn testing_watch(
                     }
                 }
             }
+        }
+    });
+    tokio::spawn(async move {
+        if let Err(e) = _watcher_handle.await {
+            tracing::error!("Test watcher {} panicked: {:?}", watcher_id_log, e);
         }
     });
 

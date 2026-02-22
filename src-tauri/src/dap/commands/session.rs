@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 use tauri::{AppHandle, Emitter, State};
 use tokio::sync::{RwLock, mpsc};
+use tracing::error;
 
 use super::super::{DebugSession, DebugSessionConfig, DebugSessionEvent, DebugSessionState};
 use super::state::DebuggerState;
@@ -33,11 +34,17 @@ pub async fn debug_start_session(
     // Forward events to frontend
     let app_clone = app.clone();
     let session_id_clone = session_id.clone();
-    tokio::spawn(async move {
+    let sid_for_log = session_id.clone();
+    let _event_fwd = tokio::spawn(async move {
         while let Some(event) = event_rx.recv().await {
             // Emit event to frontend
             let _ = app_clone.emit(&format!("debug:event:{}", session_id_clone), &event);
             let _ = app_clone.emit("debug:event", &event);
+        }
+    });
+    tokio::spawn(async move {
+        if let Err(e) = _event_fwd.await {
+            error!("Debug event forwarder for session {} panicked: {:?}", sid_for_log, e);
         }
     });
 
@@ -65,9 +72,15 @@ pub async fn debug_start_session(
 
     // Start event processing loop
     let session_clone = session.clone();
-    tokio::spawn(async move {
+    let sid_for_evt = session_id.clone();
+    let _evt_handle = tokio::spawn(async move {
         let mut session = session_clone.write().await;
         session.process_events().await;
+    });
+    tokio::spawn(async move {
+        if let Err(e) = _evt_handle.await {
+            error!("Debug event processor for session {} panicked: {:?}", sid_for_evt, e);
+        }
     });
 
     Ok(DebugSessionInfo {

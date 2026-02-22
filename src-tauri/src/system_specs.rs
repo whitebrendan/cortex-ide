@@ -338,7 +338,7 @@ pub async fn start_live_metrics(app: AppHandle) -> Result<(), String> {
     let state_clone = state.inner().clone();
     let app_clone = app.clone();
 
-    tauri::async_runtime::spawn(async move {
+    let _metrics_handle = tauri::async_runtime::spawn(async move {
         let mut sys = System::new_with_specifics(
             RefreshKind::new()
                 .with_cpu(CpuRefreshKind::everything())

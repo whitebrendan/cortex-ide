@@ -149,6 +149,7 @@ macro_rules! git_commands {
             $crate::git::branch::git_revert,
             // Git repository watcher
             $crate::git::watcher::git_watch_repository,
+            $crate::git::watcher::git_unwatch_repository,
             // Git line staging
             $crate::git::lines::git_stage_lines,
             $crate::git::lines::git_unstage_lines,

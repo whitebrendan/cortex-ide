@@ -329,7 +329,7 @@ pub async fn request_inline_completion(
 
     // Spawn receiver that emits Tauri events
     let request_id_for_stream = request_id.clone();
-    tauri::async_runtime::spawn(async move {
+    let _stream_handle = tauri::async_runtime::spawn(async move {
         let mut accumulated = String::new();
         while let Some(chunk) = rx.recv().await {
             accumulated.push_str(&chunk.content);

@@ -920,8 +920,9 @@ async fn execute_task_streaming(
         let task_label = task.label.clone();
         let app_for_bg = app_handle.clone();
         let tid_for_bg = task_id.clone();
+        let tid_for_log = task_id.clone();
 
-        tokio::spawn(async move {
+        let bg_handle = tokio::spawn(async move {
             let status = child.wait().await;
             let exit_code = status.map(|s| s.code().unwrap_or(-1)).ok();
 
@@ -952,6 +953,11 @@ async fn execute_task_streaming(
                 "Background task '{}' (id: {}) finished with status: {}",
                 task_label, tid_for_bg, final_status
             );
+        });
+        tokio::spawn(async move {
+            if let Err(e) = bg_handle.await {
+                error!("Background task {} panicked: {:?}", tid_for_log, e);
+            }
         });
 
         return Ok(TaskResult {

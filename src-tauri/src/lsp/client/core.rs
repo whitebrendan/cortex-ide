@@ -116,8 +116,13 @@ impl LspClient {
 
         // Start the writer thread
         let writer_pending = pending_requests.clone();
+        let writer_id = id.clone();
         thread::spawn(move || {
-            Self::writer_thread(stdin, outgoing_rx, writer_pending);
+            if let Err(e) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                Self::writer_thread(stdin, outgoing_rx, writer_pending);
+            })) {
+                tracing::error!("LSP writer thread for '{}' panicked: {:?}", writer_id, e);
+            }
         });
 
         // Start the reader thread
@@ -125,14 +130,24 @@ impl LspClient {
         let reader_handlers = notification_handlers;
         let server_id = id.clone();
         let diag_tx = client.diagnostics_tx.clone();
+        let reader_id = id.clone();
         thread::spawn(move || {
-            Self::reader_thread(stdout, reader_pending, reader_handlers, server_id, diag_tx);
+            if let Err(e) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                Self::reader_thread(stdout, reader_pending, reader_handlers, server_id, diag_tx);
+            })) {
+                tracing::error!("LSP reader thread for '{}' panicked: {:?}", reader_id, e);
+            }
         });
 
         // Start stderr reader thread
         let server_name = name;
+        let stderr_id = id.clone();
         thread::spawn(move || {
-            Self::stderr_thread(stderr, server_name);
+            if let Err(e) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                Self::stderr_thread(stderr, server_name);
+            })) {
+                tracing::error!("LSP stderr thread for '{}' panicked: {:?}", stderr_id, e);
+            }
         });
 
         Ok(client)

@@ -336,7 +336,7 @@ pub async fn rules_watch_directory(
     let app_clone = app.clone();
 
     // Spawn a task to forward events to the frontend
-    tokio::spawn(async move {
+    let _rules_fwd = tokio::spawn(async move {
         while let Some(event) = rx.recv().await {
             if let Err(e) = app_clone.emit("rules:file-changed", &event) {
                 error!("Failed to emit rules file event: {}", e);

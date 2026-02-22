@@ -192,7 +192,7 @@ pub async fn ai_stream(
 
     // Spawn receiver task to emit events
     let app_clone = app.clone();
-    tauri::async_runtime::spawn(async move {
+    let _stream_handle = tauri::async_runtime::spawn(async move {
         while let Some(chunk) = rx.recv().await {
             // Emit tool_call events if tool calls are present in this chunk
             if let Some(ref tool_calls) = chunk.tool_calls {

@@ -294,7 +294,7 @@ fn create_window_internal(
     // Store maximized state for when window becomes visible
     if is_max {
         let window_clone = window.clone();
-        tauri::async_runtime::spawn(async move {
+        let _max_handle = tauri::async_runtime::spawn(async move {
             // Listen for the show event, then maximize
             let _ = window_clone.maximize();
         });
@@ -342,7 +342,7 @@ pub async fn create_new_window(app: AppHandle, path: Option<String>) -> Result<(
     // This prevents invisible windows if frontend fails to load
     let window_clone = window.clone();
     let label_clone = label.clone();
-    tauri::async_runtime::spawn(async move {
+    let _fallback_handle = tauri::async_runtime::spawn(async move {
         tokio::time::sleep(std::time::Duration::from_secs(3)).await;
         // Only show if window is still not visible
         if let Ok(visible) = window_clone.is_visible() {

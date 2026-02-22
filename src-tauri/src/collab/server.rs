@@ -97,7 +97,7 @@ impl CollabServer {
 
         // Accept loop
         let mut shutdown_rx = shutdown_tx.subscribe();
-        tokio::spawn(async move {
+        let _server_handle = tokio::spawn(async move {
             loop {
                 tokio::select! {
                     accept_result = listener.accept() => {

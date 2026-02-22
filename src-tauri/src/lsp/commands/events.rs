@@ -13,7 +13,7 @@ pub fn setup_lsp_events(app: &AppHandle) {
 
     if let Some(mut rx) = state.take_diagnostics_receiver() {
         let app = app.clone();
-        tauri::async_runtime::spawn(async move {
+        let _diag_handle = tauri::async_runtime::spawn(async move {
             while let Some(event) = rx.recv().await {
                 // Emit diagnostics to the frontend
                 if let Err(e) = app.emit("lsp:diagnostics", &event) {

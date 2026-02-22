@@ -163,7 +163,7 @@ pub async fn notebook_start_kernel(
                 let (tx, mut rx) = mpsc::unbounded_channel::<KernelEvent>();
                 let emitter = app_clone.clone();
 
-                tauri::async_runtime::spawn(async move {
+                let _repl_fwd = tauri::async_runtime::spawn(async move {
                     while let Some(event) = rx.recv().await {
                         let _ = emitter.emit("repl:event", &event);
                     }

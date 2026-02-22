@@ -4,6 +4,7 @@ use std::path::{Component, PathBuf};
 use std::process::Stdio;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::io::{AsyncBufReadExt, BufReader};
+use tracing::error;
 use uuid::Uuid;
 
 use crate::fs::security::validate_path_safe;
@@ -270,7 +271,8 @@ pub async fn testing_run_streaming(
     let app_clone = app.clone();
 
     // Spawn test process with streaming output
-    tokio::spawn(async move {
+    let run_id_for_log = run_id.clone();
+    let _outer_handle = tokio::spawn(async move {
         let mut child = match crate::process_utils::async_command(program)
             .args(&args)
             .current_dir(&path)
@@ -301,13 +303,13 @@ pub async fn testing_run_streaming(
         );
 
         // Stream stdout
-        if let Some(stdout) = child.stdout.take() {
+        let stdout_handle = if let Some(stdout) = child.stdout.take() {
             let reader = BufReader::new(stdout);
             let mut lines = reader.lines();
             let app_for_stdout = app_clone.clone();
             let run_id_for_stdout = run_id_clone.clone();
 
-            tokio::spawn(async move {
+            Some(tokio::spawn(async move {
                 while let Ok(Some(line)) = lines.next_line().await {
                     let _ = app_for_stdout.emit(
                         "testing:output",
@@ -318,17 +320,19 @@ pub async fn testing_run_streaming(
                         }),
                     );
                 }
-            });
-        }
+            }))
+        } else {
+            None
+        };
 
         // Stream stderr
-        if let Some(stderr) = child.stderr.take() {
+        let stderr_handle = if let Some(stderr) = child.stderr.take() {
             let reader = BufReader::new(stderr);
             let mut lines = reader.lines();
             let app_for_stderr = app_clone.clone();
             let run_id_for_stderr = run_id_clone.clone();
 
-            tokio::spawn(async move {
+            Some(tokio::spawn(async move {
                 while let Ok(Some(line)) = lines.next_line().await {
                     let _ = app_for_stderr.emit(
                         "testing:output",
@@ -339,11 +343,21 @@ pub async fn testing_run_streaming(
                         }),
                     );
                 }
-            });
-        }
+            }))
+        } else {
+            None
+        };
 
         // Wait for process to complete
         let status = child.wait().await;
+
+        // Drain remaining output before emitting completion
+        if let Some(h) = stdout_handle {
+            let _ = h.await;
+        }
+        if let Some(h) = stderr_handle {
+            let _ = h.await;
+        }
 
         let exit_code = status.map(|s| s.code().unwrap_or(-1)).unwrap_or(-1);
 
@@ -355,6 +369,13 @@ pub async fn testing_run_streaming(
                 "success": exit_code == 0,
             }),
         );
+    });
+    // Log if the test execution task panics
+    let run_id_log = run_id_for_log;
+    tokio::spawn(async move {
+        if let Err(e) = _outer_handle.await {
+            error!("Test execution task for run_id={} panicked: {:?}", run_id_log, e);
+        }
     });
 
     Ok(run_id)

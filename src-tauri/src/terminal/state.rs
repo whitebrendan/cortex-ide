@@ -266,7 +266,9 @@ impl TerminalState {
         let app_handle_clone = app_handle.clone();
         let terminal_id_clone = terminal_id.clone();
 
+        let terminal_id_for_log = terminal_id.clone();
         let reader_handle = thread::spawn(move || {
+            if let Err(e) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
             let mut child = child;
             let mut buf = [0u8; PTY_READ_BUFFER_SIZE];
             let mut leftover = Vec::new();
@@ -365,6 +367,9 @@ impl TerminalState {
             );
 
             let _ = app_handle_clone.emit("terminal:status", &status_event);
+            })) {
+                error!("Terminal reader thread for '{}' panicked: {:?}", terminal_id_for_log, e);
+            }
         });
 
         // Store terminal instance

@@ -94,10 +94,13 @@ async fn git_clone_internal(
 
         // Process stderr for progress in a separate thread
         let progress_handle = std::thread::spawn(move || {
-            for line in reader.lines().map_while(Result::ok) {
-                // Parse git progress output
-                let progress = parse_git_progress(&line);
-                let _ = app_clone.emit("git:clone-progress", progress);
+            if let Err(e) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                for line in reader.lines().map_while(Result::ok) {
+                    let progress = parse_git_progress(&line);
+                    let _ = app_clone.emit("git:clone-progress", progress);
+                }
+            })) {
+                tracing::error!("Git clone progress thread panicked: {:?}", e);
             }
         });
 

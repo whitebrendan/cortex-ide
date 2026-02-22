@@ -9,7 +9,7 @@ use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use tokio::sync::mpsc;
-use tracing::info;
+use tracing::{error, info};
 #[cfg(windows)]
 use tracing::warn;
 
@@ -156,17 +156,21 @@ impl KernelManager {
             let sender = event_sender.clone();
             let kid = kernel_id.clone();
             thread::spawn(move || {
-                let reader = BufReader::new(stdout);
-                for line in reader.lines().map_while(Result::ok) {
-                    let _ = sender.send(KernelEvent::Output {
-                        kernel_id: kid.clone(),
-                        cell_id: "".to_string(),
-                        output: CellOutput {
-                            output_type: OutputType::Stdout,
-                            content: OutputContent::Text(line),
-                            timestamp: current_timestamp(),
-                        },
-                    });
+                if let Err(e) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    let reader = BufReader::new(stdout);
+                    for line in reader.lines().map_while(Result::ok) {
+                        let _ = sender.send(KernelEvent::Output {
+                            kernel_id: kid.clone(),
+                            cell_id: "".to_string(),
+                            output: CellOutput {
+                                output_type: OutputType::Stdout,
+                                content: OutputContent::Text(line),
+                                timestamp: current_timestamp(),
+                            },
+                        });
+                    }
+                })) {
+                    error!("REPL kernel stdout reader panicked: {:?}", e);
                 }
             });
         }
@@ -175,17 +179,21 @@ impl KernelManager {
             let sender = event_sender;
             let kid = kernel_id;
             thread::spawn(move || {
-                let reader = BufReader::new(stderr);
-                for line in reader.lines().map_while(Result::ok) {
-                    let _ = sender.send(KernelEvent::Output {
-                        kernel_id: kid.clone(),
-                        cell_id: "".to_string(),
-                        output: CellOutput {
-                            output_type: OutputType::Stderr,
-                            content: OutputContent::Text(line),
-                            timestamp: current_timestamp(),
-                        },
-                    });
+                if let Err(e) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    let reader = BufReader::new(stderr);
+                    for line in reader.lines().map_while(Result::ok) {
+                        let _ = sender.send(KernelEvent::Output {
+                            kernel_id: kid.clone(),
+                            cell_id: "".to_string(),
+                            output: CellOutput {
+                                output_type: OutputType::Stderr,
+                                content: OutputContent::Text(line),
+                                timestamp: current_timestamp(),
+                            },
+                        });
+                    }
+                })) {
+                    error!("REPL kernel stderr reader panicked: {:?}", e);
                 }
             });
         }
@@ -221,20 +229,24 @@ impl KernelManager {
             let sender = event_sender.clone();
             let kid = kernel_id.clone();
             thread::spawn(move || {
-                let reader = BufReader::new(stdout);
-                for line in reader.lines().map_while(Result::ok) {
-                    // Filter out the Node.js prompt
-                    if line.trim() != ">" && !line.trim().is_empty() {
-                        let _ = sender.send(KernelEvent::Output {
-                            kernel_id: kid.clone(),
-                            cell_id: "".to_string(),
-                            output: CellOutput {
-                                output_type: OutputType::Stdout,
-                                content: OutputContent::Text(line),
-                                timestamp: current_timestamp(),
-                            },
-                        });
+                if let Err(e) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    let reader = BufReader::new(stdout);
+                    for line in reader.lines().map_while(Result::ok) {
+                        // Filter out the Node.js prompt
+                        if line.trim() != ">" && !line.trim().is_empty() {
+                            let _ = sender.send(KernelEvent::Output {
+                                kernel_id: kid.clone(),
+                                cell_id: "".to_string(),
+                                output: CellOutput {
+                                    output_type: OutputType::Stdout,
+                                    content: OutputContent::Text(line),
+                                    timestamp: current_timestamp(),
+                                },
+                            });
+                        }
                     }
+                })) {
+                    error!("REPL node kernel stdout reader panicked: {:?}", e);
                 }
             });
         }
@@ -243,17 +255,21 @@ impl KernelManager {
             let sender = event_sender;
             let kid = kernel_id;
             thread::spawn(move || {
-                let reader = BufReader::new(stderr);
-                for line in reader.lines().map_while(Result::ok) {
-                    let _ = sender.send(KernelEvent::Output {
-                        kernel_id: kid.clone(),
-                        cell_id: "".to_string(),
-                        output: CellOutput {
-                            output_type: OutputType::Stderr,
-                            content: OutputContent::Text(line),
-                            timestamp: current_timestamp(),
-                        },
-                    });
+                if let Err(e) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    let reader = BufReader::new(stderr);
+                    for line in reader.lines().map_while(Result::ok) {
+                        let _ = sender.send(KernelEvent::Output {
+                            kernel_id: kid.clone(),
+                            cell_id: "".to_string(),
+                            output: CellOutput {
+                                output_type: OutputType::Stderr,
+                                content: OutputContent::Text(line),
+                                timestamp: current_timestamp(),
+                            },
+                        });
+                    }
+                })) {
+                    error!("REPL node kernel stderr reader panicked: {:?}", e);
                 }
             });
         }
@@ -299,11 +315,15 @@ impl KernelManager {
         let sender = self.event_sender.clone();
         let kid = kernel_id.to_string();
         thread::spawn(move || {
-            thread::sleep(std::time::Duration::from_millis(100));
-            let _ = sender.send(KernelEvent::Status {
-                kernel_id: kid,
-                status: KernelStatus::Idle,
-            });
+            if let Err(e) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                thread::sleep(std::time::Duration::from_millis(100));
+                let _ = sender.send(KernelEvent::Status {
+                    kernel_id: kid,
+                    status: KernelStatus::Idle,
+                });
+            })) {
+                error!("REPL kernel idle status thread panicked: {:?}", e);
+            }
         });
 
         Ok(execution_count)
