@@ -407,13 +407,22 @@ impl LspClient {
         // Extract and store semantic tokens legend from server capabilities
         if let Some(ref provider) = result.capabilities.semantic_tokens_provider {
             let legend = provider.get("legend").and_then(|l| {
-                let token_types = l.get("tokenTypes")?.as_array()?.iter()
+                let token_types = l
+                    .get("tokenTypes")?
+                    .as_array()?
+                    .iter()
                     .filter_map(|v| v.as_str().map(String::from))
                     .collect();
-                let token_modifiers = l.get("tokenModifiers")?.as_array()?.iter()
+                let token_modifiers = l
+                    .get("tokenModifiers")?
+                    .as_array()?
+                    .iter()
                     .filter_map(|v| v.as_str().map(String::from))
                     .collect();
-                Some(SemanticTokensLegend { token_types, token_modifiers })
+                Some(SemanticTokensLegend {
+                    token_types,
+                    token_modifiers,
+                })
             });
             *self.semantic_tokens_legend.lock() = legend;
         }

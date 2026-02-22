@@ -24,6 +24,10 @@ pub enum RemoteError {
     InvalidPath(String),
     #[error("Keyring error: {0}")]
     KeyringError(String),
+    #[error("Connection timeout: {0}")]
+    Timeout(String),
+    #[error("Channel error: {0}")]
+    ChannelError(String),
 }
 
 impl From<RemoteError> for String {

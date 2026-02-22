@@ -86,12 +86,15 @@ impl LspClient {
             return Ok(item);
         }
 
-        let lsp_item: LspCompletionItem = serde_json::from_value(result).unwrap_or_else(|_| {
-            LspCompletionItem {
+        let lsp_item: LspCompletionItem =
+            serde_json::from_value(result).unwrap_or_else(|_| LspCompletionItem {
                 label: item.label.clone(),
                 kind: item.kind.map(|k| k as u8),
                 detail: item.detail.clone(),
-                documentation: item.documentation.as_ref().map(|d| Value::String(d.clone())),
+                documentation: item
+                    .documentation
+                    .as_ref()
+                    .map(|d| Value::String(d.clone())),
                 insert_text: item.insert_text.clone(),
                 insert_text_format: item.insert_text_format,
                 text_edit: None,
@@ -106,14 +109,16 @@ impl LspClient {
                     })
                 }),
                 data: item.data.clone(),
-            }
-        });
+            });
 
         Ok(convert_completion_item(lsp_item))
     }
 
     /// Request declaration locations
-    pub async fn declaration(&self, params: TextDocumentPositionParams) -> Result<DefinitionResult> {
+    pub async fn declaration(
+        &self,
+        params: TextDocumentPositionParams,
+    ) -> Result<DefinitionResult> {
         let lsp_params = json!({
             "textDocument": {
                 "uri": format!("file://{}", params.uri.replace('\\', "/"))
@@ -716,7 +721,11 @@ impl LspClient {
     }
 
     /// Request semantic tokens for a range of a document
-    pub async fn semantic_tokens_range(&self, uri: &str, range: Range) -> Result<SemanticTokensResult> {
+    pub async fn semantic_tokens_range(
+        &self,
+        uri: &str,
+        range: Range,
+    ) -> Result<SemanticTokensResult> {
         let lsp_params = json!({
             "textDocument": {
                 "uri": uri

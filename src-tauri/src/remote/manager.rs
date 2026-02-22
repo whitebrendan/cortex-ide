@@ -50,8 +50,8 @@ impl RemoteManager {
     /// Load saved profiles from disk (no secrets - those are in keyring)
     pub async fn load_profiles(&self) -> Result<(), RemoteError> {
         let config_path = Self::profiles_path();
-        if config_path.exists() {
-            let content = std::fs::read_to_string(&config_path)?;
+        if tokio::fs::try_exists(&config_path).await.unwrap_or(false) {
+            let content = tokio::fs::read_to_string(&config_path).await?;
             let loaded_profiles: Vec<ConnectionProfile> =
                 serde_json::from_str(&content).map_err(|e| {
                     RemoteError::IoError(std::io::Error::new(std::io::ErrorKind::InvalidData, e))
@@ -67,13 +67,13 @@ impl RemoteManager {
     pub async fn save_profiles(&self) -> Result<(), RemoteError> {
         let config_path = Self::profiles_path();
         if let Some(parent) = config_path.parent() {
-            std::fs::create_dir_all(parent)?;
+            tokio::fs::create_dir_all(parent).await?;
         }
         let profiles = self.profiles.read().await;
         let content = serde_json::to_string_pretty(&*profiles).map_err(|e| {
             RemoteError::IoError(std::io::Error::new(std::io::ErrorKind::InvalidData, e))
         })?;
-        std::fs::write(&config_path, content)?;
+        tokio::fs::write(&config_path, content).await?;
 
         // Set restrictive permissions on the config file
         set_file_permissions(&config_path)?;
@@ -365,8 +365,19 @@ impl RemoteManager {
 
     #[cfg(feature = "remote-ssh")]
     pub async fn disconnect(&self, connection_id: &str) -> Result<(), RemoteError> {
-        let mut connections = self.connections.write().await;
-        if connections.remove(connection_id).is_some() {
+        let removed = {
+            let mut connections = self.connections.write().await;
+            connections.remove(connection_id)
+        };
+        if let Some(conn) = removed {
+            let connection_id = connection_id.to_string();
+            tokio::task::spawn_blocking(move || {
+                if let Ok(conn) = conn.lock() {
+                    conn.close();
+                }
+            })
+            .await
+            .map_err(|e| RemoteError::ConnectionFailed(format!("Task join error: {}", e)))?;
             info!("Disconnected from {}", connection_id);
             Ok(())
         } else {
@@ -375,25 +386,63 @@ impl RemoteManager {
     }
 
     #[cfg(feature = "remote-ssh")]
+    pub async fn disconnect_all(&self) {
+        let all_connections: Vec<(String, Arc<Mutex<SshConnection>>)> = {
+            let mut connections = self.connections.write().await;
+            connections.drain().collect()
+        };
+        for (id, conn) in all_connections {
+            let _ = tokio::task::spawn_blocking(move || {
+                if let Ok(conn) = conn.lock() {
+                    conn.close();
+                }
+            })
+            .await;
+            info!("Disconnected from {}", id);
+        }
+    }
+
+    #[cfg(not(feature = "remote-ssh"))]
+    pub async fn disconnect_all(&self) {
+        let mut connections = self.connections.write().await;
+        connections.clear();
+    }
+
+    #[cfg(feature = "remote-ssh")]
     pub async fn get_connection_status(
         &self,
         connection_id: &str,
     ) -> Result<ConnectionInfo, RemoteError> {
-        let connections = self.connections.read().await;
-        if let Some(conn) = connections.get(connection_id) {
+        let conn = {
+            let connections = self.connections.read().await;
+            connections
+                .get(connection_id)
+                .cloned()
+                .ok_or_else(|| RemoteError::ConnectionNotFound(connection_id.to_string()))?
+        };
+
+        let connection_id = connection_id.to_string();
+        tokio::task::spawn_blocking(move || {
             let conn = conn
                 .lock()
                 .map_err(|e| RemoteError::ConnectionFailed(format!("Lock poisoned: {}", e)))?;
+            let status = if conn.is_alive() {
+                ConnectionStatus::Connected
+            } else {
+                ConnectionStatus::Error {
+                    message: "Connection lost".to_string(),
+                }
+            };
             Ok(ConnectionInfo {
-                id: connection_id.to_string(),
+                id: connection_id,
                 profile: conn.profile.clone(),
-                status: ConnectionStatus::Connected,
+                status,
                 home_directory: Some(conn.home_directory.clone()),
                 platform: Some(conn.platform.clone()),
             })
-        } else {
-            Err(RemoteError::ConnectionNotFound(connection_id.to_string()))
-        }
+        })
+        .await
+        .map_err(|e| RemoteError::ConnectionFailed(format!("Task join error: {}", e)))?
     }
 
     #[cfg(feature = "remote-ssh")]
@@ -445,9 +494,9 @@ impl RemoteManager {
                 path
             };
 
-            // Verify directory exists (opendir returns error if not)
-            let _dir = sftp
-                .opendir(std::path::Path::new(&resolved_path))
+            // Verify directory exists via stat (avoids leaking an opendir handle)
+            let dir_stat = sftp
+                .stat(std::path::Path::new(&resolved_path))
                 .map_err(|e| {
                     if e.code() == ssh2::ErrorCode::Session(-2) {
                         RemoteError::FileNotFound(resolved_path.clone())
@@ -455,6 +504,12 @@ impl RemoteManager {
                         RemoteError::SshError(e)
                     }
                 })?;
+            if !dir_stat.is_dir() {
+                return Err(RemoteError::InvalidPath(format!(
+                    "Not a directory: {}",
+                    resolved_path
+                )));
+            }
 
             let mut entries = Vec::new();
             for entry in sftp.readdir(std::path::Path::new(&resolved_path))? {
@@ -746,8 +801,9 @@ impl RemoteManager {
 
             if stat.is_dir() {
                 if recursive {
-                    // Use rm -rf for recursive deletion
-                    conn.exec_command(&format!("rm -rf '{}'", resolved_path))?;
+                    // Use rm -rf for recursive deletion (escape single quotes)
+                    let escaped = resolved_path.replace('\'', "'\\''");
+                    conn.exec_command(&format!("rm -rf '{}'", escaped))?;
                 } else {
                     sftp.rmdir(std::path::Path::new(&resolved_path))?;
                 }
@@ -791,7 +847,8 @@ impl RemoteManager {
             };
 
             if recursive {
-                conn.exec_command(&format!("mkdir -p '{}'", resolved_path))?;
+                let escaped = resolved_path.replace('\'', "'\\''");
+                conn.exec_command(&format!("mkdir -p '{}'", escaped))?;
             } else {
                 let sftp = conn.sftp()?;
                 sftp.mkdir(std::path::Path::new(&resolved_path), 0o755)?;
@@ -884,7 +941,8 @@ impl RemoteManager {
                 } else {
                     dir
                 };
-                format!("cd '{}' && {}", resolved_dir, command)
+                let escaped_dir = resolved_dir.replace('\'', "'\\''");
+                format!("cd '{}' && {}", escaped_dir, command)
             } else {
                 command
             };

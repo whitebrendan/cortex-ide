@@ -554,10 +554,13 @@ impl SSHTerminalState {
 
     /// Disconnect SSH session
     pub fn disconnect(&self, app_handle: &AppHandle, session_id: &str) -> Result<(), String> {
-        let mut sessions = self.sessions.lock();
+        let removed = {
+            let mut sessions = self.sessions.lock();
+            sessions.remove(session_id)
+        };
 
-        if let Some(session) = sessions.remove(session_id) {
-            let session = session.lock();
+        if let Some(session_arc) = removed {
+            let session = session_arc.lock();
 
             // Signal reader thread to stop
             session.running.store(false, Ordering::Relaxed);
@@ -568,6 +571,9 @@ impl SSHTerminalState {
                 let _ = channel_guard.send_eof();
                 let _ = channel_guard.close();
             }
+
+            // Disconnect the SSH session
+            let _ = session.session.disconnect(None, "closing connection", None);
 
             // Emit disconnected event
             let status = SSHTerminalStatus {
@@ -647,14 +653,21 @@ pub async fn ssh_connect(
     cols: Option<u16>,
     rows: Option<u16>,
 ) -> Result<SSHTerminalInfo, String> {
-    let state = app.state::<SSHTerminalState>();
-    state.connect(&app, config, cols.unwrap_or(120), rows.unwrap_or(30))
+    let state = app.state::<SSHTerminalState>().inner().clone();
+    let app_clone = app.clone();
+    tokio::task::spawn_blocking(move || {
+        state.connect(&app_clone, config, cols.unwrap_or(120), rows.unwrap_or(30))
+    })
+    .await
+    .map_err(|e| format!("Task join error: {}", e))?
 }
 
 #[tauri::command]
 pub async fn ssh_pty_write(app: AppHandle, session_id: String, data: String) -> Result<(), String> {
-    let state = app.state::<SSHTerminalState>();
-    state.write(&session_id, &data)
+    let state = app.state::<SSHTerminalState>().inner().clone();
+    tokio::task::spawn_blocking(move || state.write(&session_id, &data))
+        .await
+        .map_err(|e| format!("Task join error: {}", e))?
 }
 
 #[tauri::command]
@@ -664,20 +677,27 @@ pub async fn ssh_pty_resize(
     cols: u16,
     rows: u16,
 ) -> Result<(), String> {
-    let state = app.state::<SSHTerminalState>();
-    state.resize(&session_id, cols, rows)
+    let state = app.state::<SSHTerminalState>().inner().clone();
+    tokio::task::spawn_blocking(move || state.resize(&session_id, cols, rows))
+        .await
+        .map_err(|e| format!("Task join error: {}", e))?
 }
 
 #[tauri::command]
 pub async fn ssh_pty_ack(app: AppHandle, session_id: String, bytes: usize) -> Result<(), String> {
-    let state = app.state::<SSHTerminalState>();
-    state.acknowledge(&session_id, bytes)
+    let state = app.state::<SSHTerminalState>().inner().clone();
+    tokio::task::spawn_blocking(move || state.acknowledge(&session_id, bytes))
+        .await
+        .map_err(|e| format!("Task join error: {}", e))?
 }
 
 #[tauri::command]
 pub async fn ssh_disconnect(app: AppHandle, session_id: String) -> Result<(), String> {
-    let state = app.state::<SSHTerminalState>();
-    state.disconnect(&app, &session_id)
+    let state = app.state::<SSHTerminalState>().inner().clone();
+    let app_clone = app.clone();
+    tokio::task::spawn_blocking(move || state.disconnect(&app_clone, &session_id))
+        .await
+        .map_err(|e| format!("Task join error: {}", e))?
 }
 
 #[tauri::command]
@@ -685,14 +705,18 @@ pub async fn ssh_get_session(
     app: AppHandle,
     session_id: String,
 ) -> Result<Option<SSHTerminalInfo>, String> {
-    let state = app.state::<SSHTerminalState>();
-    state.get_session(&session_id)
+    let state = app.state::<SSHTerminalState>().inner().clone();
+    tokio::task::spawn_blocking(move || state.get_session(&session_id))
+        .await
+        .map_err(|e| format!("Task join error: {}", e))?
 }
 
 #[tauri::command]
 pub async fn ssh_list_sessions(app: AppHandle) -> Result<Vec<SSHTerminalInfo>, String> {
-    let state = app.state::<SSHTerminalState>();
-    state.list_sessions()
+    let state = app.state::<SSHTerminalState>().inner().clone();
+    tokio::task::spawn_blocking(move || state.list_sessions())
+        .await
+        .map_err(|e| format!("Task join error: {}", e))?
 }
 
 #[tauri::command]
@@ -701,14 +725,19 @@ pub async fn ssh_exec(
     session_id: String,
     command: String,
 ) -> Result<String, String> {
-    let state = app.state::<SSHTerminalState>();
-    state.exec_command(&session_id, &command)
+    let state = app.state::<SSHTerminalState>().inner().clone();
+    tokio::task::spawn_blocking(move || state.exec_command(&session_id, &command))
+        .await
+        .map_err(|e| format!("Task join error: {}", e))?
 }
 
 #[tauri::command]
 pub async fn ssh_close_all(app: AppHandle) -> Result<(), String> {
-    let state = app.state::<SSHTerminalState>();
-    state.close_all(&app)
+    let state = app.state::<SSHTerminalState>().inner().clone();
+    let app_clone = app.clone();
+    tokio::task::spawn_blocking(move || state.close_all(&app_clone))
+        .await
+        .map_err(|e| format!("Task join error: {}", e))?
 }
 
 // ============================================================================
@@ -747,10 +776,11 @@ fn get_ssh_profiles_path(app: &AppHandle) -> Result<std::path::PathBuf, String> 
     Ok(path)
 }
 
-fn load_ssh_profiles(app: &AppHandle) -> Result<Vec<SSHProfile>, String> {
+async fn load_ssh_profiles(app: &AppHandle) -> Result<Vec<SSHProfile>, String> {
     let path = get_ssh_profiles_path(app)?;
-    if path.exists() {
-        let content = std::fs::read_to_string(&path)
+    if tokio::fs::try_exists(&path).await.unwrap_or(false) {
+        let content = tokio::fs::read_to_string(&path)
+            .await
             .map_err(|e| format!("Failed to read SSH profiles: {}", e))?;
         serde_json::from_str(&content).map_err(|e| format!("Failed to parse SSH profiles: {}", e))
     } else {
@@ -758,17 +788,19 @@ fn load_ssh_profiles(app: &AppHandle) -> Result<Vec<SSHProfile>, String> {
     }
 }
 
-fn save_ssh_profiles(app: &AppHandle, profiles: &[SSHProfile]) -> Result<(), String> {
+async fn save_ssh_profiles(app: &AppHandle, profiles: &[SSHProfile]) -> Result<(), String> {
     let path = get_ssh_profiles_path(app)?;
     let content = serde_json::to_string_pretty(&profiles)
         .map_err(|e| format!("Failed to serialize SSH profiles: {}", e))?;
-    std::fs::write(&path, content).map_err(|e| format!("Failed to write SSH profiles: {}", e))
+    tokio::fs::write(&path, content)
+        .await
+        .map_err(|e| format!("Failed to write SSH profiles: {}", e))
 }
 
 /// Save or update an SSH profile
 #[tauri::command]
 pub async fn ssh_save_profile(app: AppHandle, profile: SSHProfile) -> Result<(), String> {
-    let mut profiles = load_ssh_profiles(&app)?;
+    let mut profiles = load_ssh_profiles(&app).await?;
 
     // Update if exists, otherwise add
     if let Some(existing) = profiles.iter_mut().find(|p| p.id == profile.id) {
@@ -777,7 +809,7 @@ pub async fn ssh_save_profile(app: AppHandle, profile: SSHProfile) -> Result<(),
         profiles.push(profile);
     }
 
-    save_ssh_profiles(&app, &profiles)?;
+    save_ssh_profiles(&app, &profiles).await?;
     tracing::info!("SSH profile saved");
     Ok(())
 }
@@ -785,9 +817,9 @@ pub async fn ssh_save_profile(app: AppHandle, profile: SSHProfile) -> Result<(),
 /// Delete an SSH profile
 #[tauri::command]
 pub async fn ssh_delete_profile(app: AppHandle, profile_id: String) -> Result<(), String> {
-    let mut profiles = load_ssh_profiles(&app)?;
+    let mut profiles = load_ssh_profiles(&app).await?;
     profiles.retain(|p| p.id != profile_id);
-    save_ssh_profiles(&app, &profiles)?;
+    save_ssh_profiles(&app, &profiles).await?;
     tracing::info!("SSH profile deleted: {}", profile_id);
     Ok(())
 }
@@ -801,5 +833,5 @@ pub fn ssh_generate_profile_id() -> String {
 /// List all SSH profiles
 #[tauri::command]
 pub async fn ssh_list_profiles(app: AppHandle) -> Result<Vec<SSHProfile>, String> {
-    load_ssh_profiles(&app)
+    load_ssh_profiles(&app).await
 }

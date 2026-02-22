@@ -689,6 +689,12 @@ pub fn handle_run_event(app: &AppHandle, event: RunEvent) {
                 info!("All SSH sessions closed on app exit");
             }
 
+            {
+                let remote_manager = app.state::<Arc<RemoteManager>>();
+                tauri::async_runtime::block_on(remote_manager.disconnect_all());
+                info!("All remote SSH connections closed on app exit");
+            }
+
             let lsp_state = app.state::<LspState>();
             let _ = lsp_state.stop_all_servers();
             info!("All LSP servers stopped on app exit");

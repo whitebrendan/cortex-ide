@@ -91,7 +91,10 @@ impl LspClient {
     }
 
     /// Resolve a document link (fill in target if not present)
-    pub async fn document_link_resolve(&self, link: commands::DocumentLink) -> Result<commands::DocumentLink> {
+    pub async fn document_link_resolve(
+        &self,
+        link: commands::DocumentLink,
+    ) -> Result<commands::DocumentLink> {
         let lsp_params = json!({
             "range": {
                 "start": { "line": link.range.start.line, "character": link.range.start.character },
@@ -108,13 +111,24 @@ impl LspClient {
             return Ok(link);
         }
 
-        let range = result.get("range").and_then(|r| {
-            let lsp_range: LspRange = serde_json::from_value(r.clone()).ok()?;
-            Some(convert_range(lsp_range))
-        }).unwrap_or(link.range.clone());
+        let range = result
+            .get("range")
+            .and_then(|r| {
+                let lsp_range: LspRange = serde_json::from_value(r.clone()).ok()?;
+                Some(convert_range(lsp_range))
+            })
+            .unwrap_or(link.range.clone());
 
-        let target = result.get("target").and_then(|t| t.as_str()).map(String::from).or(link.target.clone());
-        let tooltip = result.get("tooltip").and_then(|t| t.as_str()).map(String::from).or(link.tooltip.clone());
+        let target = result
+            .get("target")
+            .and_then(|t| t.as_str())
+            .map(String::from)
+            .or(link.target.clone());
+        let tooltip = result
+            .get("tooltip")
+            .and_then(|t| t.as_str())
+            .map(String::from)
+            .or(link.tooltip.clone());
         let data = result.get("data").cloned().or(link.data.clone());
 
         Ok(commands::DocumentLink {
@@ -151,7 +165,10 @@ impl LspClient {
 
         match range {
             Some(range) => {
-                let expression = result.get("expression").and_then(|e| e.as_str()).map(String::from);
+                let expression = result
+                    .get("expression")
+                    .and_then(|e| e.as_str())
+                    .map(String::from);
                 Ok(Some(commands::EvaluatableExpression { range, expression }))
             }
             None => Ok(None),

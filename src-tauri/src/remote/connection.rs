@@ -39,8 +39,14 @@ impl SshConnection {
     }
 
     pub fn exec_command(&self, command: &str) -> Result<CommandResult, RemoteError> {
-        let mut channel = self.session.channel_session()?;
-        channel.exec(command)?;
+        let mut channel = self
+            .session
+            .channel_session()
+            .map_err(|e| RemoteError::ChannelError(format!("Failed to open channel: {}", e)))?;
+        channel.exec(command).map_err(|e| {
+            let _ = channel.close();
+            RemoteError::ChannelError(format!("Failed to exec command: {}", e))
+        })?;
 
         let mut stdout = String::new();
         let mut stderr = String::new();
@@ -48,14 +54,41 @@ impl SshConnection {
         channel.read_to_string(&mut stdout)?;
         channel.stderr().read_to_string(&mut stderr)?;
 
-        channel.wait_close()?;
-        let exit_code = channel.exit_status()?;
+        channel
+            .wait_close()
+            .map_err(|e| RemoteError::ChannelError(format!("Channel wait_close failed: {}", e)))?;
+        let exit_code = channel
+            .exit_status()
+            .map_err(|e| RemoteError::ChannelError(format!("Failed to get exit status: {}", e)))?;
 
         Ok(CommandResult {
             stdout,
             stderr,
             exit_code,
         })
+    }
+
+    pub fn is_alive(&self) -> bool {
+        self.session.authenticated()
+            && self
+                .session
+                .channel_session()
+                .map(|mut ch| {
+                    let _ = ch.close();
+                    true
+                })
+                .unwrap_or(false)
+    }
+
+    pub fn close(&self) {
+        let _ = self.session.disconnect(None, "closing connection", None);
+    }
+}
+
+#[cfg(feature = "remote-ssh")]
+impl Drop for SshConnection {
+    fn drop(&mut self) {
+        let _ = self.session.disconnect(None, "closing connection", None);
     }
 }
 

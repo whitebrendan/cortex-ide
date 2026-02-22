@@ -143,11 +143,7 @@ pub async fn git_diff_between_commits(
 
 /// Get diff for a specific file at a specific commit
 #[tauri::command]
-pub async fn git_diff_commit(
-    path: String,
-    file: String,
-    commit: String,
-) -> Result<String, String> {
+pub async fn git_diff_commit(path: String, file: String, commit: String) -> Result<String, String> {
     tokio::task::spawn_blocking(move || {
         let repo_root = get_repo_root(&path)?;
         let repo_root_path = std::path::Path::new(&repo_root);
