@@ -165,7 +165,10 @@ pub fn git_status_sync(path: &str) -> Result<StatusResponse, String> {
             } else {
                 // Detached HEAD
                 head.target()
-                    .map(|oid| oid.to_string()[..7].to_string())
+                    .map(|oid| {
+                        let s = oid.to_string();
+                        s[..7.min(s.len())].to_string()
+                    })
                     .unwrap_or_else(|| "HEAD".to_string())
             }
         }
@@ -427,7 +430,10 @@ pub async fn git_current_branch(path: String) -> Result<String, String> {
                 } else {
                     Ok(head
                         .target()
-                        .map(|oid| oid.to_string()[..7].to_string())
+                        .map(|oid| {
+                            let s = oid.to_string();
+                            s[..7.min(s.len())].to_string()
+                        })
                         .unwrap_or_else(|| "HEAD".to_string()))
                 }
             }

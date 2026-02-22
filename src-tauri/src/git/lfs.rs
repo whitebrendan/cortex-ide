@@ -451,7 +451,11 @@ pub async fn git_lfs_locks(path: String) -> Result<Vec<LFSLock>, String> {
         let stdout = String::from_utf8_lossy(&output.stdout);
 
         // Parse JSON output
-        let locks: Vec<LFSLock> = serde_json::from_str(&stdout).unwrap_or_else(|_| {
+        let locks: Vec<LFSLock> = serde_json::from_str(&stdout).unwrap_or_else(|e| {
+            warn!(
+                "Failed to parse LFS locks JSON, falling back to text parsing: {}",
+                e
+            );
             // Fallback: parse non-JSON output
             stdout
                 .lines()

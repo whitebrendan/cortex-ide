@@ -52,7 +52,8 @@ fn git_worktree_list_sync(path: &str) -> Result<Vec<WorktreeInfo>, String> {
             } else if line.starts_with("branch ") {
                 let branch = line
                     .strip_prefix("branch refs/heads/")
-                    .unwrap_or(line.strip_prefix("branch ").unwrap_or(""));
+                    .or_else(|| line.strip_prefix("branch "))
+                    .unwrap_or("");
                 wt.branch = Some(branch.to_string());
             } else if line == "bare" {
                 wt.is_bare = true;
