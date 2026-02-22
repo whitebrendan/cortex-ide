@@ -1,4 +1,4 @@
-import { createContext, useContext, createSignal, onMount, ParentProps } from "solid-js";
+import { createContext, useContext, createSignal, onMount, onCleanup, ParentProps } from "solid-js";
 
 export type ColorThemeId = "01" | "02" | "03" | "04" | "05";
 
@@ -115,6 +115,14 @@ export function CortexColorThemeProvider(props: ParentProps) {
     applyAccent(accentColor());
     const css = customCss();
     if (css) applyCustomCss(css);
+  });
+
+  onCleanup(() => {
+    if (customStyleEl) {
+      customStyleEl.remove();
+      customStyleEl = null;
+    }
+    document.documentElement.style.removeProperty("--cortex-accent-primary");
   });
 
   return (

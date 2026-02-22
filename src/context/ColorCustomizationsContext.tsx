@@ -606,7 +606,29 @@ function loadFromStorage(): ThemeColorCustomizations {
       return {};
     }
 
-    return parsed as ThemeColorCustomizations;
+    // Filter out invalid color values on load
+    const validated: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+      if (key.startsWith("[") && key.endsWith("]")) {
+        // Theme-specific entry — validate nested color values
+        if (typeof value === "object" && value !== null) {
+          const themeColors: ColorCustomization = {};
+          for (const [colorKey, colorVal] of Object.entries(value as Record<string, unknown>)) {
+            if (typeof colorVal === "string" && isValidColor(colorVal)) {
+              themeColors[colorKey] = colorVal;
+            }
+          }
+          if (Object.keys(themeColors).length > 0) {
+            validated[key] = themeColors;
+          }
+        }
+      } else if (typeof value === "string" && isValidColor(value)) {
+        // Global color entry
+        validated[key] = value;
+      }
+    }
+
+    return validated as ThemeColorCustomizations;
   } catch (e) {
     console.error("[ColorCustomizations] Failed to load from storage:", e);
     return {};

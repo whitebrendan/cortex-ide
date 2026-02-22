@@ -1098,6 +1098,66 @@ function matchGlobPattern(filename: string, pattern: string): boolean {
 }
 
 // ============================================================================
+// Validation Helpers
+// ============================================================================
+
+/** Clamp a number to a range, returning the default if NaN/undefined */
+function clampNum(value: number | undefined, min: number, max: number, fallback: number): number {
+  if (value === undefined || Number.isNaN(value)) return fallback;
+  return Math.max(min, Math.min(max, value));
+}
+
+/** Validate that a string is one of the allowed values, or return the fallback */
+function enumStr<T extends string>(value: string | undefined, allowed: readonly T[], fallback: T): T {
+  if (value !== undefined && (allowed as readonly string[]).includes(value)) return value as T;
+  return fallback;
+}
+
+/** Merge loaded settings with defaults and clamp/validate individual field values */
+function mergeAndValidateSettings(loaded: Partial<CortexSettings>): CortexSettings {
+  const merged: CortexSettings = {
+    ...DEFAULT_SETTINGS,
+    ...loaded,
+    editor: { ...DEFAULT_SETTINGS.editor, ...loaded?.editor },
+    theme: { ...DEFAULT_SETTINGS.theme, ...loaded?.theme },
+    terminal: { ...DEFAULT_SETTINGS.terminal, ...loaded?.terminal },
+    ai: { ...DEFAULT_SETTINGS.ai, ...loaded?.ai },
+    security: { ...DEFAULT_SETTINGS.security, ...loaded?.security },
+    files: { ...DEFAULT_SETTINGS.files, ...loaded?.files },
+    explorer: { ...DEFAULT_SETTINGS.explorer, ...loaded?.explorer },
+    zenMode: { ...DEFAULT_SETTINGS.zenMode, ...loaded?.zenMode },
+    screencastMode: { ...DEFAULT_SETTINGS.screencastMode, ...loaded?.screencastMode },
+    search: { ...DEFAULT_SETTINGS.search, ...loaded?.search },
+    debug: { ...DEFAULT_SETTINGS.debug, ...loaded?.debug },
+    git: { ...DEFAULT_SETTINGS.git, ...loaded?.git },
+    http: { ...DEFAULT_SETTINGS.http, ...loaded?.http },
+    commandPalette: { ...DEFAULT_SETTINGS.commandPalette, ...loaded?.commandPalette },
+    workbench: { ...DEFAULT_SETTINGS.workbench, ...loaded?.workbench, editor: { ...DEFAULT_SETTINGS.workbench.editor, ...loaded?.workbench?.editor } },
+  };
+
+  // Clamp numeric fields to valid ranges
+  merged.editor.fontSize = clampNum(merged.editor.fontSize, 1, 200, DEFAULT_SETTINGS.editor.fontSize);
+  merged.editor.tabSize = clampNum(merged.editor.tabSize, 1, 32, DEFAULT_SETTINGS.editor.tabSize);
+  merged.editor.lineHeight = clampNum(merged.editor.lineHeight, 0.5, 5, DEFAULT_SETTINGS.editor.lineHeight);
+  merged.editor.minimapWidth = clampNum(merged.editor.minimapWidth, 0, 500, DEFAULT_SETTINGS.editor.minimapWidth);
+  merged.theme.uiFontSize = clampNum(merged.theme.uiFontSize, 8, 40, DEFAULT_SETTINGS.theme.uiFontSize);
+  merged.theme.zoomLevel = clampNum(merged.theme.zoomLevel, 0.25, 5, DEFAULT_SETTINGS.theme.zoomLevel);
+  merged.terminal.fontSize = clampNum(merged.terminal.fontSize, 1, 200, DEFAULT_SETTINGS.terminal.fontSize);
+  merged.terminal.lineHeight = clampNum(merged.terminal.lineHeight, 0.5, 5, DEFAULT_SETTINGS.terminal.lineHeight);
+  merged.files.autoSaveDelay = clampNum(merged.files.autoSaveDelay, 100, 60000, DEFAULT_SETTINGS.files.autoSaveDelay);
+
+  // Validate enum-like string fields
+  merged.editor.wordWrap = enumStr(merged.editor.wordWrap, ["off", "on", "wordWrapColumn", "bounded"] as const, "off");
+  merged.editor.lineNumbers = enumStr(merged.editor.lineNumbers, ["on", "off", "relative", "interval"] as const, "on");
+  merged.editor.cursorStyle = enumStr(merged.editor.cursorStyle, ["line", "block", "underline", "line-thin", "block-outline", "underline-thin"] as const, "line");
+  merged.editor.cursorBlink = enumStr(merged.editor.cursorBlink, ["blink", "smooth", "phase", "expand", "solid"] as const, "blink");
+  merged.editor.renderWhitespace = enumStr(merged.editor.renderWhitespace, ["none", "boundary", "selection", "trailing", "all"] as const, "selection");
+  merged.files.autoSave = enumStr(merged.files.autoSave, ["off", "afterDelay", "onFocusChange", "onWindowChange"] as const, "off");
+
+  return merged;
+}
+
+// ============================================================================
 // Provider
 // ============================================================================
 
@@ -1149,27 +1209,7 @@ export function SettingsProvider(props: ParentProps) {
     });
     try {
       const loaded = await invoke<CortexSettings>("settings_load");
-      // Validate loaded settings have required structure, fallback to defaults for missing sections
-      const validated: CortexSettings = {
-        ...DEFAULT_SETTINGS,
-        ...loaded,
-        // Ensure nested objects have defaults merged properly
-        editor: { ...DEFAULT_SETTINGS.editor, ...loaded?.editor },
-        theme: { ...DEFAULT_SETTINGS.theme, ...loaded?.theme },
-        terminal: { ...DEFAULT_SETTINGS.terminal, ...loaded?.terminal },
-        ai: { ...DEFAULT_SETTINGS.ai, ...loaded?.ai },
-        security: { ...DEFAULT_SETTINGS.security, ...loaded?.security },
-        files: { ...DEFAULT_SETTINGS.files, ...loaded?.files },
-        explorer: { ...DEFAULT_SETTINGS.explorer, ...loaded?.explorer },
-        zenMode: { ...DEFAULT_SETTINGS.zenMode, ...loaded?.zenMode },
-        screencastMode: { ...DEFAULT_SETTINGS.screencastMode, ...loaded?.screencastMode },
-        search: { ...DEFAULT_SETTINGS.search, ...loaded?.search },
-        debug: { ...DEFAULT_SETTINGS.debug, ...loaded?.debug },
-        git: { ...DEFAULT_SETTINGS.git, ...loaded?.git },
-        http: { ...DEFAULT_SETTINGS.http, ...loaded?.http },
-        commandPalette: { ...DEFAULT_SETTINGS.commandPalette, ...loaded?.commandPalette },
-        workbench: { ...DEFAULT_SETTINGS.workbench, ...loaded?.workbench, editor: { ...DEFAULT_SETTINGS.workbench.editor, ...loaded?.workbench?.editor } },
-      };
+      const validated = mergeAndValidateSettings(loaded);
       batch(() => {
         setWsState("userSettings", reconcile(validated));
         setState("isDirty", false);
@@ -1747,25 +1787,7 @@ const updateCommandPaletteSetting = async <K extends keyof CommandPaletteSetting
       const cached = localStorage.getItem(SETTINGS_CACHE_KEY);
       if (cached) {
         const parsed = JSON.parse(cached) as CortexSettings;
-        const validated: CortexSettings = {
-          ...DEFAULT_SETTINGS,
-          ...parsed,
-          editor: { ...DEFAULT_SETTINGS.editor, ...parsed?.editor },
-          theme: { ...DEFAULT_SETTINGS.theme, ...parsed?.theme },
-          terminal: { ...DEFAULT_SETTINGS.terminal, ...parsed?.terminal },
-          ai: { ...DEFAULT_SETTINGS.ai, ...parsed?.ai },
-          security: { ...DEFAULT_SETTINGS.security, ...parsed?.security },
-          files: { ...DEFAULT_SETTINGS.files, ...parsed?.files },
-          explorer: { ...DEFAULT_SETTINGS.explorer, ...parsed?.explorer },
-          zenMode: { ...DEFAULT_SETTINGS.zenMode, ...parsed?.zenMode },
-          screencastMode: { ...DEFAULT_SETTINGS.screencastMode, ...parsed?.screencastMode },
-          search: { ...DEFAULT_SETTINGS.search, ...parsed?.search },
-          debug: { ...DEFAULT_SETTINGS.debug, ...parsed?.debug },
-          git: { ...DEFAULT_SETTINGS.git, ...parsed?.git },
-          http: { ...DEFAULT_SETTINGS.http, ...parsed?.http },
-          commandPalette: { ...DEFAULT_SETTINGS.commandPalette, ...parsed?.commandPalette },
-          workbench: { ...DEFAULT_SETTINGS.workbench, ...parsed?.workbench, editor: { ...DEFAULT_SETTINGS.workbench.editor, ...parsed?.workbench?.editor } },
-        };
+        const validated = mergeAndValidateSettings(parsed);
         batch(() => {
           setWsState("userSettings", reconcile(validated));
           setState("loading", false);

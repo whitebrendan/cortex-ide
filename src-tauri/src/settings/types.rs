@@ -847,6 +847,16 @@ impl Default for CortexSettings {
 impl CortexSettings {
     /// Migrate settings from older versions
     pub fn migrate(&mut self) {
+        // Don't downgrade settings from a future version
+        if self.version > SETTINGS_VERSION {
+            tracing::warn!(
+                "Settings version {} is newer than current {}; leaving as-is",
+                self.version,
+                SETTINGS_VERSION
+            );
+            return;
+        }
+
         if self.version < SETTINGS_VERSION {
             tracing::info!(
                 "Migrating settings from version {} to {}",
@@ -866,5 +876,166 @@ impl CortexSettings {
 
             self.version = SETTINGS_VERSION;
         }
+    }
+
+    /// Clamp numeric fields and fix invalid enum values to safe defaults.
+    ///
+    /// Called after loading/importing to ensure no out-of-range values persist.
+    pub fn validate_fields(&mut self) {
+        // Editor numeric bounds
+        self.editor.font_size = self.editor.font_size.clamp(1, 200);
+        self.editor.tab_size = self.editor.tab_size.clamp(1, 32);
+        self.editor.line_height = self.editor.line_height.clamp(0.5, 5.0);
+        self.editor.minimap_width = self.editor.minimap_width.clamp(0, 500);
+
+        // Theme numeric bounds
+        self.theme.ui_font_size = self.theme.ui_font_size.clamp(8, 40);
+        self.theme.zoom_level = self.theme.zoom_level.clamp(0.25, 5.0);
+
+        // Terminal numeric bounds
+        self.terminal.font_size = self.terminal.font_size.clamp(1, 200);
+        self.terminal.line_height = self.terminal.line_height.clamp(0.5, 5.0);
+        self.terminal.scrollback = self.terminal.scrollback.clamp(100, 1_000_000);
+
+        // Files
+        self.files.auto_save_delay = self.files.auto_save_delay.clamp(100, 60_000);
+
+        // Search
+        self.search.max_results = self.search.max_results.clamp(1, 1_000_000);
+        self.search.search_on_type_delay = self.search.search_on_type_delay.clamp(0, 10_000);
+
+        // Screencast mode
+        self.screencast_mode.font_size = self.screencast_mode.font_size.clamp(8, 100);
+        self.screencast_mode.keyboard_overlay_timeout =
+            self.screencast_mode.keyboard_overlay_timeout.clamp(100, 10_000);
+
+        // Command palette
+        self.command_palette.history_limit = self.command_palette.history_limit.clamp(1, 1000);
+
+        // Validate enum-like string fields by resetting invalid values to defaults
+        let valid_word_wraps = ["off", "on", "wordWrapColumn", "bounded"];
+        if !valid_word_wraps.contains(&self.editor.word_wrap.as_str()) {
+            self.editor.word_wrap = "off".to_string();
+        }
+
+        let valid_line_numbers = ["on", "off", "relative", "interval"];
+        if !valid_line_numbers.contains(&self.editor.line_numbers.as_str()) {
+            self.editor.line_numbers = "on".to_string();
+        }
+
+        let valid_cursor_styles = ["line", "block", "underline", "line-thin", "block-outline", "underline-thin"];
+        if !valid_cursor_styles.contains(&self.editor.cursor_style.as_str()) {
+            self.editor.cursor_style = "line".to_string();
+        }
+
+        let valid_cursor_blinks = ["blink", "smooth", "phase", "expand", "solid"];
+        if !valid_cursor_blinks.contains(&self.editor.cursor_blink.as_str()) {
+            self.editor.cursor_blink = "blink".to_string();
+        }
+
+        let valid_render_whitespace = ["none", "boundary", "selection", "trailing", "all"];
+        if !valid_render_whitespace.contains(&self.editor.render_whitespace.as_str()) {
+            self.editor.render_whitespace = "selection".to_string();
+        }
+
+        let valid_auto_save = ["off", "afterDelay", "onFocusChange", "onWindowChange"];
+        if !valid_auto_save.contains(&self.files.auto_save.as_str()) {
+            self.files.auto_save = "off".to_string();
+        }
+
+        let valid_eol = ["auto", "lf", "crlf"];
+        if !valid_eol.contains(&self.files.eol.as_str()) {
+            self.files.eol = "auto".to_string();
+        }
+
+        let valid_sort_order = ["name", "type", "modified"];
+        if !valid_sort_order.contains(&self.explorer.sort_order.as_str()) {
+            self.explorer.sort_order = "name".to_string();
+        }
+
+        let valid_proxy_support = ["off", "on", "fallback"];
+        if !valid_proxy_support.contains(&self.http.proxy_support.as_str()) {
+            self.http.proxy_support = "fallback".to_string();
+        }
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn migrate_noop_at_current_version() {
+        let mut s = CortexSettings::default();
+        let original_version = s.version;
+        s.migrate();
+        assert_eq!(s.version, original_version);
+    }
+
+    #[test]
+    fn migrate_future_version_no_downgrade() {
+        let mut s = CortexSettings::default();
+        s.version = SETTINGS_VERSION + 10;
+        s.migrate();
+        assert_eq!(s.version, SETTINGS_VERSION + 10);
+    }
+
+    #[test]
+    fn validate_fields_clamps_font_size() {
+        let mut s = CortexSettings::default();
+        s.editor.font_size = 0;
+        s.validate_fields();
+        assert_eq!(s.editor.font_size, 1);
+
+        s.editor.font_size = 999;
+        s.validate_fields();
+        assert_eq!(s.editor.font_size, 200);
+    }
+
+    #[test]
+    fn validate_fields_clamps_tab_size() {
+        let mut s = CortexSettings::default();
+        s.editor.tab_size = 0;
+        s.validate_fields();
+        assert_eq!(s.editor.tab_size, 1);
+
+        s.editor.tab_size = 100;
+        s.validate_fields();
+        assert_eq!(s.editor.tab_size, 32);
+    }
+
+    #[test]
+    fn validate_fields_resets_invalid_enum() {
+        let mut s = CortexSettings::default();
+        s.editor.word_wrap = "invalid".to_string();
+        s.editor.cursor_style = "bogus".to_string();
+        s.files.auto_save = "nope".to_string();
+        s.validate_fields();
+        assert_eq!(s.editor.word_wrap, "off");
+        assert_eq!(s.editor.cursor_style, "line");
+        assert_eq!(s.files.auto_save, "off");
+    }
+
+    #[test]
+    fn validate_fields_preserves_valid_values() {
+        let mut s = CortexSettings::default();
+        s.editor.font_size = 16;
+        s.editor.word_wrap = "bounded".to_string();
+        s.validate_fields();
+        assert_eq!(s.editor.font_size, 16);
+        assert_eq!(s.editor.word_wrap, "bounded");
+    }
+
+    #[test]
+    fn validate_fields_clamps_zoom_level() {
+        let mut s = CortexSettings::default();
+        s.theme.zoom_level = 0.1;
+        s.validate_fields();
+        assert_eq!(s.theme.zoom_level, 0.25);
+
+        s.theme.zoom_level = 10.0;
+        s.validate_fields();
+        assert_eq!(s.theme.zoom_level, 5.0);
     }
 }

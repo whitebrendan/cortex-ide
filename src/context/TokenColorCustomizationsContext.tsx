@@ -268,7 +268,37 @@ function loadFromStorage(): ThemeTokenCustomizations {
       return {};
     }
 
-    return parsed as ThemeTokenCustomizations;
+    // Validate color values on load to prevent invalid data from entering state
+    const validated: ThemeTokenCustomizations = {};
+    const simpleKeys = ["comments", "keywords", "strings", "numbers", "types", "functions", "variables", "regexes"];
+
+    for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+      if (key.startsWith("[") && key.endsWith("]")) {
+        if (typeof value === "object" && value !== null) {
+          const themeEntry: Record<string, unknown> = {};
+          const v = value as Record<string, unknown>;
+          for (const tk of simpleKeys) {
+            if (typeof v[tk] === "string" && isValidColor(v[tk] as string)) {
+              themeEntry[tk] = v[tk];
+            }
+          }
+          if (Array.isArray(v.textMateRules)) {
+            themeEntry.textMateRules = v.textMateRules;
+          }
+          if (Object.keys(themeEntry).length > 0) {
+            validated[key] = themeEntry as TokenColorCustomization;
+          }
+        }
+      } else if (typeof value === "string" && simpleKeys.includes(key)) {
+        if (isValidColor(value)) {
+          validated[key] = value;
+        }
+      } else if (key === "textMateRules" && Array.isArray(value)) {
+        validated[key] = value as TextMateRule[];
+      }
+    }
+
+    return validated;
   } catch (e) {
     console.error("[TokenColorCustomizations] Failed to load from storage:", e);
     return {};

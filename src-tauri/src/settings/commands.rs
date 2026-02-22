@@ -40,33 +40,7 @@ pub async fn settings_load(app: AppHandle) -> Result<CortexSettings, String> {
         }
     }
 
-    let settings_path = get_settings_path()?;
-
-    let settings = if settings_path.exists() {
-        let content = fs::read_to_string(&settings_path)
-            .map_err(|e| format!("Failed to read settings file: {}", e))?;
-
-        match serde_json::from_str::<CortexSettings>(&content) {
-            Ok(mut loaded) => {
-                loaded.migrate();
-
-                // Update API key presence flags from keyring
-                loaded.ai.has_supermaven_api_key =
-                    SecureApiKeyStore::has_api_key("supermaven_api_key").unwrap_or(false);
-                loaded.http.has_proxy_authorization =
-                    SecureApiKeyStore::has_api_key("proxy_authorization").unwrap_or(false);
-
-                loaded
-            }
-            Err(e) => {
-                tracing::warn!("Failed to parse settings, using defaults: {}", e);
-                CortexSettings::default()
-            }
-        }
-    } else {
-        info!("No settings file found, using defaults");
-        CortexSettings::default()
-    };
+    let settings = super::storage::load_settings_from_disk().await?;
 
     // Update state
     if let Ok(mut guard) = settings_state.0.lock() {
@@ -303,13 +277,34 @@ pub async fn settings_export(app: AppHandle) -> Result<String, String> {
     serde_json::to_string_pretty(&settings).map_err(|e| format!("Failed to export settings: {}", e))
 }
 
+/// Maximum allowed size for imported settings JSON (1 MB)
+const MAX_IMPORT_SIZE: usize = 1_048_576;
+
 /// Import settings from a JSON string
 #[tauri::command]
 pub async fn settings_import(app: AppHandle, json: String) -> Result<CortexSettings, String> {
+    if json.len() > MAX_IMPORT_SIZE {
+        return Err(format!(
+            "Settings JSON too large ({} bytes, max {} bytes)",
+            json.len(),
+            MAX_IMPORT_SIZE
+        ));
+    }
+
     let mut settings: CortexSettings =
         serde_json::from_str(&json).map_err(|e| format!("Invalid settings JSON: {}", e))?;
 
+    // Reject settings from a future version we don't understand
+    if settings.version > super::SETTINGS_VERSION {
+        return Err(format!(
+            "Cannot import settings from a newer version (v{}, current v{})",
+            settings.version,
+            super::SETTINGS_VERSION
+        ));
+    }
+
     settings.migrate();
+    settings.validate_fields();
     settings_save(app, settings.clone()).await?;
     Ok(settings)
 }
