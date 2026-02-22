@@ -11,7 +11,7 @@
  * which loads lazily after first paint.
  */
 
-import { ParentProps, ErrorBoundary, Suspense, lazy, onMount } from "solid-js";
+import { ParentProps, ErrorBoundary, Suspense, lazy, onMount, onCleanup } from "solid-js";
 import { invoke } from "@tauri-apps/api/core";
 import { SplashScreen } from "./components/startup/SplashScreen";
 
@@ -42,7 +42,7 @@ const AppCore = lazy(() => {
 // ERROR FALLBACK
 // ============================================================================
 // Minimal error display - no external dependencies
-function ErrorFallback(props: { error: Error }) {
+function ErrorFallback(props: { error: Error; reset?: () => void }) {
   return (
     <div style={{
       "min-height": "100vh",
@@ -79,21 +79,42 @@ function ErrorFallback(props: { error: Error }) {
         {"\n\n"}
         {props.error.stack}
       </pre>
-      <button
-        onClick={() => window.location.reload()}
-        style={{
-          "margin-top": "24px",
-          padding: "8px 16px",
-          background: "#3b82f6",
-          color: "white",
-          border: "none",
-          "border-radius": "6px",
-          cursor: "pointer",
-          "font-size": "14px",
-        }}
-      >
-        Reload Application
-      </button>
+      <div style={{
+        display: "flex",
+        gap: "12px",
+        "margin-top": "24px",
+      }}>
+        {props.reset && (
+          <button
+            onClick={props.reset}
+            style={{
+              padding: "8px 16px",
+              background: "#22c55e",
+              color: "white",
+              border: "none",
+              "border-radius": "6px",
+              cursor: "pointer",
+              "font-size": "14px",
+            }}
+          >
+            Try Again
+          </button>
+        )}
+        <button
+          onClick={() => window.location.reload()}
+          style={{
+            padding: "8px 16px",
+            background: "#3b82f6",
+            color: "white",
+            border: "none",
+            "border-radius": "6px",
+            cursor: "pointer",
+            "font-size": "14px",
+          }}
+        >
+          Reload Application
+        </button>
+      </div>
     </div>
   );
 }
@@ -104,6 +125,25 @@ function ErrorFallback(props: { error: Error }) {
 export default function AppShell(props: ParentProps) {
   if (import.meta.env.DEV) console.log(`[STARTUP] AppShell rendering @ ${performance.now().toFixed(1)}ms`);
 
+  // Early global error handlers — safety net before AppCore's full handler initializes.
+  // These log to console and do NOT prevent propagation (errors still reach error boundaries).
+  const earlyErrorHandler = (event: ErrorEvent) => {
+    console.error("[AppShell] Uncaught error:", event.message, event.error);
+  };
+  const earlyRejectionHandler = (event: PromiseRejectionEvent) => {
+    const reason = event.reason;
+    const message = reason instanceof Error ? reason.message : String(reason);
+    console.error("[AppShell] Unhandled rejection:", message);
+  };
+
+  window.addEventListener("error", earlyErrorHandler);
+  window.addEventListener("unhandledrejection", earlyRejectionHandler);
+
+  onCleanup(() => {
+    window.removeEventListener("error", earlyErrorHandler);
+    window.removeEventListener("unhandledrejection", earlyRejectionHandler);
+  });
+
   onMount(() => {
     requestAnimationFrame(() => {
       invoke("show_main_window").catch(() => {});
@@ -111,7 +151,7 @@ export default function AppShell(props: ParentProps) {
   });
 
   return (
-    <ErrorBoundary fallback={(err) => <ErrorFallback error={err} />}>
+    <ErrorBoundary fallback={(err, reset) => <ErrorFallback error={err} reset={reset} />}>
       <Suspense fallback={<SplashScreen />}>
         <AppCore {...props}>{props.children}</AppCore>
       </Suspense>

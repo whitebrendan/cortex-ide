@@ -1,4 +1,4 @@
-import { Show, For, createSignal } from "solid-js";
+import { Show, For, createSignal, onCleanup } from "solid-js";
 import { Icon } from "@/components/ui/Icon";
 import type { Notification } from "@/context/NotificationsContext";
 
@@ -54,9 +54,16 @@ export function NotificationToast(props: NotificationToastProps) {
   const [isExiting, setIsExiting] = createSignal(false);
   const [isHovered, setIsHovered] = createSignal(false);
 
+  let dismissTimer: ReturnType<typeof setTimeout> | undefined;
+
+  onCleanup(() => {
+    if (dismissTimer) clearTimeout(dismissTimer);
+  });
+
   const handleDismiss = () => {
     setIsExiting(true);
-    setTimeout(() => {
+    if (dismissTimer) clearTimeout(dismissTimer);
+    dismissTimer = setTimeout(() => {
       props.onDismiss?.(props.notification.id);
     }, 200);
   };

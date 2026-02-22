@@ -337,6 +337,9 @@ function saveSettings(settings: NotificationSettings): void {
 // Maximum number of visible toasts at once
 const MAX_TOASTS = 5;
 
+// Deduplication window for rapid identical notifications (ms)
+const NOTIFY_DEDUP_WINDOW_MS = 2000;
+
 export function NotificationsProvider(props: ParentProps) {
   const [store, setStore] = createStore<NotificationsStore>({
     notifications: loadNotifications(),
@@ -352,10 +355,14 @@ export function NotificationsProvider(props: ParentProps) {
   let unlistenFn: UnlistenFn | undefined;
   let cleanupInterval: ReturnType<typeof setInterval> | undefined;
 
+  // Deduplication map: message -> last timestamp
+  const recentNotifyMessages = new Map<string, number>();
+
   // Register cleanup synchronously
   onCleanup(() => {
     unlistenFn?.();
     if (cleanupInterval) clearInterval(cleanupInterval);
+    recentNotifyMessages.clear();
   });
 
   onMount(async () => {
@@ -698,11 +705,30 @@ export function NotificationsProvider(props: ParentProps) {
   };
 
   /**
-   * Simplified notify method for common notifications
+   * Simplified notify method for common notifications.
+   * Deduplicates rapid identical messages within a 2-second window.
    */
   const notify = (options: NotifyOptions): string => {
-    const id = crypto.randomUUID();
     const notifyType = options.type || "info";
+
+    // Deduplicate rapid identical notifications
+    const dedupKey = `${notifyType}:${options.message}`;
+    const now = Date.now();
+    const lastSeen = recentNotifyMessages.get(dedupKey);
+    if (lastSeen && now - lastSeen < NOTIFY_DEDUP_WINDOW_MS) {
+      return ""; // Suppress duplicate
+    }
+    recentNotifyMessages.set(dedupKey, now);
+
+    // Prune stale entries periodically
+    if (recentNotifyMessages.size > 50) {
+      const cutoff = now - NOTIFY_DEDUP_WINDOW_MS;
+      for (const [k, v] of recentNotifyMessages) {
+        if (v < cutoff) recentNotifyMessages.delete(k);
+      }
+    }
+
+    const id = crypto.randomUUID();
     const showToast = options.toast !== false;
     const persist = options.persist !== false;
 

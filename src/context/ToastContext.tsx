@@ -1,4 +1,4 @@
-import { createContext, useContext, ParentProps, For } from "solid-js";
+import { createContext, useContext, ParentProps, For, onCleanup } from "solid-js";
 import { createStore, produce } from "solid-js/store";
 import { Toast } from "@/components/Toast";
 
@@ -47,10 +47,37 @@ const DEFAULT_DURATIONS: Record<ToastVariant, number> = {
 // VS Code spec: Maximum 3 visible toasts at once
 const MAX_TOASTS = 3;
 
+// Deduplication window for rapid identical toasts (ms)
+const TOAST_DEDUP_WINDOW_MS = 2000;
+
 export function ToastProvider(props: ParentProps) {
   const [toasts, setToasts] = createStore<ToastItem[]>([]);
 
+  // Deduplication map: message key -> last timestamp
+  const recentToastMessages = new Map<string, number>();
+
+  onCleanup(() => {
+    recentToastMessages.clear();
+  });
+
   const show = (toast: Omit<ToastItem, "id" | "duration"> & { duration?: number }): string => {
+    // Deduplicate rapid identical toasts
+    const dedupKey = `${toast.variant}:${toast.message}`;
+    const now = Date.now();
+    const lastSeen = recentToastMessages.get(dedupKey);
+    if (lastSeen && now - lastSeen < TOAST_DEDUP_WINDOW_MS) {
+      return ""; // Suppress duplicate
+    }
+    recentToastMessages.set(dedupKey, now);
+
+    // Prune stale entries
+    if (recentToastMessages.size > 50) {
+      const cutoff = now - TOAST_DEDUP_WINDOW_MS;
+      for (const [k, v] of recentToastMessages) {
+        if (v < cutoff) recentToastMessages.delete(k);
+      }
+    }
+
     const id = crypto.randomUUID();
     const duration = toast.duration ?? DEFAULT_DURATIONS[toast.variant];
     const newToast: ToastItem = { ...toast, id, duration };
