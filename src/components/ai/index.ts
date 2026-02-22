@@ -2,6 +2,7 @@
 export { ChatEditingMode, ChatEditingModeCompact, useChatEditingMode } from "./ChatEditingMode";
 export { ContextServerPanel, ContextServerSelector } from "./ContextServerPanel";
 export { CopilotStatusIndicator, CopilotSignInModal, CopilotSettingsPanel, useCopilotCompletions } from "./CopilotStatus";
+export { InlineCompletionStatusIndicator, InlineCompletionToolbar, InlineCompletionSettingsPanel } from "./InlineCompletionStatus";
 export { useEditPredictions, EditPredictionOverlay, PredictionStatusIndicator } from "./EditPredictions";
 export { InlineAssistant, InlineAssistantManager, useInlineAssistant } from "./InlineAssistant";
 export { LLMSelector, ModelChip } from "./LLMSelector";

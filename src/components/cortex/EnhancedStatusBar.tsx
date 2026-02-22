@@ -10,6 +10,7 @@ import { CortexBreadcrumb, type BreadcrumbSegment } from "./CortexBreadcrumb";
 import { useStatusBar, type StatusBarItemConfig } from "@/context/StatusBarContext";
 import { useDiagnostics } from "@/context/DiagnosticsContext";
 import { useWorkspaceTrust, useTrustStatus } from "@/context/WorkspaceTrustContext";
+import { InlineCompletionStatusIndicator } from "@/components/ai/InlineCompletionStatus";
 
 export interface EnhancedStatusBarProps {
   breadcrumbs?: BreadcrumbSegment[];
@@ -177,6 +178,8 @@ export const EnhancedStatusBar: Component<EnhancedStatusBarProps> = (props) => {
             <StatusBarItem item={item} onClick={() => item.command && statusBar.executeCommand(item.command)} />
           )}
         </For>
+
+        <InlineCompletionStatusIndicator />
 
         <CortexTooltip content={`Line ${cursorPos().line}, Column ${cursorPos().column}`} position="top">
           <div style={itemStyle} onClick={handleCursorClick}>

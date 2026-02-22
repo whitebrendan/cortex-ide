@@ -42,6 +42,7 @@ import { loadStylesheet } from "@/utils/lazyStyles";
 loadStylesheet("editor");
 loadStylesheet("editor-features");
 import { LightBulbWidget } from "./LightBulbWidget";
+import { InlineCompletion } from "./InlineCompletion";
 import {
   updateCodeLensSettings,
   updateDebugHoverState,
@@ -832,6 +833,7 @@ export function CodeEditor(props: CodeEditorProps) {
         <ExceptionWidget lineHeight={20} editorTopOffset={0} onContinue={() => debug.continue_()} onConfigureBreakpoint={(exceptionId) => { editorLogger.debug("Configure breakpoint for exception:", exceptionId); }} />
       </Show>
       <LightBulbWidget editor={instance.editor()} monaco={instance.monaco()} uri={currentUri()} />
+      <InlineCompletion editor={instance.editor()} monaco={instance.monaco()} />
     </div>
   );
 }

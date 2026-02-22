@@ -160,3 +160,7 @@ export { EditorArea } from "./EditorArea";
 export type { EditorAreaProps } from "./EditorArea";
 export { WelcomeTab } from "./WelcomeTab";
 export type { WelcomeTabProps } from "./WelcomeTab";
+
+// Inline Completion (AI ghost text)
+export { InlineCompletion } from "./InlineCompletion";
+export type { InlineCompletionProps } from "./InlineCompletion";
