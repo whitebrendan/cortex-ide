@@ -71,7 +71,7 @@ impl AIState {
         Self {
             provider_manager: create_shared_provider_manager(),
             thread_manager: ThreadManagerState::new(),
-            session_manager: Arc::new(SessionManager::new()),
+            session_manager: Arc::new(SessionManager::new_or_panic()),
             completion_state: CompletionState::new(),
             indexer_state: IndexerState::new(),
             vector_store_state: VectorStoreState::new(),

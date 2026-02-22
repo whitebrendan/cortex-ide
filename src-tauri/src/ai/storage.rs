@@ -218,8 +218,8 @@ impl SessionStorage {
 }
 
 impl Default for SessionStorage {
-    #[allow(clippy::expect_used)] // Default impl must succeed or panic
+    #[allow(clippy::expect_used)]
     fn default() -> Self {
-        Self::default_location().expect("Failed to create default session storage")
+        Self::default_location().expect("Failed to create default session storage - home directory unavailable")
     }
 }

@@ -252,10 +252,18 @@ impl ProviderManager {
             usize,
             (Option<String>, Option<String>, String, String),
         > = HashMap::new();
+        const MAX_BUFFER_SIZE: usize = 10 * 1024 * 1024; // 10 MB
 
         while let Some(chunk_result) = stream.next().await {
             let chunk = chunk_result?;
             buffer.push_str(&String::from_utf8_lossy(&chunk));
+            if buffer.len() > MAX_BUFFER_SIZE {
+                return Err(AIError::ApiError {
+                    provider: config.provider,
+                    message: "Streaming response exceeded maximum buffer size".to_string(),
+                    status_code: None,
+                });
+            }
 
             while let Some(line_end) = buffer.find('\n') {
                 let line = buffer[..line_end].trim().to_string();
@@ -475,10 +483,18 @@ impl ProviderManager {
         let mut stream = response.bytes_stream();
         let mut buffer = String::new();
         let mut usage: Option<TokenUsage> = None;
+        const MAX_BUFFER_SIZE: usize = 10 * 1024 * 1024; // 10 MB
 
         while let Some(chunk_result) = stream.next().await {
             let chunk = chunk_result?;
             buffer.push_str(&String::from_utf8_lossy(&chunk));
+            if buffer.len() > MAX_BUFFER_SIZE {
+                return Err(AIError::ApiError {
+                    provider: AIProvider::Anthropic,
+                    message: "Streaming response exceeded maximum buffer size".to_string(),
+                    status_code: None,
+                });
+            }
 
             while let Some(line_end) = buffer.find('\n') {
                 let line = buffer[..line_end].trim().to_string();

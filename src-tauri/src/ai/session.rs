@@ -75,17 +75,27 @@ impl std::fmt::Debug for ManagedSession {
 
 impl SessionManager {
     /// Create a new session manager.
-    #[allow(clippy::expect_used)] // Initialization-time panic if storage setup fails
-    pub fn new() -> Self {
-        let storage = SessionStorage::new().expect("Failed to create session storage");
-        // Initialize storage directories synchronously
+    ///
+    /// # Errors
+    /// Returns an error if storage directories cannot be created.
+    pub fn new() -> Result<Self, String> {
+        let storage = SessionStorage::new()
+            .map_err(|e| format!("Failed to create session storage: {}", e))?;
         storage
             .init_sync()
-            .expect("Failed to initialize session storage");
-        Self {
+            .map_err(|e| format!("Failed to initialize session storage: {}", e))?;
+        Ok(Self {
             sessions: RwLock::new(HashMap::new()),
             storage: Arc::new(storage),
-        }
+        })
+    }
+
+    /// Create a new session manager, panicking on failure.
+    ///
+    /// Use this only during application initialization where failure is unrecoverable.
+    #[allow(clippy::expect_used)]
+    pub fn new_or_panic() -> Self {
+        Self::new().expect("Failed to create SessionManager")
     }
 
     /// Get a reference to the storage.
@@ -530,7 +540,7 @@ impl SessionManager {
 
 impl Default for SessionManager {
     fn default() -> Self {
-        Self::new()
+        Self::new_or_panic()
     }
 }
 

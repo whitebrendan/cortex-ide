@@ -39,7 +39,10 @@ Generate ONLY the system prompt text, no explanations or meta-commentary."#,
         description
     );
 
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 
     let (api_url, request_body) = if is_anthropic {
         (

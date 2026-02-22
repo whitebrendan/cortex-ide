@@ -4,8 +4,14 @@
 //! shell command execution, HTTP requests, AI calls, tool execution, and notifications.
 
 use std::collections::HashMap;
+use std::sync::LazyLock;
 
 use super::types::{AiResponse, HttpResponse, ShellOutput};
+
+/// Pre-compiled regex for variable substitution patterns.
+#[allow(clippy::expect_used)] // Static regex literal — infallible at compile time
+static VARIABLE_RE: LazyLock<regex::Regex> =
+    LazyLock::new(|| regex::Regex::new(r"\{\{([^}]+)\}\}").expect("static regex is valid"));
 
 /// Substitute variables in a string using {{variable_name}} syntax
 pub fn substitute_variables(
@@ -15,8 +21,7 @@ pub fn substitute_variables(
     let mut result = template.to_string();
 
     // Find all {{variable}} patterns
-    #[allow(clippy::expect_used)]
-    let re = regex::Regex::new(r"\{\{([^}]+)\}\}").expect("Invalid regex pattern");
+    let re = &*VARIABLE_RE;
 
     for cap in re.captures_iter(template) {
         let full_match = &cap[0];
@@ -114,7 +119,10 @@ pub async fn execute_http_request(
 ) -> Result<HttpResponse, String> {
     let start = std::time::Instant::now();
 
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(60))
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 
     let mut request = match method.to_uppercase().as_str() {
         "GET" => client.get(url),
@@ -219,7 +227,10 @@ pub async fn execute_ai_call(
         ("https://api.openai.com/v1/chat/completions", false)
     };
 
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(120))
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 
     let request_body = if is_anthropic {
         serde_json::json!({
