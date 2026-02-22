@@ -164,7 +164,7 @@ describe("taskVariables", () => {
 
   describe("InputValidationError", () => {
     it("creates validation error", () => {
-      const err = new InputValidationError("invalid");
+      const err = new InputValidationError("invalid", "input1", "validation failed");
       expect(err).toBeInstanceOf(Error);
       expect(err.message).toBe("invalid");
     });
@@ -172,7 +172,7 @@ describe("taskVariables", () => {
 
   describe("InputCancelledError", () => {
     it("creates cancelled error", () => {
-      const err = new InputCancelledError();
+      const err = new InputCancelledError("input1");
       expect(err).toBeInstanceOf(Error);
     });
   });

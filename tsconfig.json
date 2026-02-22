@@ -22,5 +22,6 @@
     "baseUrl": "."
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["src/**/cov-*.test.ts", "src/**/cov-*.test.tsx"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
