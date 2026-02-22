@@ -1123,3 +1123,98 @@
   /* Slight indent when in multi-root mode */
   padding-left: 0;
 }
+
+/* ============================================================================
+   VIRTUALIZED FILE TREE
+   ============================================================================ */
+
+.virtualized-file-tree {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+.virtual-scroll-container {
+  overflow-y: auto;
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+.virtual-scroll-spacer {
+  position: relative;
+  overflow: hidden;
+}
+
+.virtual-scroll-content {
+  will-change: transform;
+}
+
+/* ============================================================================
+   SKELETON LOADER
+   ============================================================================ */
+
+.file-tree-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.file-tree-skeleton-chevron {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--jb-text-muted-color, rgba(255, 255, 255, 0.08));
+  flex-shrink: 0;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.file-tree-skeleton-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  background: var(--jb-text-muted-color, rgba(255, 255, 255, 0.08));
+  flex-shrink: 0;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  animation-delay: 0.1s;
+}
+
+.file-tree-skeleton-name {
+  height: 10px;
+  border-radius: 2px;
+  background: var(--jb-text-muted-color, rgba(255, 255, 255, 0.08));
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  animation-delay: 0.2s;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* ============================================================================
+   NESTED FILE BADGE
+   ============================================================================ */
+
+.file-tree-nested-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 14px;
+  padding: 0 4px;
+  margin-left: auto;
+  margin-right: 4px;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--text-secondary);
+  background: var(--jb-tree-selection-bg, rgba(255, 255, 255, 0.06));
+  border-radius: 7px;
+  flex-shrink: 0;
+}
