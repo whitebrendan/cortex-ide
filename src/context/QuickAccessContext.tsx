@@ -1149,24 +1149,35 @@ export function QuickAccessProvider(props: { children: JSX.Element }) {
   // Item Loading
   // ==========================================================================
   
-  createEffect(async () => {
+  createEffect(() => {
     const active = activeProvider();
-    if (!active || !isVisible()) {
+    const visible = isVisible();
+    if (!active || !visible) {
       setItems([]);
       return;
     }
-    
-    setIsLoading(true);
-    try {
-      const providerItems = await active.provider.provideItems(active.query);
-      setItems(providerItems);
-      setSelectedIndex(0);
-    } catch (err) {
-      console.error("QuickAccess: Error loading items", err);
-      setItems([]);
-    } finally {
-      setIsLoading(false);
-    }
+
+    let cancelled = false;
+
+    (async () => {
+      setIsLoading(true);
+      try {
+        const providerItems = await active.provider.provideItems(active.query);
+        if (!cancelled) {
+          setItems(providerItems);
+          setSelectedIndex(0);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error("QuickAccess: Error loading items", err);
+          setItems([]);
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+
+    onCleanup(() => { cancelled = true; });
   });
   
   // ==========================================================================

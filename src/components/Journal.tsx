@@ -118,14 +118,22 @@ export function JournalPanel() {
   let searchInputRef: HTMLInputElement | undefined;
   let editorRef: HTMLTextAreaElement | undefined;
 
-  createEffect(async () => {
+  createEffect(() => {
     const date = journal.state.selectedDate;
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
-    
-    const dates = await journal.getEntriesForMonth(year, month);
-    const dateSet = new Set(dates.map(formatDateKey));
-    setEntryDatesForMonth(dateSet);
+
+    let cancelled = false;
+
+    (async () => {
+      const dates = await journal.getEntriesForMonth(year, month);
+      if (!cancelled) {
+        const dateSet = new Set(dates.map(formatDateKey));
+        setEntryDatesForMonth(dateSet);
+      }
+    })();
+
+    onCleanup(() => { cancelled = true; });
   });
 
   const calendarDays = () => {

@@ -17,7 +17,7 @@
 const PROVIDERS_START = performance.now();
 if (import.meta.env.DEV) console.log(`[STARTUP] OptimizedProviders.tsx module loading @ ${PROVIDERS_START.toFixed(1)}ms`);
 
-import { ParentProps, JSX, ErrorBoundary, createSignal, onMount, Show } from "solid-js";
+import { ParentProps, JSX, ErrorBoundary, createSignal, onMount, onCleanup, Show } from "solid-js";
 
 // ============================================================================
 // ERROR FALLBACK
@@ -150,6 +150,7 @@ function DeferredProviders(props: ParentProps): JSX.Element {
           clearInterval(check);
         }
       }, 10);
+      onCleanup(() => clearInterval(check));
     });
   }
 

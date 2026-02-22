@@ -1,4 +1,4 @@
-import { JSX, createSignal, createEffect, onMount } from "solid-js";
+import { JSX, createSignal, createEffect, onMount, onCleanup } from "solid-js";
 import { SessionFilters } from "@/components/admin/SessionFilters";
 import { SessionsTable } from "@/components/admin/SessionsTable";
 import { BulkActions } from "@/components/admin/BulkActions";
@@ -40,20 +40,30 @@ export default function AdminSessionsPage() {
   const [error, setError] = createSignal<string | null>(null);
 
   // Fetch sessions when filters change
-  createEffect(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const result = await fetchAdminSessions(filters());
-      setData(result);
-      // Clear selection when data changes
-      setSelectedIds([]);
-    } catch (e) {
-      const err = e as Error;
-      setError(err.message || "Failed to load sessions");
-    } finally {
-      setLoading(false);
-    }
+  createEffect(() => {
+    const currentFilters = filters();
+    let cancelled = false;
+
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const result = await fetchAdminSessions(currentFilters);
+        if (!cancelled) {
+          setData(result);
+          setSelectedIds([]);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          const err = e as Error;
+          setError(err.message || "Failed to load sessions");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    onCleanup(() => { cancelled = true; });
   });
 
   // Fetch stats on mount

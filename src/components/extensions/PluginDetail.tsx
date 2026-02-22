@@ -1,4 +1,4 @@
-import { Component, Show, For, createSignal, onMount } from "solid-js";
+import { Component, Show, For, createSignal, onMount, onCleanup } from "solid-js";
 import { invoke } from "@tauri-apps/api/core";
 import { Icon } from "@/components/ui/Icon";
 import { Button, Badge, Text, LoadingSpinner } from "@/components/ui";
@@ -32,15 +32,21 @@ export const PluginDetail: Component<PluginDetailProps> = (props) => {
   const [error, setError] = createSignal<string | null>(null);
   const [installing, setInstalling] = createSignal(false);
 
-  onMount(async () => {
-    try {
-      const data = await invoke<PluginInfo>("registry_get_plugin", { name: props.pluginName });
-      setPlugin(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
-    }
+  onMount(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const data = await invoke<PluginInfo>("registry_get_plugin", { name: props.pluginName });
+        if (!cancelled) setPlugin(data);
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    onCleanup(() => { cancelled = true; });
   });
 
   const handleInstall = async () => {

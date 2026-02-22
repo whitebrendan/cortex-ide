@@ -1,4 +1,4 @@
-import { Component, Show, For, createSignal, createMemo, onMount } from "solid-js";
+import { Component, Show, For, createSignal, createMemo, onMount, onCleanup } from "solid-js";
 import { useExtensions, Extension, MarketplaceExtension } from "../../context/ExtensionsContext";
 import { ExtensionCard, ViewMode } from "./ExtensionCard";
 import { ExtensionDetail, ExtensionDetailData, MOCK_EXTENSION_DETAIL } from "./ExtensionDetail";
@@ -142,8 +142,14 @@ export const ExtensionMarketplace: Component<ExtensionMarketplaceProps> = (props
   });
 
   // Load featured extensions on mount
-  onMount(async () => {
-    await getFeaturedExtensions();
+  onMount(() => {
+    let cancelled = false;
+
+    (async () => {
+      if (!cancelled) await getFeaturedExtensions();
+    })();
+
+    onCleanup(() => { cancelled = true; });
   });
 
   const handleExtensionClick = (ext: Extension | MarketplaceExtension) => {

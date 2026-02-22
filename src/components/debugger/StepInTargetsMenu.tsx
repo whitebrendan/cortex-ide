@@ -42,7 +42,7 @@ export function StepInTargetsMenu(props: StepInTargetsMenuProps) {
   let menuRef: HTMLDivElement | undefined;
 
   // Load targets when menu opens
-  createEffect(async () => {
+  createEffect(() => {
     if (!props.isOpen) {
       setTargets([]);
       setSelectedIndex(0);
@@ -56,22 +56,30 @@ export function StepInTargetsMenu(props: StepInTargetsMenuProps) {
       return;
     }
 
+    let cancelled = false;
     setLoading(true);
     setError(null);
 
-    try {
-      const result = await debug.getStepInTargets(frameId);
-      setTargets(result);
-      
-      if (result.length === 0) {
-        setError("No step-in targets available");
+    (async () => {
+      try {
+        const result = await debug.getStepInTargets(frameId);
+        if (!cancelled) {
+          setTargets(result);
+          if (result.length === 0) {
+            setError("No step-in targets available");
+          }
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setError("Failed to get step-in targets");
+          console.error("Failed to get step-in targets:", e);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    } catch (e) {
-      setError("Failed to get step-in targets");
-      console.error("Failed to get step-in targets:", e);
-    } finally {
-      setLoading(false);
-    }
+    })();
+
+    onCleanup(() => { cancelled = true; });
   });
 
   // Handle keyboard navigation

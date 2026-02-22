@@ -1080,6 +1080,13 @@ Process List:
     if (interval > 0) {
       refreshTimerRef = setInterval(fetchProcesses, interval);
     }
+
+    onCleanup(() => {
+      if (refreshTimerRef) {
+        clearInterval(refreshTimerRef);
+        refreshTimerRef = null;
+      }
+    });
   });
 
   // Listen for process events

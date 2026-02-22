@@ -1,4 +1,4 @@
-import { JSX, createSignal, createEffect, Show } from "solid-js";
+import { JSX, createSignal, createEffect, Show, onCleanup } from "solid-js";
 import { useParams } from "@solidjs/router";
 import { SharedSessionHeader } from "@/components/share/SharedSessionHeader";
 import { ShareFooter } from "@/components/share/ShareFooter";
@@ -29,7 +29,7 @@ export default function SharedSessionPage() {
   const [reportSuccess, setReportSuccess] = createSignal(false);
 
   // Fetch session on mount
-  createEffect(async () => {
+  createEffect(() => {
     const token = params.token;
     if (!token) {
       setError("Invalid share link");
@@ -37,21 +37,29 @@ export default function SharedSessionPage() {
       return;
     }
 
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await fetchSharedSession(token);
-      setSession(data);
-    } catch (e) {
-      const err = e as Error;
-      if (err.message === "Password required") {
-        setNeedsPassword(true);
-      } else {
-        setError(err.message || "Failed to load shared session");
+    let cancelled = false;
+
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await fetchSharedSession(token);
+        if (!cancelled) setSession(data);
+      } catch (e) {
+        if (!cancelled) {
+          const err = e as Error;
+          if (err.message === "Password required") {
+            setNeedsPassword(true);
+          } else {
+            setError(err.message || "Failed to load shared session");
+          }
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
+    })();
+
+    onCleanup(() => { cancelled = true; });
   });
 
   const handlePasswordSubmit = async (password: string) => {

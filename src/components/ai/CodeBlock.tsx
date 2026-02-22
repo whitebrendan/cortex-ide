@@ -1,4 +1,4 @@
-import { Show, createSignal, createResource, createMemo } from "solid-js";
+import { Show, createSignal, createResource, createMemo, onCleanup } from "solid-js";
 import { Icon } from "../ui/Icon";
 import { SafeHTML } from "../ui/SafeHTML";
 import { highlightCode, normalizeLanguage } from "@/utils/shikiHighlighter";
@@ -78,7 +78,9 @@ export function CodeBlock(props: CodeBlockProps) {
     }
   };
   
-  // Cleanup timeout on unmount handled by signal
+  onCleanup(() => {
+    if (copyTimeoutId) window.clearTimeout(copyTimeoutId);
+  });
   
   const containerStyle = createMemo(() => {
     const styles: Record<string, string> = {

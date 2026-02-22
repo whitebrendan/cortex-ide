@@ -642,6 +642,7 @@ export function SearchProvider(props: ParentProps) {
   createEffect(() => {
     const pattern = state.query.pattern;
     const isRegex = state.query.options.useRegex;
+    let cancelled = false;
     
     // Clear previous debounce
     if (searchDebounceTimer) {
@@ -652,7 +653,7 @@ export function SearchProvider(props: ParentProps) {
     // Validate regex in real-time
     if (isRegex && pattern.trim()) {
       validateRegex(pattern).then(result => {
-        setRegexValidationError(result.error);
+        if (!cancelled) setRegexValidationError(result.error);
       });
     } else {
       setRegexValidationError(null);
@@ -664,6 +665,14 @@ export function SearchProvider(props: ParentProps) {
         performSearch();
       }, 300);
     }
+
+    onCleanup(() => {
+      cancelled = true;
+      if (searchDebounceTimer) {
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = null;
+      }
+    });
   });
 
   // Update frequent patterns from history

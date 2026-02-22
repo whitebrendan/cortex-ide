@@ -1,4 +1,4 @@
-import { createSignal, For, Show } from "solid-js";
+import { createSignal, For, Show, onCleanup } from "solid-js";
 import { Icon } from "./ui/Icon";
 import {
   Button,
@@ -162,8 +162,19 @@ export function CodemapsSidebar() {
     "/src/context",
   ];
 
+  // Track active intervals for cleanup on unmount
+  let activeIntervalId: ReturnType<typeof setInterval> | null = null;
+
+  onCleanup(() => {
+    if (activeIntervalId) {
+      clearInterval(activeIntervalId);
+      activeIntervalId = null;
+    }
+  });
+
   // Actions
   const initializeIndex = () => {
+    if (activeIntervalId) clearInterval(activeIntervalId);
     setContext(c => ({ ...c, status: "indexing", progress: 0, currentTask: "Scanning files..." }));
     
     const tasks = [
@@ -177,11 +188,12 @@ export function CodemapsSidebar() {
     ];
     
     let taskIndex = 0;
-    const interval = setInterval(() => {
+    activeIntervalId = setInterval(() => {
       setContext(c => {
         const newProgress = c.progress + 2;
         if (newProgress >= 100) {
-          clearInterval(interval);
+          if (activeIntervalId) clearInterval(activeIntervalId);
+          activeIntervalId = null;
           return { 
             ...c, 
             status: "indexed", 
@@ -200,13 +212,15 @@ export function CodemapsSidebar() {
   };
 
   const reIndex = () => {
+    if (activeIntervalId) clearInterval(activeIntervalId);
     setContext(c => ({ ...c, status: "indexing", progress: 0, currentTask: "Updating documentation..." }));
     
-    const interval = setInterval(() => {
+    activeIntervalId = setInterval(() => {
       setContext(c => {
         const newProgress = c.progress + 5;
         if (newProgress >= 100) {
-          clearInterval(interval);
+          if (activeIntervalId) clearInterval(activeIntervalId);
+          activeIntervalId = null;
           return { ...c, status: "indexed", progress: 100, currentTask: "", lastIndexed: new Date() };
         }
         return { ...c, progress: newProgress };

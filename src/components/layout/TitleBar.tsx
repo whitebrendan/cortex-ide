@@ -1,4 +1,4 @@
-import { Component, JSX, onMount, createSignal, Show } from "solid-js";
+import { Component, JSX, onMount, onCleanup, createSignal, Show } from "solid-js";
 import { WindowControls } from "@/components/cortex/titlebar/WindowControls";
 import { detectPlatform } from "@/components/cortex/titlebar/platformDetect";
 
@@ -28,13 +28,19 @@ export const TitleBar: Component<TitleBarProps> = (props) => {
   let windowHandle: WindowHandle | null = null;
   const [hoveredMenu, setHoveredMenu] = createSignal<string | null>(null);
 
-  onMount(async () => {
-    try {
-      const { getCurrentWindow } = await import("@tauri-apps/api/window");
-      windowHandle = getCurrentWindow();
-    } catch {
-      // Not in Tauri context
-    }
+  onMount(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const { getCurrentWindow } = await import("@tauri-apps/api/window");
+        if (!cancelled) windowHandle = getCurrentWindow();
+      } catch {
+        // Not in Tauri context
+      }
+    })();
+
+    onCleanup(() => { cancelled = true; });
   });
 
   const handleMinimize = async () => {

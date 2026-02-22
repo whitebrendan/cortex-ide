@@ -93,16 +93,26 @@ export function SSHConnectionDialog(props: SSHConnectionDialogProps) {
   });
 
   // Generate profile ID for new profiles
-  createEffect(async () => {
-    if (props.isOpen && !props.editProfile) {
+  createEffect(() => {
+    const isOpen = props.isOpen;
+    const editProfile = props.editProfile;
+    if (!isOpen || editProfile) return;
+
+    let cancelled = false;
+
+    (async () => {
       try {
         const id = await remote.generateProfileId();
-        setProfileId(id);
+        if (!cancelled) setProfileId(id);
       } catch (e) {
-        console.error("Failed to generate profile ID:", e);
-        setProfileId(`profile_${Date.now()}`);
+        if (!cancelled) {
+          console.error("Failed to generate profile ID:", e);
+          setProfileId(`profile_${Date.now()}`);
+        }
       }
-    }
+    })();
+
+    onCleanup(() => { cancelled = true; });
   });
 
   // Populate form when editing

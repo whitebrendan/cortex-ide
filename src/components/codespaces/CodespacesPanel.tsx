@@ -5,7 +5,7 @@
  * create functionality, and connection options.
  */
 
-import { createSignal, For, Show, createEffect } from "solid-js";
+import { createSignal, For, Show, createEffect, onCleanup } from "solid-js";
 import { Icon } from "../ui/Icon";
 import {
   useCodespaces,
@@ -396,26 +396,34 @@ function CreateCodespaceDialog(props: CreateCodespaceDialogProps) {
   };
 
   // Load machines when repository is selected
-  createEffect(async () => {
+  createEffect(() => {
     const repo = selectedRepo();
     if (!repo) {
       setMachines([]);
       return;
     }
 
+    let cancelled = false;
     setIsLoadingMachines(true);
     setBranch(repo.default_branch);
-    try {
-      const machs = await props.getMachines(repo.id);
-      setMachines(machs);
-      if (machs.length > 0) {
-        setSelectedMachine(machs[0].name);
+
+    (async () => {
+      try {
+        const machs = await props.getMachines(repo.id);
+        if (!cancelled) {
+          setMachines(machs);
+          if (machs.length > 0) {
+            setSelectedMachine(machs[0].name);
+          }
+        }
+      } catch (e) {
+        if (!cancelled) console.error("Failed to load machines:", e);
+      } finally {
+        if (!cancelled) setIsLoadingMachines(false);
       }
-    } catch (e) {
-      console.error("Failed to load machines:", e);
-    } finally {
-      setIsLoadingMachines(false);
-    }
+    })();
+
+    onCleanup(() => { cancelled = true; });
   });
 
   const handleCreate = async () => {
