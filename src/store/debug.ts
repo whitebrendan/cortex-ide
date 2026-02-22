@@ -1,0 +1,45 @@
+export {
+  DebugProvider,
+  useDebug,
+} from "@/context/DebugContext";
+
+export type {
+  DebugSessionConfig,
+  DebugSessionInfo,
+  DebugSessionState,
+  Thread,
+  StackFrame,
+  Source,
+  Variable,
+  Breakpoint,
+  Scope,
+  EvaluateResult,
+  SetVariableResult,
+  DebugCapabilities,
+  OutputMessage,
+  WatchExpression,
+  FunctionBreakpoint,
+  DataBreakpoint,
+  DataBreakpointAccessType,
+  BreakpointLocation,
+  CompoundConfig,
+  SavedLaunchConfig,
+  StepInTarget,
+  GotoTarget,
+  InlineValueInfo,
+  ExceptionBreakpoint,
+  ExceptionBreakpointFilter,
+  DebugBehaviorSettings,
+  BreakpointGroup,
+  BreakpointId,
+  DebugHoverResult,
+  Logpoint,
+  SessionPickerState,
+} from "@/context/DebugContext";
+
+export {
+  createBreakpointId,
+  parseBreakpointId,
+  DEFAULT_DEBUG_BEHAVIOR_SETTINGS,
+  DEFAULT_DEBUG_CONSOLE_SETTINGS,
+} from "@/context/DebugContext";
