@@ -47,6 +47,15 @@ impl RemoteManager {
         }
     }
 
+    pub async fn disconnect_all(&self) {
+        let mut connections = self.connections.write().await;
+        let count = connections.len();
+        connections.clear();
+        if count > 0 {
+            info!("Disconnected {} SSH connections", count);
+        }
+    }
+
     /// Load saved profiles from disk (no secrets - those are in keyring)
     pub async fn load_profiles(&self) -> Result<(), RemoteError> {
         let config_path = Self::profiles_path();

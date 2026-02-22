@@ -26,6 +26,37 @@ impl SettingsState {
     }
 }
 
+impl SettingsState {
+    pub fn flush(&self) {
+        let settings = match self.0.lock() {
+            Ok(guard) => guard.clone(),
+            Err(_) => {
+                warn!("Failed to acquire settings lock for flush");
+                return;
+            }
+        };
+        if let Ok(path) = get_settings_path() {
+            if let Err(e) = ensure_settings_dir() {
+                warn!("Failed to ensure settings dir on flush: {}", e);
+                return;
+            }
+            match serde_json::to_string_pretty(&settings) {
+                Ok(content) => {
+                    if let Err(e) = std::fs::write(&path, content) {
+                        warn!("Failed to write settings on flush: {}", e);
+                    } else {
+                        let _ = set_file_permissions(&path);
+                        info!("Settings flushed to disk");
+                    }
+                }
+                Err(e) => {
+                    warn!("Failed to serialize settings on flush: {}", e);
+                }
+            }
+        }
+    }
+}
+
 impl Default for SettingsState {
     fn default() -> Self {
         Self::new()

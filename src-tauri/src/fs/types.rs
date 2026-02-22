@@ -255,6 +255,19 @@ impl FileWatcherState {
         let threshold = Duration::from_secs(60);
         last_events.retain(|_, time| now.duration_since(*time) < threshold);
     }
+
+    pub fn stop_all_watchers(&self) {
+        let mut watchers = self.watchers.lock();
+        let count = watchers.len();
+        watchers.clear();
+        let mut watched = self.watched_paths.lock();
+        watched.clear();
+        let mut events = self.last_events.lock();
+        events.clear();
+        if count > 0 {
+            tracing::info!("Stopped {} file watchers", count);
+        }
+    }
 }
 
 impl Default for FileWatcherState {

@@ -778,6 +778,47 @@ pub fn handle_run_event(app: &AppHandle, event: RunEvent) {
                 info!("All remote tunnels closed on app exit");
             }
 
+            {
+                let remote_manager = app.state::<Arc<RemoteManager>>();
+                let remote_manager = remote_manager.inner().clone();
+                tauri::async_runtime::block_on(async {
+                    remote_manager.disconnect_all().await;
+                });
+                info!("All SSH connections disconnected on app exit");
+            }
+
+            {
+                let collab_state = app.state::<LazyState<CollabState>>();
+                if collab_state.is_initialized() {
+                    let collab = collab_state.get().0.clone();
+                    tauri::async_runtime::block_on(async {
+                        let mut manager = collab.lock().await;
+                        manager.stop_server();
+                    });
+                    info!("Collaboration server stopped on app exit");
+                }
+            }
+
+            {
+                let watcher_state = app.state::<Arc<crate::fs::FileWatcherState>>();
+                watcher_state.stop_all_watchers();
+                info!("All file watchers stopped on app exit");
+            }
+
+            {
+                let settings_state = app.state::<crate::settings::storage::SettingsState>();
+                settings_state.flush();
+                info!("Settings flushed on app exit");
+            }
+
+            {
+                let window_state = app.state::<crate::window::WindowManagerState>();
+                if let Ok(sessions) = window_state.sessions.lock() {
+                    crate::window::save_sessions_on_exit(app, &sessions);
+                }
+                info!("Window sessions saved on app exit");
+            }
+
             info!("All child processes cleaned up, exiting application");
         }
         _ => {}

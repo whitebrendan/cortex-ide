@@ -103,6 +103,13 @@ fn save_window_sessions(
     }
 }
 
+pub fn save_sessions_on_exit(
+    app: &AppHandle,
+    sessions: &HashMap<String, (Option<String>, Option<WindowBounds>)>,
+) {
+    save_window_sessions(app, sessions);
+}
+
 #[tauri::command]
 pub async fn register_window_project(
     app: AppHandle,
