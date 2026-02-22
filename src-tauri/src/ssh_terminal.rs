@@ -763,13 +763,14 @@ pub struct SSHProfile {
     pub updated_at: i64,
 }
 
-fn get_ssh_profiles_path(app: &AppHandle) -> Result<std::path::PathBuf, String> {
+async fn get_ssh_profiles_path(app: &AppHandle) -> Result<std::path::PathBuf, String> {
     let mut path = app
         .path()
         .app_config_dir()
         .map_err(|e| format!("Failed to get config directory: {}", e))?;
-    if !path.exists() {
-        std::fs::create_dir_all(&path)
+    if !tokio::fs::try_exists(&path).await.unwrap_or(false) {
+        tokio::fs::create_dir_all(&path)
+            .await
             .map_err(|e| format!("Failed to create config directory: {}", e))?;
     }
     path.push("ssh_profiles.json");
@@ -777,7 +778,7 @@ fn get_ssh_profiles_path(app: &AppHandle) -> Result<std::path::PathBuf, String> 
 }
 
 async fn load_ssh_profiles(app: &AppHandle) -> Result<Vec<SSHProfile>, String> {
-    let path = get_ssh_profiles_path(app)?;
+    let path = get_ssh_profiles_path(app).await?;
     if tokio::fs::try_exists(&path).await.unwrap_or(false) {
         let content = tokio::fs::read_to_string(&path)
             .await
@@ -789,7 +790,7 @@ async fn load_ssh_profiles(app: &AppHandle) -> Result<Vec<SSHProfile>, String> {
 }
 
 async fn save_ssh_profiles(app: &AppHandle, profiles: &[SSHProfile]) -> Result<(), String> {
-    let path = get_ssh_profiles_path(app)?;
+    let path = get_ssh_profiles_path(app).await?;
     let content = serde_json::to_string_pretty(&profiles)
         .map_err(|e| format!("Failed to serialize SSH profiles: {}", e))?;
     tokio::fs::write(&path, content)
