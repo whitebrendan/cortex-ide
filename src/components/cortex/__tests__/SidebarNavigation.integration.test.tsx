@@ -104,6 +104,10 @@ vi.mock("@/components/cortex/CortexAccountPanel", () => ({
   CortexAccountPanel: () => <div data-testid="panel-account">Account Panel</div>,
 }));
 
+vi.mock("@/components/cortex/CortexDocumentationPanel", () => ({
+  CortexDocumentationPanel: () => <div data-testid="panel-docs">Documentation Panel</div>,
+}));
+
 const STORAGE_KEYS = {
   sidebarTab: "figma_layout_sidebar_tab",
   sidebarCollapsed: "figma_layout_sidebar_collapsed",
@@ -118,6 +122,7 @@ const NAV_ITEMS: ActivityBarItem[] = [
   { id: "plugins", icon: "plugins", label: "Plugins" },
   { id: "agents", icon: "users", label: "AI Agents" },
   { id: "extensions", icon: "grid", label: "Extensions" },
+  { id: "docs", icon: "book", label: "Documentation" },
   { id: "themes", icon: "brush", label: "Themes" },
 ];
 
@@ -297,6 +302,19 @@ describe("SidebarNavigation Integration", () => {
       const panel = await findByTestId("panel-plugins");
       expect(panel).toBeTruthy();
       expect(panel.textContent).toContain("Plugins Panel");
+    });
+
+    it("clicking 'docs' shows documentation panel", async () => {
+      const { container, findByTestId } = render(() => <SidebarIntegrationWrapper />);
+
+      const docsButton = container.querySelector('button[aria-label="Documentation"]');
+      expect(docsButton).toBeTruthy();
+
+      await fireEvent.click(docsButton!);
+
+      const panel = await findByTestId("panel-docs");
+      expect(panel).toBeTruthy();
+      expect(panel.textContent).toContain("Documentation Panel");
     });
 
     it("clicking 'account' shows account panel", async () => {

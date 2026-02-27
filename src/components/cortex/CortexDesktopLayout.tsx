@@ -233,7 +233,7 @@ export function CortexDesktopLayout(props: ParentProps) {
       "view:agents": (() => { setSidebarTab("agents"); setSidebarCollapsed(false); }) as EventListener,
       "sidebar:toggle": (() => setSidebarCollapsed(!sidebarCollapsed())) as EventListener,
       "selection:select-all": (() => document.execCommand("selectAll")) as EventListener,
-      "help:docs": (() => window.open("https://docs.cortex.dev", "_blank")) as EventListener,
+      "help:docs": (() => { setSidebarTab("docs"); setSidebarCollapsed(false); }) as EventListener,
       "terminal:toggle": (() => { if (bottomPanelCollapsed()) { setBottomPanelCollapsed(false); setBottomPanelTab("terminal"); } else if (bottomPanelTab() === "terminal") { setBottomPanelCollapsed(true); } else { setBottomPanelTab("terminal"); } }) as EventListener,
       "layout:toggle-panel": (() => setBottomPanelCollapsed(!bottomPanelCollapsed())) as EventListener,
       "ai:modifications:toggle": (() => setShowAIModifications((prev) => !prev)) as EventListener,
