@@ -860,3 +860,26 @@
     gap: 8px;
   }
 }
+
+/* Sidebar responsive: collapse to dropdown at very narrow widths */
+@media (max-width: 500px) {
+  .settings-sidebar {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    flex-shrink: 1 !important;
+    padding: 4px !important;
+  }
+
+  .settings-sidebar .settings-tab-button {
+    font-size: 12px;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+  }
+
+  .settings-sidebar .settings-tree-node span[style*="flex: 1"] {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}

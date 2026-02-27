@@ -176,6 +176,7 @@ function SettingsTreeItem(props: {
             display: "flex",
             "align-items": "center",
             width: "100%",
+            "min-width": "0",
             gap: "6px",
             padding: `4px 8px 4px ${8 + props.depth * 16}px`,
             background: isActive() ? "var(--jb-list-active-bg, rgba(255,255,255,0.08))" : "transparent",
@@ -957,14 +958,14 @@ export function SettingsDialog(props: SettingsDialogProps) {
           <Show when={!showJsonView()}>
           <div style={{ display: "flex", height: "calc(90vh - 120px)", overflow: "hidden" }}>
             {/* Sidebar */}
-            <div style={{
+            <div class="settings-sidebar" style={{
               width: "256px",
-              "min-width": "200px",
+              "min-width": "120px",
               "border-right": "1px solid var(--jb-border-default)",
               "overflow-y": "auto",
-              "overflow-x": "auto",
+              "overflow-x": "hidden",
               padding: "8px",
-              "flex-shrink": "0",
+              "flex-shrink": "1",
               background: "var(--jb-panel)",
             }}>
               {/* Modified filter toggle */}
@@ -993,7 +994,7 @@ export function SettingsDialog(props: SettingsDialogProps) {
                   title={showModifiedOnly() ? "Show all settings" : "Show only modified settings"}
                 >
                   <Icon name="filter" style={{ width: "14px", height: "14px" }} />
-                  <Text size="sm" style={{ flex: "1", "text-align": "left" }}>Modified</Text>
+                  <Text size="sm" style={{ flex: "1", "text-align": "left", overflow: "hidden", "white-space": "nowrap", "text-overflow": "ellipsis" }}>Modified</Text>
                   <Show when={totalModifiedCount() > 0}>
                     <Badge 
                       size="sm" 
