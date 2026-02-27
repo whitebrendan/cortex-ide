@@ -78,6 +78,8 @@ export interface CortexLayoutProps {
   activeTabId?: string | null;
   onTabClick?: (id: string) => void;
   onTabClose?: (id: string) => void;
+  onTabCloseOthers?: (id: string) => void;
+  onTabCloseAll?: () => void;
   onTabReorder?: (sourceId: string, targetId: string) => void;
   onNewTab?: () => void;
   currentLine?: number;
@@ -132,6 +134,8 @@ export const CortexLayout: Component<CortexLayoutProps> = (props) => {
     "activeTabId",
     "onTabClick",
     "onTabClose",
+    "onTabCloseOthers",
+    "onTabCloseAll",
     "onTabReorder",
     "onNewTab",
     "currentLine",
@@ -261,6 +265,8 @@ export const CortexLayout: Component<CortexLayoutProps> = (props) => {
                 activeTabId={local.activeTabId}
                 onTabClick={local.onTabClick}
                 onTabClose={local.onTabClose}
+                onTabCloseOthers={local.onTabCloseOthers}
+                onTabCloseAll={local.onTabCloseAll}
                 onTabReorder={local.onTabReorder}
                 onNewTab={local.onNewTab}
                 language={local.language}
