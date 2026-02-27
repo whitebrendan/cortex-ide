@@ -425,6 +425,17 @@ const cortex_SETTINGS_SCHEMA = {
               description: "Enable auto-reply feature",
               default: false
             },
+            showNotification: {
+              type: "boolean",
+              description: "Show notification when auto-reply triggers",
+              default: true
+            },
+            defaultDelay: {
+              type: "number",
+              description: "Default delay before sending reply (ms)",
+              default: 100,
+              minimum: 0
+            },
             rules: {
               type: "array",
               description: "Auto-reply rules for matching terminal output patterns",
