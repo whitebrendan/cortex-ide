@@ -409,6 +409,42 @@ const cortex_SETTINGS_SCHEMA = {
           type: "string",
           description: "Characters treated as word separators in terminal selection",
           default: " ()[]{}',\"`─"
+        },
+        bell: {
+          type: "string",
+          description: "Terminal bell behavior",
+          enum: ["none", "audible", "visual"],
+          default: "none"
+        },
+        autoReply: {
+          type: "object",
+          description: "Auto-reply settings for automated responses to terminal prompts",
+          properties: {
+            enabled: {
+              type: "boolean",
+              description: "Enable auto-reply feature",
+              default: false
+            },
+            rules: {
+              type: "array",
+              description: "Auto-reply rules for matching terminal output patterns",
+              items: {
+                type: "object",
+                properties: {
+                  id: { type: "string", description: "Unique identifier for the rule" },
+                  name: { type: "string", description: "Display name for the rule" },
+                  pattern: { type: "string", description: "Regex pattern to match terminal output" },
+                  reply: { type: "string", description: "Response to send when pattern matches" },
+                  enabled: { type: "boolean", description: "Whether the rule is enabled", default: true },
+                  caseSensitive: { type: "boolean", description: "Whether pattern matching is case sensitive", default: false },
+                  terminalFilter: { type: "string", description: "Optional terminal ID filter" },
+                  delay: { type: "number", description: "Delay before sending reply (ms)", minimum: 0 }
+                },
+                required: ["id", "name", "pattern", "reply", "enabled", "caseSensitive"]
+              },
+              default: []
+            }
+          }
         }
       }
     },
@@ -478,6 +514,12 @@ const cortex_SETTINGS_SCHEMA = {
           type: "boolean",
           description: "Send crash reports",
           default: false
+        },
+        trustedWorkspaces: {
+          type: "array",
+          description: "List of trusted workspace paths",
+          items: { type: "string" },
+          default: []
         }
       }
     },
