@@ -159,8 +159,9 @@ export function PaletteCommandPalette() {
   };
 
   const handleGlobalEsc = (e: KeyboardEvent) => { if (e.key === "Escape" && showCommandPalette()) { e.preventDefault(); setShowCommandPalette(false); } };
-  onMount(() => window.addEventListener("keydown", handleGlobalEsc));
-  onCleanup(() => window.removeEventListener("keydown", handleGlobalEsc));
+  const handleToggleEvent = () => { setShowCommandPalette(!showCommandPalette()); };
+  onMount(() => { window.addEventListener("keydown", handleGlobalEsc); window.addEventListener("command-palette:toggle", handleToggleEvent); });
+  onCleanup(() => { window.removeEventListener("keydown", handleGlobalEsc); window.removeEventListener("command-palette:toggle", handleToggleEvent); });
 
   const itemStyle = (sel: boolean): JSX.CSSProperties => ({
     display: "flex", "align-items": "center", gap: "6px", height: "24px", padding: "0 8px", margin: "1px 4px",

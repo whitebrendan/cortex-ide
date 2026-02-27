@@ -54,7 +54,6 @@ const ToastManager = lazy(() => import("@/components/ToastManager").then(m => ({
 const NotificationCenter = lazy(() => import("@/components/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
 
 // COMMAND PALETTE - Core UI, should load early
-const CommandPalette = lazy(() => import("@/components/CommandPalette").then(m => ({ default: m.CommandPalette })));
 const ViewQuickAccess = lazy(() => import("@/components/ViewQuickAccess").then(m => ({ default: m.ViewQuickAccess })));
 const PaletteCommandPalette = lazy(() => import("@/components/palette/CommandPalette").then(m => ({ default: m.PaletteCommandPalette })));
 const PaletteQuickOpen = lazy(() => import("@/components/palette/QuickOpen").then(m => ({ default: m.PaletteQuickOpen })));
@@ -568,7 +567,6 @@ function AppContent(props: ParentProps) {
         <Suspense>
           <ToastManager />
           <NotificationCenter />
-          <CommandPalette />
           <PaletteCommandPalette />
           <PaletteQuickOpen />
           <ViewQuickAccess />
