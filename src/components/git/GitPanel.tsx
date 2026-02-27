@@ -12,7 +12,7 @@ import { ConflictResolver, type ResolvedConflict } from "./ConflictResolver";
 import { useMultiRepo, type GitFile } from "@/context/MultiRepoContext";
 import { useSettings } from "@/context/SettingsContext";
 import { useGitMerge } from "@/context/GitMergeContext";
-import { gitLog, gitDiff, gitSubmoduleList, gitSubmoduleInit, gitSubmoduleUpdate, gitIsGpgConfigured, gitInit, gitTagList, type SubmoduleInfo } from "../../utils/tauri-api";
+import { gitLog, gitDiff, gitSubmoduleList, gitSubmoduleInit, gitSubmoduleUpdate, gitIsGpgConfigured, gitInit, gitTagList, gitMergeContinue, type SubmoduleInfo } from "../../utils/tauri-api";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import {
   Button,
@@ -26,6 +26,7 @@ import {
 import { tokens } from '@/design-system/tokens';
 
 const LazyMergeEditor = lazy(() => import("./MergeEditor").then(m => ({ default: m.MergeEditor })));
+const LazyBranchComparison = lazy(() => import("./BranchComparison").then(m => ({ default: m.BranchComparison })));
 // Note: Box, Flex, VStack, HStack from '@/design-system/primitives/Flex' prepared for layout refactoring
 
 // Threshold for virtualizing lists (render all if below this)
@@ -86,6 +87,8 @@ export function GitPanel() {
 const [signCommits, setSignCommits] = createSignal(false);
   const [gpgConfigured, setGpgConfigured] = createSignal(false);
   const [tagCount, setTagCount] = createSignal(0);
+  const [compareBranch, setCompareBranch] = createSignal<string | null>(null);
+  const [mergeBranchTarget, setMergeBranchTarget] = createSignal<string | null>(null);
   const [resolvingFile, setResolvingFile] = createSignal<string | null>(null);
   const [showMergeEditor, setShowMergeEditor] = createSignal(false);
   const [mergeEditorContent, setMergeEditorContent] = createSignal<string | null>(null);
@@ -704,20 +707,27 @@ const [signCommits, setSignCommits] = createSignal(false);
     }
   };
 
-  const mergeBranch = async (branchName: string) => {
+  const mergeBranch = async (branchName: string, closeBranchSelector = true) => {
     const repo = activeRepo();
     if (!repo) return;
 
     setOperationLoading("merge");
+    setMergeBranchTarget(branchName);
     try {
       const result = await multiRepo.mergeBranch(repo.id, branchName);
       if (result.hasConflicts) {
         showError("Merge completed with conflicts - resolve them before committing", "warning");
         gitMerge.loadConflicts();
+      } else {
+        setMergeBranchTarget(null);
+      }
+      if (closeBranchSelector) {
+        setShowBranchSelector(false);
       }
     } catch (err) {
       showError("Failed to merge branch");
       console.error("Failed to merge branch:", err);
+      setMergeBranchTarget(null);
     } finally {
       setOperationLoading(null);
     }
@@ -749,14 +759,36 @@ const [signCommits, setSignCommits] = createSignal(false);
   };
 
   const handleAbortMerge = async () => {
+    const repo = activeRepo();
     try {
       await gitMerge.abortMerge();
       setResolvingFile(null);
       setShowMergeEditor(false);
       setMergeEditorContent(null);
+      setMergeBranchTarget(null);
+      if (repo) {
+        await multiRepo.refreshRepository(repo.id);
+      }
     } catch (err) {
       showError("Failed to abort merge");
       console.error("Failed to abort merge:", err);
+    }
+  };
+
+  const handleCompleteMerge = async () => {
+    const repo = activeRepo();
+    if (!repo) return;
+
+    setOperationLoading("complete-merge");
+    try {
+      await gitMergeContinue(repo.path);
+      setMergeBranchTarget(null);
+      await multiRepo.refreshRepository(repo.id);
+    } catch (err) {
+      showError("Failed to complete merge");
+      console.error("Failed to complete merge:", err);
+    } finally {
+      setOperationLoading(null);
     }
   };
 
@@ -1545,9 +1577,16 @@ const [signCommits, setSignCommits] = createSignal(false);
                         <IconButton
                           size="sm"
                           tooltip={`Merge ${b.name} into current branch`}
-                          onClick={(e) => { e.stopPropagation(); mergeBranch(b.name); }}
+                          onClick={(e) => { e.stopPropagation(); mergeBranch(b.name, true); }}
                         >
                           <Icon name="code-merge" size={12} />
+                        </IconButton>
+                        <IconButton
+                          size="sm"
+                          tooltip={`Compare ${b.name} with current branch`}
+                          onClick={(e) => { e.stopPropagation(); setCompareBranch(b.name); setShowBranchSelector(false); }}
+                        >
+                          <Icon name="code-compare" size={12} />
                         </IconButton>
                         <IconButton
                           size="sm"
@@ -1748,30 +1787,46 @@ const [signCommits, setSignCommits] = createSignal(false);
         </Show>
 
         <Show when={!loading() && activeView() === "changes" && activeRepo()}>
-          {/* Merge conflict banner */}
+          {/* Merge in progress banner */}
           <Show when={conflictFiles().length > 0 || gitMerge.state.isMerging}>
             <div
               style={{
                 display: "flex",
                 "align-items": "center",
-                gap: tokens.spacing.md,
+                "justify-content": "space-between",
                 padding: `${tokens.spacing.md} ${tokens.spacing.lg}`,
                 background: `color-mix(in srgb, ${tokens.colors.semantic.warning} 10%, transparent)`,
                 "border-bottom": `1px solid ${tokens.colors.border.divider}`,
               }}
             >
-              <Icon name="triangle-exclamation" size={14} style={{ "flex-shrink": "0", color: tokens.colors.semantic.warning }} />
-              <Text as="span" style={{ flex: "1", "font-size": "12px", color: tokens.colors.semantic.warning }}>
-                Merge in progress — {conflictFiles().length} conflict{conflictFiles().length !== 1 ? "s" : ""} to resolve
-              </Text>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleAbortMerge}
-                style={{ "font-size": "10px", color: tokens.colors.semantic.error }}
-              >
-                Abort Merge
-              </Button>
+              <div style={{ display: "flex", "align-items": "center", gap: tokens.spacing.md }}>
+                <Icon name="code-merge" size={14} style={{ color: tokens.colors.semantic.warning }} />
+                <Text style={{ "font-size": "12px", "font-weight": "500", color: tokens.colors.semantic.warning }}>
+                  Merge in progress{mergeBranchTarget() ? ` (${mergeBranchTarget()})` : ""} — {conflictFiles().length} conflict{conflictFiles().length !== 1 ? "s" : ""} to resolve
+                </Text>
+              </div>
+              <div style={{ display: "flex", "align-items": "center", gap: tokens.spacing.sm }}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  loading={operationLoading() === "abort-merge"}
+                  disabled={!!operationLoading()}
+                  onClick={handleAbortMerge}
+                  style={{ color: tokens.colors.semantic.error, "font-size": "11px" }}
+                >
+                  Abort Merge
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  loading={operationLoading() === "complete-merge"}
+                  disabled={!!operationLoading() || conflictFiles().length > 0}
+                  onClick={handleCompleteMerge}
+                  style={{ "font-size": "11px" }}
+                >
+                  Complete Merge
+                </Button>
+              </div>
             </div>
           </Show>
 
@@ -2227,6 +2282,39 @@ const [signCommits, setSignCommits] = createSignal(false);
           >
             Commit {stagedFiles().length > 0 ? `(${stagedFiles().length} file${stagedFiles().length !== 1 ? "s" : ""})` : ""}
           </Button>
+        </div>
+      </Show>
+
+      {/* Branch Comparison overlay */}
+      <Show when={compareBranch()}>
+        <div
+          style={{
+            position: "absolute",
+            inset: "0",
+            "z-index": "40",
+            display: "flex",
+            "flex-direction": "column",
+            background: tokens.colors.surface.panel,
+          }}
+        >
+          <Suspense
+            fallback={
+              <div style={{ display: "flex", "align-items": "center", "justify-content": "center", height: "100%" }}>
+                <Icon name="spinner" size={20} style={{ animation: "spin 1s linear infinite", color: tokens.colors.icon.default }} />
+              </div>
+            }
+          >
+            <LazyBranchComparison
+              baseBranch={branch() || ""}
+              compareBranch={compareBranch()!}
+              branches={branches().filter(b => !b.remote).map(b => ({ name: b.name, current: b.current }))}
+              onClose={() => setCompareBranch(null)}
+              onMerge={(from, _to) => {
+                setCompareBranch(null);
+                mergeBranch(from, false);
+              }}
+            />
+          </Suspense>
         </div>
       </Show>
 
