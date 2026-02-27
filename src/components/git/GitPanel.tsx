@@ -101,9 +101,6 @@ export function GitPanel() {
   const [mergeError, setMergeError] = createSignal<string | null>(null);
 
 
-
-
-
   // Commit message validation settings (defaults as per conventional commit guidelines)
   const INPUT_VALIDATION_SUBJECT_LENGTH = 50;
   const INPUT_VALIDATION_LENGTH = 72;
