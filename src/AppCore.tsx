@@ -123,6 +123,7 @@ const ExtensionProfilerCommands = lazy(() => import("@/components/extensions").t
 
 // TERMINAL TOOLS
 const TerminalToolsCommands = lazy(() => import("@/components/terminal/TerminalToolsCommands").then(m => ({ default: m.TerminalToolsCommands })));
+const TerminalGroupCommands = lazy(() => import("@/components/TerminalGroupCommands").then(m => ({ default: m.TerminalGroupCommands })));
 
 // CODE NAVIGATION
 const ReferencesView = lazy(() => import("@/components/ReferencesView").then(m => ({ default: m.ReferencesView })));
@@ -528,6 +529,7 @@ function AppContent(props: ParentProps) {
           <Suspense>
             <TerminalPanel />
             <TerminalToolsCommands />
+            <TerminalGroupCommands />
           </Suspense>
         </Show>
         
