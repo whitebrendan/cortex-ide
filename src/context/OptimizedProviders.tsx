@@ -59,6 +59,7 @@ import { SearchProvider } from "@/context/SearchContext";
 import { WorkspaceProvider } from "@/context/WorkspaceContext";
 import { EditorFeaturesProvider } from "@/context/editor/EditorFeaturesProvider";
 import { ModalActiveProvider } from "@/context/ModalActiveContext";
+import { EditorCursorProvider } from "@/context/editor/EditorCursorContext";
 
 // ============================================================================
 // TIER 2: DEFERRED PROVIDERS - Loaded after first paint
@@ -315,6 +316,7 @@ export function OptimizedProviders(props: ParentProps): JSX.Element {
       <SearchProvider>
       <WorkspaceProvider>
       <EditorProvider>
+      <EditorCursorProvider>
       <EditorFeaturesProvider>
 
         {/* Tier 2: Deferred providers - mounted after first paint */}
@@ -323,6 +325,7 @@ export function OptimizedProviders(props: ParentProps): JSX.Element {
         </DeferredProviders>
 
       </EditorFeaturesProvider>
+      </EditorCursorProvider>
       </EditorProvider>
       </WorkspaceProvider>
       </SearchProvider>

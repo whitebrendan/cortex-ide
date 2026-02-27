@@ -61,6 +61,25 @@ export interface DiagnosticEntry {
   source?: string;
 }
 
+/** Backend UnifiedDiagnostic shape returned by diagnostics_get_by_file */
+interface BackendDiagnostic {
+  uri: string;
+  range: { start: { line: number; character: number }; end: { line: number; character: number } };
+  severity: string;
+  source: string;
+  source_name?: string;
+  message: string;
+  code?: string;
+}
+
+/** Backend FileDiagnostics shape returned by diagnostics_get_by_file */
+interface BackendFileDiagnostics {
+  uri: string;
+  diagnostics: BackendDiagnostic[];
+  error_count: number;
+  warning_count: number;
+}
+
 /** Options for filtering diagnostics */
 export interface UseDiagnosticsOptions {
   /** Filter diagnostics to a specific document URI */
@@ -182,10 +201,21 @@ export function useDiagnostics(
     }
 
     try {
-      const raw = await invoke<DiagnosticEntry[]>("diagnostics_get");
+      const grouped = await invoke<BackendFileDiagnostics[]>("diagnostics_get_by_file", { filter: null });
       if (cancelled) {
         return;
       }
+
+      const raw: DiagnosticEntry[] = grouped.flatMap((file) =>
+        file.diagnostics.map((d) => ({
+          uri: d.uri,
+          message: d.message,
+          severity: d.severity,
+          line: d.range.start.line,
+          character: d.range.start.character,
+          source: d.source_name ?? d.source,
+        }))
+      );
 
       const filtered = applyFilters(raw, options);
       setDiagnostics(filtered);

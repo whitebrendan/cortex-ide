@@ -37,6 +37,8 @@ import { useLayout } from "@/context/LayoutContext";
 import { useSettings } from "@/context/SettingsContext";
 import { useNotifications } from "@/context/NotificationsContext";
 import { useOutput } from "@/context/OutputContext";
+import { useWorkspace } from "@/context/WorkspaceContext";
+import { useEditorCursor } from "@/context/editor/EditorCursorContext";
 import { useWindowEvents } from "@/hooks/useWindowEvents";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { initGlobalErrorHandler } from "@/lib/error-handler";
@@ -273,6 +275,65 @@ function DeepLinkHandler(): null {
   return null;
 }
 
+/** Bridges AI slash command context requests to editor/workspace/terminal contexts */
+function AIContextBridge(): null {
+  const editor = useEditor();
+  const editorCursor = useEditorCursor();
+  const workspace = useWorkspace();
+
+  const handleRequestSelection = () => {
+    const selection = editorCursor.primarySelection();
+    const activeFile = editor.selectors.activeFile();
+    const text = selection?.text || "";
+    const filePath = activeFile?.path;
+    const range = selection
+      ? {
+          startLine: selection.startLine,
+          startColumn: selection.startColumn,
+          endLine: selection.endLine,
+          endColumn: selection.endColumn,
+        }
+      : undefined;
+    window.dispatchEvent(
+      new CustomEvent("ai:selection-response", {
+        detail: { text, filePath, range },
+      })
+    );
+  };
+
+  const handleRequestWorkspace = () => {
+    const folders = workspace.folders().map((f) => ({ path: f.path, name: f.name }));
+    const activeFolder = workspace.activeFolder() || undefined;
+    window.dispatchEvent(
+      new CustomEvent("ai:workspace-response", {
+        detail: { folders, activeFolder },
+      })
+    );
+  };
+
+  const handleRequestTerminal = (_e: Event) => {
+    window.dispatchEvent(
+      new CustomEvent("ai:terminal-response", {
+        detail: { output: "", terminalId: undefined },
+      })
+    );
+  };
+
+  onMount(() => {
+    window.addEventListener("ai:request-selection", handleRequestSelection);
+    window.addEventListener("ai:request-workspace", handleRequestWorkspace);
+    window.addEventListener("ai:request-terminal", handleRequestTerminal);
+  });
+
+  onCleanup(() => {
+    window.removeEventListener("ai:request-selection", handleRequestSelection);
+    window.removeEventListener("ai:request-workspace", handleRequestWorkspace);
+    window.removeEventListener("ai:request-terminal", handleRequestTerminal);
+  });
+
+  return null;
+}
+
 // ============================================================================
 // MAIN APP CONTENT - Rendered inside OptimizedProviders
 // ============================================================================
@@ -499,6 +560,7 @@ function AppContent(props: ParentProps) {
         <ExtensionCommandRegistrar />
         <ExtensionNotificationListener />
         <DeepLinkHandler />
+        <AIContextBridge />
         
         {/* ============================================================ */}
         {/* TIER 1: ALWAYS VISIBLE - Critical UI */}

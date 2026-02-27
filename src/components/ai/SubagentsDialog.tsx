@@ -131,6 +131,7 @@ export function SubagentsDialog(props: SubagentsDialogProps) {
             : a
         )
       );
+      syncSelectedAgent();
     });
     
     const unlisten3 = await listen<AgentTask>("agent:task-completed", (event) => {
@@ -148,6 +149,15 @@ export function SubagentsDialog(props: SubagentsDialogProps) {
     unlistenFns.forEach((fn) => fn());
   });
 
+  // Sync selectedAgent with latest agents list after refresh
+  const syncSelectedAgent = () => {
+    const current = selectedAgent();
+    if (current) {
+      const updated = agents().find((a) => a.id === current.id) || null;
+      setSelectedAgent(updated);
+    }
+  };
+
   // Load agents from backend
   const loadAgents = async () => {
     setLoading(true);
@@ -155,6 +165,7 @@ export function SubagentsDialog(props: SubagentsDialogProps) {
     try {
       const result = await invoke<SubAgent[]>("agent_list");
       setAgents(result);
+      syncSelectedAgent();
     } catch (e) {
       setError(`Failed to load agents: ${e}`);
     } finally {

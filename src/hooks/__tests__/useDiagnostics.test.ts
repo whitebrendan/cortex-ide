@@ -264,21 +264,21 @@ describe("useDiagnostics", () => {
   });
 
   describe("Refresh Diagnostics", () => {
-    it("should call diagnostics_get via invoke", async () => {
+    it("should call diagnostics_get_by_file via invoke", async () => {
       vi.mocked(invoke).mockResolvedValueOnce([
-        { uri: "file:///src/app.ts", diagnostics: [] },
+        { uri: "file:///src/app.ts", diagnostics: [], error_count: 0, warning_count: 0 },
       ]);
 
-      const result = await invoke("diagnostics_get");
+      const result = await invoke("diagnostics_get_by_file", { filter: null });
 
-      expect(invoke).toHaveBeenCalledWith("diagnostics_get");
+      expect(invoke).toHaveBeenCalledWith("diagnostics_get_by_file", { filter: null });
       expect(result).toHaveLength(1);
     });
 
     it("should handle refresh failure", async () => {
       vi.mocked(invoke).mockRejectedValueOnce(new Error("Backend unavailable"));
 
-      await expect(invoke("diagnostics_get")).rejects.toThrow("Backend unavailable");
+      await expect(invoke("diagnostics_get_by_file", { filter: null })).rejects.toThrow("Backend unavailable");
     });
   });
 

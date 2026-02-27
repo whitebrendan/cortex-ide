@@ -68,7 +68,12 @@ export async function refreshDiagnostics(options?: DiagnosticsRefreshOptions): P
 }
 
 export async function getDiagnostics(uri?: string): Promise<DiagnosticCollection[]> {
-  return safeInvoke<DiagnosticCollection[]>("diagnostics_get", { uri }, { fallback: [] });
+  if (uri) {
+    const diagnostics = await safeInvoke<Diagnostic[]>("diagnostics_get_for_file", { uri }, { fallback: [] });
+    return diagnostics.length > 0 ? [{ uri, diagnostics }] : [];
+  }
+  const grouped = await safeInvoke<DiagnosticCollection[]>("diagnostics_get_by_file", { filter: null }, { fallback: [] });
+  return grouped;
 }
 
 export async function getDiagnosticsForFile(uri: string): Promise<Diagnostic[]> {
