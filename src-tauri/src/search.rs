@@ -797,11 +797,16 @@ pub async fn search_replace_preview(
             let mut preview_lines: Vec<ReplacePreviewLine> = Vec::new();
 
             for (line_num, line_matches) in &matches_by_line {
-                if (*line_num as usize) >= new_lines.len() {
+                let line_idx = if *line_num > 0 {
+                    (*line_num - 1) as usize
+                } else {
+                    0
+                };
+                if line_idx >= new_lines.len() {
                     continue;
                 }
 
-                let original = new_lines[*line_num as usize].clone();
+                let original = new_lines[line_idx].clone();
                 let mut line = original.clone();
 
                 for m in line_matches {
@@ -821,7 +826,7 @@ pub async fn search_replace_preview(
                     }
                 }
 
-                new_lines[*line_num as usize] = line.clone();
+                new_lines[line_idx] = line.clone();
 
                 preview_lines.push(ReplacePreviewLine {
                     line_number: *line_num,
@@ -1212,7 +1217,7 @@ mod tests {
 
         let matches = vec![SearchMatch {
             id: "1".to_string(),
-            line: 0,
+            line: 1,
             column: 6,
             length: 5,
             line_text: "hello world".to_string(),
@@ -1239,7 +1244,7 @@ mod tests {
 
         let matches = vec![SearchMatch {
             id: "1".to_string(),
-            line: 0,
+            line: 1,
             column: 0,
             length: 9,
             line_text: "remove_me here".to_string(),
@@ -1266,7 +1271,7 @@ mod tests {
 
         let matches = vec![SearchMatch {
             id: "1".to_string(),
-            line: 0,
+            line: 1,
             column: 0,
             length: 5,
             line_text: "Hello World".to_string(),
@@ -1334,7 +1339,7 @@ mod tests {
 
         let matches = vec![SearchMatch {
             id: "1".to_string(),
-            line: 0,
+            line: 1,
             column: 7,
             length: 4,
             line_text: "price: $100".to_string(),
