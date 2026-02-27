@@ -19,6 +19,7 @@ vi.mock("@/context/SettingsContext", () => {
         enabled: true, fontSize: 0, fontFamily: "", showTypes: true,
         showParameterNames: true, showReturnTypes: true, maxLength: 25, padding: false,
       },
+      semanticHighlighting: { enabled: true, strings: true, comments: true },
     },
     theme: {
       theme: "dark", iconTheme: "seti", accentColor: "#007acc", uiFontFamily: "Inter",
@@ -108,6 +109,12 @@ vi.mock("@/context/WorkspaceTrustContext", () => ({
 vi.mock("@/utils/restrictedSettings", () => ({
   isSettingRestricted: () => false,
   getSettingRestrictionReason: () => null,
+}));
+
+vi.mock("@/utils/safeStorage", () => ({
+  safeGetItem: () => null,
+  safeSetItem: () => {},
+  safeRemoveItem: () => {},
 }));
 
 vi.mock("@/utils/lazyStyles", () => ({

@@ -34,6 +34,7 @@ import { useWorkspaceTrust } from "@/context/WorkspaceTrustContext";
 import { isSettingRestricted, getSettingRestrictionReason } from "@/utils/restrictedSettings";
 import { tokens } from "@/design-system/tokens";
 import { Button, IconButton, Input, Text, Badge, Toggle } from "@/components/ui";
+import { safeGetItem, safeSetItem } from "@/utils/safeStorage";
 import { loadStylesheet } from "@/utils/lazyStyles";
 loadStylesheet("settings");
 
@@ -105,8 +106,17 @@ interface FilterSuggestion {
   description: string;
 }
 
-// Module-level signal to persist TOC section across re-renders / focus changes
-const [persistedActiveSection, setPersistedActiveSection] = createSignal("editor");
+// Module-level signal to persist TOC section across re-renders / focus changes.
+// Back the signal with sessionStorage so the value survives lazy-chunk re-evaluation
+// and component unmount/remount cycles (e.g. switching editor tabs).
+const SETTINGS_TOC_STORAGE_KEY = "settings_active_toc_section";
+const [persistedActiveSection, _setPersistedRaw] = createSignal(
+  safeGetItem(SETTINGS_TOC_STORAGE_KEY) || "editor"
+);
+const setPersistedActiveSection = (id: string) => {
+  _setPersistedRaw(id);
+  safeSetItem(SETTINGS_TOC_STORAGE_KEY, id);
+};
 
 // =============================================================================
 // SETTINGS REGISTRY
