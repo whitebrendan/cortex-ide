@@ -756,6 +756,7 @@ export function SettingsDialog(props: SettingsDialogProps) {
               {/* Folder selector - shown when folder scope is active */}
               <Show when={settingsScope() === "folder" && isMultiRoot()}>
                 <select
+                  aria-label="Select workspace folder for folder-specific settings"
                   value={selectedFolder() || ""}
                   onChange={(e) => setSelectedFolder(e.currentTarget.value)}
                   style={{
