@@ -87,6 +87,28 @@ impl FactoryManager {
         }
     }
 
+    /// Initialize persistence: set the base directory and load persisted workflows.
+    pub fn initialize(&mut self, base_dir: std::path::PathBuf) -> Result<(), String> {
+        self.persistence.set_base_dir(base_dir)?;
+
+        if let Ok(workflows) = self.persistence.list_workflows() {
+            for wf in workflows {
+                if let Some(num) = wf
+                    .id
+                    .strip_prefix("wf_")
+                    .and_then(|s| s.parse::<u64>().ok())
+                {
+                    if num >= self.next_id {
+                        self.next_id = num + 1;
+                    }
+                }
+                self.workflows.insert(wf.id.clone(), wf);
+            }
+        }
+
+        Ok(())
+    }
+
     /// Generate a unique ID with the given prefix
     pub fn generate_id(&mut self, prefix: &str) -> String {
         let id = format!("{}_{}", prefix, self.next_id);

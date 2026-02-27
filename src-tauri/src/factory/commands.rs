@@ -31,6 +31,10 @@ pub async fn factory_create_workflow(
         .cloned()
         .ok_or("Failed to create workflow")?;
 
+    if let Err(e) = manager.persistence().save_workflow(&created) {
+        tracing::warn!("Failed to persist workflow {}: {}", id, e);
+    }
+
     // Log audit entry
     manager.audit_mut().log(
         "workflow_created",
@@ -66,6 +70,10 @@ pub async fn factory_update_workflow(
         .cloned()
         .ok_or("Failed to get updated workflow")?;
 
+    if let Err(e) = manager.persistence().save_workflow(&updated) {
+        tracing::warn!("Failed to persist workflow {}: {}", id, e);
+    }
+
     // Log audit entry
     manager.audit_mut().log(
         "workflow_updated",
@@ -93,6 +101,10 @@ pub async fn factory_delete_workflow(
 ) -> Result<(), String> {
     let mut manager = state.get().0.lock().await;
     let workflow = manager.delete_workflow(&workflow_id)?;
+
+    if let Err(e) = manager.persistence().delete_workflow(&workflow_id) {
+        tracing::warn!("Failed to delete persisted workflow {}: {}", workflow_id, e);
+    }
 
     // Log audit entry
     manager.audit_mut().log(
@@ -162,6 +174,10 @@ pub async fn factory_import_workflow(
         .get_workflow(&id)
         .cloned()
         .ok_or("Failed to import workflow")?;
+
+    if let Err(e) = manager.persistence().save_workflow(&created) {
+        tracing::warn!("Failed to persist imported workflow {}: {}", id, e);
+    }
 
     // Log audit entry
     manager.audit_mut().log(

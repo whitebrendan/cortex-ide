@@ -488,6 +488,7 @@ fn run_phase_b(app_handle: AppHandle, remote_manager: Arc<RemoteManager>) {
             _update_result,
             _ai_result,
             _mcp_result,
+            _factory_result,
         ) = tokio::join!(
             async {
                 let t = std::time::Instant::now();
@@ -540,6 +541,22 @@ fn run_phase_b(app_handle: AppHandle, remote_manager: Arc<RemoteManager>) {
                         info!("MCP socket server started in {:?}", t.elapsed());
                     }
                 }
+            },
+            async {
+                let t = std::time::Instant::now();
+                let factory_state =
+                    app_handle.state::<crate::LazyState<crate::factory::FactoryState>>();
+                let mut manager = factory_state.get().0.lock().await;
+                if let Some(data_dir) = dirs::data_dir() {
+                    let base_dir = data_dir.join("Cortex");
+                    if let Err(e) = manager.initialize(base_dir) {
+                        warn!("Failed to initialize factory persistence: {}", e);
+                    } else {
+                        info!("Factory workflows loaded in {:?}", t.elapsed());
+                    }
+                } else {
+                    warn!("Could not determine data directory for factory persistence");
+                }
             }
         );
 
@@ -551,7 +568,7 @@ fn run_phase_b(app_handle: AppHandle, remote_manager: Arc<RemoteManager>) {
         if let Err(e) = app_handle.emit(
             "backend:phase_b_ready",
             serde_json::json!({
-                "initialized": ["extensions", "lsp", "ssh_profiles", "auto_update", "ai_providers", "mcp"]
+                "initialized": ["extensions", "lsp", "ssh_profiles", "auto_update", "ai_providers", "mcp", "factory"]
             }),
         ) {
             warn!("Failed to emit backend:phase_b_ready event: {}", e);
