@@ -1221,7 +1221,7 @@ export function JsonSettingsEditor(props: JsonSettingsEditorProps) {
       {/* Header */}
       <div class="flex items-center justify-between px-4 py-2 border-b border-border bg-background-secondary flex-wrap gap-2">
         {/* Scope Tabs */}
-        <div class="flex items-center gap-2 flex-wrap">
+        <div class="flex items-center gap-2 flex-wrap min-w-0">
           <div class="flex items-center gap-1 rounded-lg border border-border bg-background p-0.5">
             <button
               onClick={() => switchScope("user")}
@@ -1263,7 +1263,7 @@ export function JsonSettingsEditor(props: JsonSettingsEditorProps) {
         </div>
 
         {/* Actions */}
-        <div class="flex items-center gap-2 flex-wrap">
+        <div class="flex items-center gap-2 flex-wrap flex-shrink-0">
           {/* Show Default Settings Toggle */}
           <button
             onClick={() => setShowDefaultSettings(!showDefaultSettings())}
