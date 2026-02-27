@@ -529,79 +529,6 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           />
         </SettingRowWithOverride>
         <Show when={editor().minimapEnabled}>
-          <SettingRowWithOverride 
-            label="Side" 
-            settingKey="minimapSide"
-            hasOverride={hasOverride("minimapSide")}
-            onReset={() => resetOverride("minimapSide")}
-          >
-            <select
-              value={editor().minimapSide}
-              onChange={(e) => updateSetting("minimapSide", e.currentTarget.value as "right" | "left")}
-              style={getSelectStyle(hasOverride("minimapSide"))}
-              onFocus={(e) => e.currentTarget.style.borderColor = "var(--jb-border-focus)"}
-              onBlur={(e) => e.currentTarget.style.borderColor = hasOverride("minimapSide") ? "var(--jb-border-focus)" : "var(--jb-border-default)"}
-            >
-              <option value="right">Right</option>
-              <option value="left">Left</option>
-            </select>
-          </SettingRowWithOverride>
-          <SettingRowWithOverride 
-            label="Show Slider" 
-            settingKey="minimapShowSlider"
-            hasOverride={hasOverride("minimapShowSlider")}
-            onReset={() => resetOverride("minimapShowSlider")}
-          >
-            <select
-              value={editor().minimapShowSlider}
-              onChange={(e) => updateSetting("minimapShowSlider", e.currentTarget.value as "always" | "mouseover")}
-              style={getSelectStyle(hasOverride("minimapShowSlider"))}
-              onFocus={(e) => e.currentTarget.style.borderColor = "var(--jb-border-focus)"}
-              onBlur={(e) => e.currentTarget.style.borderColor = hasOverride("minimapShowSlider") ? "var(--jb-border-focus)" : "var(--jb-border-default)"}
-            >
-              <option value="always">Always</option>
-              <option value="mouseover">On Mouseover</option>
-            </select>
-          </SettingRowWithOverride>
-          <SettingRowWithOverride 
-            label="Render Characters" 
-            settingKey="minimapRenderCharacters"
-            hasOverride={hasOverride("minimapRenderCharacters")}
-            onReset={() => resetOverride("minimapRenderCharacters")}
-          >
-            <Toggle
-              checked={editor().minimapRenderCharacters}
-              onChange={(checked) => updateSetting("minimapRenderCharacters", checked)}
-            />
-          </SettingRowWithOverride>
-          <SettingRowWithOverride 
-            label="Max Column" 
-            settingKey="minimapMaxColumn"
-            hasOverride={hasOverride("minimapMaxColumn")}
-            onReset={() => resetOverride("minimapMaxColumn")}
-          >
-            <input
-              type="number"
-              min="1"
-              max="300"
-              value={editor().minimapMaxColumn}
-              onChange={(e) => updateSetting("minimapMaxColumn", parseInt(e.currentTarget.value) || 80)}
-              style={{ ...getInputStyle(hasOverride("minimapMaxColumn")), width: "80px" }}
-              onFocus={(e) => e.currentTarget.style.borderColor = "var(--jb-border-focus)"}
-              onBlur={(e) => e.currentTarget.style.borderColor = hasOverride("minimapMaxColumn") ? "var(--jb-border-focus)" : "var(--jb-border-default)"}
-            />
-          </SettingRowWithOverride>
-          <SettingRowWithOverride
-            label="Render Characters"
-            settingKey="minimapRenderCharacters"
-            hasOverride={hasOverride("minimapRenderCharacters")}
-            onReset={() => resetOverride("minimapRenderCharacters")}
-          >
-            <Toggle
-              checked={editor().minimapRenderCharacters}
-              onChange={(checked) => updateSetting("minimapRenderCharacters", checked)}
-            />
-          </SettingRowWithOverride>
           <SettingRowWithOverride
             label="Side"
             settingKey="minimapSide"
@@ -618,6 +545,51 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
               <option value="right">Right</option>
               <option value="left">Left</option>
             </select>
+          </SettingRowWithOverride>
+          <SettingRowWithOverride
+            label="Show Slider"
+            settingKey="minimapShowSlider"
+            hasOverride={hasOverride("minimapShowSlider")}
+            onReset={() => resetOverride("minimapShowSlider")}
+          >
+            <select
+              value={editor().minimapShowSlider}
+              onChange={(e) => updateSetting("minimapShowSlider", e.currentTarget.value as "always" | "mouseover")}
+              style={getSelectStyle(hasOverride("minimapShowSlider"))}
+              onFocus={(e) => e.currentTarget.style.borderColor = "var(--jb-border-focus)"}
+              onBlur={(e) => e.currentTarget.style.borderColor = hasOverride("minimapShowSlider") ? "var(--jb-border-focus)" : "var(--jb-border-default)"}
+            >
+              <option value="always">Always</option>
+              <option value="mouseover">On Mouseover</option>
+            </select>
+          </SettingRowWithOverride>
+          <SettingRowWithOverride
+            label="Render Characters"
+            settingKey="minimapRenderCharacters"
+            hasOverride={hasOverride("minimapRenderCharacters")}
+            onReset={() => resetOverride("minimapRenderCharacters")}
+          >
+            <Toggle
+              checked={editor().minimapRenderCharacters}
+              onChange={(checked) => updateSetting("minimapRenderCharacters", checked)}
+            />
+          </SettingRowWithOverride>
+          <SettingRowWithOverride
+            label="Max Column"
+            settingKey="minimapMaxColumn"
+            hasOverride={hasOverride("minimapMaxColumn")}
+            onReset={() => resetOverride("minimapMaxColumn")}
+          >
+            <input
+              type="number"
+              min="1"
+              max="300"
+              value={editor().minimapMaxColumn}
+              onChange={(e) => updateSetting("minimapMaxColumn", parseInt(e.currentTarget.value) || 80)}
+              style={{ ...getInputStyle(hasOverride("minimapMaxColumn")), width: "80px" }}
+              onFocus={(e) => e.currentTarget.style.borderColor = "var(--jb-border-focus)"}
+              onBlur={(e) => e.currentTarget.style.borderColor = hasOverride("minimapMaxColumn") ? "var(--jb-border-focus)" : "var(--jb-border-default)"}
+            />
           </SettingRowWithOverride>
           <SettingRowWithOverride
             label="Scale"
@@ -637,23 +609,6 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
               <option value="2">2x</option>
               <option value="2.5">2.5x</option>
               <option value="3">3x</option>
-            </select>
-          </SettingRowWithOverride>
-          <SettingRowWithOverride
-            label="Show Slider"
-            settingKey="minimapShowSlider"
-            hasOverride={hasOverride("minimapShowSlider")}
-            onReset={() => resetOverride("minimapShowSlider")}
-          >
-            <select
-              value={editor().minimapShowSlider}
-              onChange={(e) => updateSetting("minimapShowSlider", e.currentTarget.value as "always" | "mouseover")}
-              style={getSelectStyle(hasOverride("minimapShowSlider"))}
-              onFocus={(e) => e.currentTarget.style.borderColor = "var(--jb-border-focus)"}
-              onBlur={(e) => e.currentTarget.style.borderColor = hasOverride("minimapShowSlider") ? "var(--jb-border-focus)" : "var(--jb-border-default)"}
-            >
-              <option value="mouseover">On Mouse Over</option>
-              <option value="always">Always</option>
             </select>
           </SettingRowWithOverride>
         </Show>
