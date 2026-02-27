@@ -86,13 +86,15 @@ export interface TerminalSplitViewProps {
   showHeaders?: boolean;
   /** Render function for terminal content */
   renderTerminal: (terminal: TerminalInfo, isActive: boolean) => JSX.Element;
+  /** Callback to request xterm fit on all panes after resize */
+  onFitTerminals?: (terminalIds: string[]) => void;
 }
 
 // =============================================================================
 // CONSTANTS
 // =============================================================================
 
-const DEFAULT_MIN_PANE_SIZE = 100;
+const DEFAULT_MIN_PANE_SIZE = 200;
 const SASH_SIZE = 4;
 const SASH_HOVER_SIZE = 8;
 
@@ -341,6 +343,13 @@ export function TerminalSplitView(props: TerminalSplitViewProps) {
     return positions;
   });
 
+  // Notify xterm fit after container/pane resize
+  const requestFit = () => {
+    if (props.onFitTerminals) {
+      props.onFitTerminals(props.group.terminalIds);
+    }
+  };
+
   // Update container size
   onMount(() => {
     if (!containerRef) return;
@@ -348,6 +357,7 @@ export function TerminalSplitView(props: TerminalSplitViewProps) {
     const updateSize = () => {
       const rect = containerRef!.getBoundingClientRect();
       setContainerSize({ width: rect.width, height: rect.height });
+      requestFit();
     };
 
     updateSize();
@@ -392,15 +402,17 @@ export function TerminalSplitView(props: TerminalSplitViewProps) {
     // Apply minimum size constraints
     const minRatio = minPaneSize() / availableSize;
     if (newRatio1 < minRatio) {
-      const diff = minRatio - newRatio1;
       newRatio1 = minRatio;
-      newRatio2 -= diff;
+      newRatio2 = currentRatios[index] + currentRatios[index + 1] - newRatio1;
     }
     if (newRatio2 < minRatio) {
-      const diff = minRatio - newRatio2;
       newRatio2 = minRatio;
-      newRatio1 -= diff;
+      newRatio1 = currentRatios[index] + currentRatios[index + 1] - newRatio2;
     }
+
+    // Final safety clamp — ensure neither pane is below minimum
+    newRatio1 = Math.max(minRatio, newRatio1);
+    newRatio2 = Math.max(minRatio, newRatio2);
 
     // Notify parent of ratio change
     props.onSplitRatioChange(props.group.id, index, newRatio1);
@@ -440,10 +452,10 @@ export function TerminalSplitView(props: TerminalSplitViewProps) {
       [isHorizontal() ? "height" : "width"]: "100%",
       "flex-shrink": "0",
       overflow: "hidden",
-      "border": isActive
-        ? `1px solid ${tokens.colors.accent.primary}`
-        : `1px solid transparent`,
-      transition: "border-color 150ms ease",
+      "box-shadow": isActive
+        ? `inset 0 0 0 1px ${tokens.colors.accent.primary}`
+        : "none",
+      transition: "box-shadow 150ms ease",
     };
   };
 
@@ -504,6 +516,7 @@ export function TerminalSplitView(props: TerminalSplitViewProps) {
             onResizeStart={() => setIsResizing(true)}
             onResizeEnd={() => {
               setIsResizing(false);
+              requestFit();
               notifyTerminalRefit();
             }}
             onDoubleClick={() => handleSashDoubleClick(index())}

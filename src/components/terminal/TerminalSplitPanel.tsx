@@ -47,6 +47,8 @@ export interface TerminalSplitPanelProps {
   onInitializeTerminal: (terminal: TerminalInfo, container: HTMLElement) => void;
   /** Dispose a terminal instance */
   onDisposeTerminal: (terminalId: string) => void;
+  /** Callback to request xterm fit on terminals after resize */
+  onFitTerminals?: (terminalIds: string[]) => void;
   /** Callback when panel should be closed */
   onClosePanel?: () => void;
   /** Whether the panel is focused */
@@ -604,9 +606,10 @@ export function TerminalSplitPanel(props: TerminalSplitPanelProps) {
             onSelectTerminal={setActiveTerminal}
             onCloseTerminal={handleCloseTerminal}
             onSplitRatioChange={handleSplitRatioChange}
-            minPaneSize={100}
+            minPaneSize={200}
             showHeaders={true}
             renderTerminal={renderTerminal}
+            onFitTerminals={props.onFitTerminals}
           />
         </Show>
 
