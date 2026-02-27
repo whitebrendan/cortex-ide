@@ -2,6 +2,7 @@ import { createSignal, For, Show, onMount, onCleanup, createMemo, createEffect, 
 import { Icon } from "../ui/Icon";
 import { VirtualList } from "../ui/VirtualList";
 import { CommitGraph, type Commit } from "./CommitGraph";
+import { DeleteBranchDialog } from "./DeleteBranchDialog";
 import { StashPanel } from "./StashPanel";
 import { TagManager } from "./TagManager";
 import { IncomingOutgoingSection, IncomingOutgoingView } from "./IncomingOutgoingView";
@@ -73,6 +74,8 @@ export function GitPanel() {
   const [error, setError] = createSignal<ErrorState | null>(null);
   const [showCreateBranch, setShowCreateBranch] = createSignal(false);
   const [newBranchName, setNewBranchName] = createSignal("");
+  const [branchFilter, setBranchFilter] = createSignal<string>("");
+  const [pendingDeleteBranch, setPendingDeleteBranch] = createSignal<string | null>(null);
   const [submodules, setSubmodules] = createSignal<SubmoduleInfo[]>([]);
   const [submodulesLoading, setSubmodulesLoading] = createSignal(false);
 const [signCommits, setSignCommits] = createSignal(false);
@@ -161,6 +164,14 @@ const [signCommits, setSignCommits] = createSignal(false);
       }
     });
   });
+
+  const filteredBranches = createMemo(() => {
+    const filter = branchFilter().toLowerCase();
+    const local = sortedBranches().filter(b => !b.remote);
+    if (!filter) return local;
+    return local.filter(b => b.name.toLowerCase().includes(filter));
+  });
+
   const stagedFiles = () => activeRepo()?.stagedFiles || [];
   const unstagedFiles = () => activeRepo()?.unstagedFiles || [];
   const conflictFiles = () => activeRepo()?.conflictFiles || [];
@@ -598,6 +609,7 @@ const [signCommits, setSignCommits] = createSignal(false);
     setOperationLoading("checkout");
     try {
       await multiRepo.checkout(repo.id, branchName);
+      setBranchFilter("");
       setShowBranchSelector(false);
     } catch (err) {
       showError("Failed to checkout branch");
@@ -659,6 +671,7 @@ const [signCommits, setSignCommits] = createSignal(false);
     setOperationLoading("create-branch");
     try {
       await multiRepo.createBranch(repo.id, name, checkoutAfter);
+      setBranchFilter("");
       setShowBranchSelector(false);
     } catch (err) {
       showError("Failed to create branch");
@@ -1295,7 +1308,7 @@ const [signCommits, setSignCommits] = createSignal(false);
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setShowBranchSelector(!showBranchSelector())}
+            onClick={() => { const next = !showBranchSelector(); setShowBranchSelector(next); if (!next) setBranchFilter(""); }}
             disabled={loading()}
             icon={<Icon name="code-branch" size={16} />}
             iconRight={<Icon name="chevron-down" size={12} />}
@@ -1419,9 +1432,29 @@ const [signCommits, setSignCommits] = createSignal(false);
             </div>
           </Show>
           
+          {/* Branch search */}
+          <div style={{ padding: `${tokens.spacing.sm} ${tokens.spacing.lg}`, "border-bottom": `1px solid ${tokens.colors.border.divider}` }}>
+            <Input
+              placeholder="Search branches..."
+              value={branchFilter()}
+              onInput={(e) => setBranchFilter(e.currentTarget.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setBranchFilter("");
+                  setShowBranchSelector(false);
+                }
+              }}
+            />
+          </div>
+
           {/* Branch list */}
           <div style={{ "max-height": "192px", "overflow-y": "auto" }}>
-            <For each={sortedBranches().filter(b => !b.remote)}>
+            <Show when={filteredBranches().length === 0 && branchFilter()}>
+              <div style={{ padding: tokens.spacing.lg, "text-align": "center", color: tokens.colors.text.muted, "font-size": "12px" }}>
+                No matching branches
+              </div>
+            </Show>
+            <For each={filteredBranches()}>
               {(b) => (
                 <ListItem
                   icon={
@@ -1455,9 +1488,7 @@ const [signCommits, setSignCommits] = createSignal(false);
                           tooltip={`Delete ${b.name}`}
                           onClick={(e) => { 
                             e.stopPropagation(); 
-                            if (confirm(`Delete branch "${b.name}"?`)) {
-                              deleteBranch(b.name);
-                            }
+                            setPendingDeleteBranch(b.name);
                           }}
                         >
                           <Icon name="trash" size={12} style={{ color: tokens.colors.semantic.error }} />
@@ -1470,6 +1501,19 @@ const [signCommits, setSignCommits] = createSignal(false);
             </For>
           </div>
         </div>
+      </Show>
+
+      {/* Delete branch confirmation dialog */}
+      <Show when={pendingDeleteBranch()}>
+        <DeleteBranchDialog
+          branchName={pendingDeleteBranch()!}
+          onConfirm={() => {
+            const name = pendingDeleteBranch();
+            setPendingDeleteBranch(null);
+            if (name) deleteBranch(name);
+          }}
+          onCancel={() => setPendingDeleteBranch(null)}
+        />
       </Show>
 
       {/* Error banner */}
@@ -2093,6 +2137,7 @@ const [signCommits, setSignCommits] = createSignal(false);
           }}
           onClick={() => {
             setShowRepoSelector(false);
+            setBranchFilter("");
             setShowBranchSelector(false);
           }}
         />
