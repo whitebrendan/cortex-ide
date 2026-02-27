@@ -684,6 +684,10 @@ export interface ZenModeSettings {
   hideMenuBar: boolean;
   /** Hide panel in zen mode */
   hidePanel: boolean;
+  /** Hide the tab bar in zen mode */
+  hideTabs: boolean;
+  /** Hide the activity bar in zen mode */
+  hideActivityBar: boolean;
   /** Center layout in zen mode */
   centerLayout: boolean;
   /** Max width of centered layout */
@@ -692,8 +696,12 @@ export interface ZenModeSettings {
   fullScreen: boolean;
   /** Show line numbers */
   showLineNumbers: boolean;
-  /** Silence notifications */
+  /** Hide editor line numbers in zen mode (overrides showLineNumbers) */
+  hideLineNumbers: boolean;
+  /** Silence notifications in zen mode */
   silenceNotifications: boolean;
+  /** Restore window state when exiting zen mode */
+  restore: boolean;
 }
 
 // ============================================================================

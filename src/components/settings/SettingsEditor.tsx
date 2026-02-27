@@ -356,10 +356,17 @@ const SETTINGS_REGISTRY: SettingDefinition[] = [
   // Zen Mode Settings
   { id: "zenMode.hideSidebar", key: "hideSidebar", section: "zenMode", label: "Hide Sidebar", description: "Hide the sidebar in zen mode.", type: "boolean", defaultValue: DEFAULT_SETTINGS.zenMode.hideSidebar },
   { id: "zenMode.hideStatusBar", key: "hideStatusBar", section: "zenMode", label: "Hide Status Bar", description: "Hide the status bar in zen mode.", type: "boolean", defaultValue: DEFAULT_SETTINGS.zenMode.hideStatusBar },
-  { id: "zenMode.hidePanel", key: "hidePanel", section: "zenMode", label: "Hide Panel", description: "Hide the panel in zen mode.", type: "boolean", defaultValue: DEFAULT_SETTINGS.zenMode.hidePanel },
-  { id: "zenMode.centerLayout", key: "centerLayout", section: "zenMode", label: "Center Layout", description: "Center the layout in zen mode.", type: "boolean", defaultValue: DEFAULT_SETTINGS.zenMode.centerLayout },
-  { id: "zenMode.fullScreen", key: "fullScreen", section: "zenMode", label: "Full Screen", description: "Enter full screen in zen mode.", type: "boolean", defaultValue: DEFAULT_SETTINGS.zenMode.fullScreen },
-  { id: "zenMode.silenceNotifications", key: "silenceNotifications", section: "zenMode", label: "Silence Notifications", description: "Silence notifications in zen mode.", type: "boolean", defaultValue: DEFAULT_SETTINGS.zenMode.silenceNotifications },
+  { id: "zenMode.hideMenuBar", key: "hideMenuBar", section: "zenMode", label: "Hide Menu Bar", description: "Hide the menu bar in zen mode.", type: "boolean", defaultValue: DEFAULT_SETTINGS.zenMode.hideMenuBar },
+  { id: "zenMode.hidePanel", key: "hidePanel", section: "zenMode", label: "Hide Panel", description: "Hide the bottom panel in zen mode.", type: "boolean", defaultValue: DEFAULT_SETTINGS.zenMode.hidePanel },
+  { id: "zenMode.hideTabs", key: "hideTabs", section: "zenMode", label: "Hide Tabs", description: "Hide the tab bar in zen mode.", type: "boolean", defaultValue: DEFAULT_SETTINGS.zenMode.hideTabs },
+  { id: "zenMode.hideActivityBar", key: "hideActivityBar", section: "zenMode", label: "Hide Activity Bar", description: "Hide the activity bar in zen mode.", type: "boolean", defaultValue: DEFAULT_SETTINGS.zenMode.hideActivityBar },
+  { id: "zenMode.centerLayout", key: "centerLayout", section: "zenMode", label: "Center Layout", description: "Center the editor layout in zen mode.", type: "boolean", defaultValue: DEFAULT_SETTINGS.zenMode.centerLayout },
+  { id: "zenMode.maxWidth", key: "maxWidth", section: "zenMode", label: "Max Width", description: "Maximum width for the centered layout in zen mode (e.g., '900px').", type: "string", defaultValue: DEFAULT_SETTINGS.zenMode.maxWidth },
+  { id: "zenMode.fullScreen", key: "fullScreen", section: "zenMode", label: "Full Screen", description: "Enter full screen when zen mode is activated.", type: "boolean", defaultValue: DEFAULT_SETTINGS.zenMode.fullScreen },
+  { id: "zenMode.showLineNumbers", key: "showLineNumbers", section: "zenMode", label: "Show Line Numbers", description: "Show line numbers in zen mode.", type: "boolean", defaultValue: DEFAULT_SETTINGS.zenMode.showLineNumbers },
+  { id: "zenMode.hideLineNumbers", key: "hideLineNumbers", section: "zenMode", label: "Hide Line Numbers", description: "Hide editor line numbers in zen mode. Overrides 'Show Line Numbers' when enabled.", type: "boolean", defaultValue: DEFAULT_SETTINGS.zenMode.hideLineNumbers },
+  { id: "zenMode.silenceNotifications", key: "silenceNotifications", section: "zenMode", label: "Silence Notifications", description: "Controls whether notifications are silenced (suppressed) when zen mode is active.", type: "boolean", defaultValue: DEFAULT_SETTINGS.zenMode.silenceNotifications },
+  { id: "zenMode.restore", key: "restore", section: "zenMode", label: "Restore", description: "Restore the previous window state when exiting zen mode.", type: "boolean", defaultValue: DEFAULT_SETTINGS.zenMode.restore },
 
   // Search Settings
   { id: "search.useIgnoreFiles", key: "useIgnoreFiles", section: "search", label: "Use Ignore Files", description: "Controls whether to use .gitignore and .ignore files when searching.", type: "boolean", defaultValue: DEFAULT_SETTINGS.search.useIgnoreFiles },

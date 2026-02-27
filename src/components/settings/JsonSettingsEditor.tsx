@@ -635,6 +635,16 @@ const cortex_SETTINGS_SCHEMA = {
           description: "Hide bottom panel in zen mode",
           default: true
         },
+        hideTabs: {
+          type: "boolean",
+          description: "Hide the tab bar in zen mode",
+          default: false
+        },
+        hideActivityBar: {
+          type: "boolean",
+          description: "Hide the activity bar in zen mode",
+          default: true
+        },
         centerLayout: {
           type: "boolean",
           description: "Center editor layout in zen mode",
@@ -655,9 +665,19 @@ const cortex_SETTINGS_SCHEMA = {
           description: "Show line numbers in zen mode",
           default: true
         },
+        hideLineNumbers: {
+          type: "boolean",
+          description: "Hide editor line numbers in zen mode (overrides showLineNumbers)",
+          default: false
+        },
         silenceNotifications: {
           type: "boolean",
-          description: "Silence notifications in zen mode",
+          description: "Controls whether notifications are silenced when zen mode is active",
+          default: true
+        },
+        restore: {
+          type: "boolean",
+          description: "Restore the previous window state when exiting zen mode",
           default: true
         }
       }

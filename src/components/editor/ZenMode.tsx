@@ -25,7 +25,10 @@ export interface ZenModeSettings {
   centerLayout: boolean;
   fullScreen: boolean;
   maxWidth: string;
+  showLineNumbers: boolean;
+  hideLineNumbers: boolean;
   silenceNotifications: boolean;
+  restore: boolean;
 }
 
 const DEFAULT_ZEN_SETTINGS: ZenModeSettings = {
@@ -38,7 +41,10 @@ const DEFAULT_ZEN_SETTINGS: ZenModeSettings = {
   centerLayout: true,
   fullScreen: false,
   maxWidth: "900px",
+  showLineNumbers: true,
+  hideLineNumbers: false,
   silenceNotifications: true,
+  restore: true,
 };
 
 const ZEN_BODY_CLASSES = [
@@ -78,8 +84,11 @@ export const ZenMode: Component<ZenModeProps> = (props) => {
       centerLayout: s?.centerLayout ?? DEFAULT_ZEN_SETTINGS.centerLayout,
       fullScreen: s?.fullScreen ?? DEFAULT_ZEN_SETTINGS.fullScreen,
       maxWidth: s?.maxWidth ?? DEFAULT_ZEN_SETTINGS.maxWidth,
+      showLineNumbers: s?.showLineNumbers ?? DEFAULT_ZEN_SETTINGS.showLineNumbers,
+      hideLineNumbers: s?.hideLineNumbers ?? DEFAULT_ZEN_SETTINGS.hideLineNumbers,
       silenceNotifications:
         s?.silenceNotifications ?? DEFAULT_ZEN_SETTINGS.silenceNotifications,
+      restore: s?.restore ?? DEFAULT_ZEN_SETTINGS.restore,
     };
   };
 

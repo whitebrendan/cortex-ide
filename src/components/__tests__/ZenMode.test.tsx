@@ -16,7 +16,10 @@ describe("ZenMode Component Logic", () => {
       centerLayout: boolean;
       fullScreen: boolean;
       maxWidth: string;
+      showLineNumbers: boolean;
+      hideLineNumbers: boolean;
       silenceNotifications: boolean;
+      restore: boolean;
     }
 
     const DEFAULT_ZEN_SETTINGS: ZenModeSettings = {
@@ -29,7 +32,10 @@ describe("ZenMode Component Logic", () => {
       centerLayout: true,
       fullScreen: false,
       maxWidth: "900px",
+      showLineNumbers: true,
+      hideLineNumbers: false,
       silenceNotifications: true,
+      restore: true,
     };
 
     it("should have correct default settings", () => {
