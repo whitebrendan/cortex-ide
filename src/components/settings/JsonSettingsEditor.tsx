@@ -1256,14 +1256,14 @@ export function JsonSettingsEditor(props: JsonSettingsEditorProps) {
           
           {/* File path indicator */}
           <Show when={settingsPath()}>
-            <span class="text-xs text-foreground-muted truncate max-w-[300px]" title={settingsPath()}>
+            <span class="text-xs text-foreground-muted truncate max-w-[300px] min-w-0" title={settingsPath()}>
               {settingsPath()}
             </span>
           </Show>
         </div>
 
         {/* Actions */}
-        <div class="flex items-center gap-2 flex-wrap flex-shrink-0">
+        <div class="flex items-center gap-2 flex-shrink-0 flex-wrap">
           {/* Show Default Settings Toggle */}
           <button
             onClick={() => setShowDefaultSettings(!showDefaultSettings())}
