@@ -43,7 +43,7 @@ export interface EnhancedZenModeSettings {
   hideStatusBar: boolean;
   hidePanel: boolean;
   hideMenuBar: boolean;
-  silentNotifications: boolean;
+  silenceNotifications: boolean;
   maxWidth: string;
   showLineNumbers: boolean;
   
@@ -83,7 +83,7 @@ const DEFAULT_ZEN_MODE_SETTINGS: EnhancedZenModeSettings = {
   hideStatusBar: true,
   hidePanel: true,
   hideMenuBar: true,
-  silentNotifications: true,
+  silenceNotifications: true,
   maxWidth: "900px",
   showLineNumbers: true,
   // New settings
@@ -215,7 +215,7 @@ function enterZenMode() {
   if (cachedZenModeSettings.hideMenuBar) {
     window.dispatchEvent(new CustomEvent("zenmode:hide-menu-bar"));
   }
-  if (cachedZenModeSettings.silentNotifications) {
+  if (cachedZenModeSettings.silenceNotifications) {
     window.dispatchEvent(new CustomEvent("zenmode:silence-notifications"));
   }
   

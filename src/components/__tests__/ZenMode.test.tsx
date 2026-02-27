@@ -16,7 +16,7 @@ describe("ZenMode Component Logic", () => {
       centerLayout: boolean;
       fullScreen: boolean;
       maxWidth: string;
-      silentNotifications: boolean;
+      silenceNotifications: boolean;
     }
 
     const DEFAULT_ZEN_SETTINGS: ZenModeSettings = {
@@ -29,7 +29,7 @@ describe("ZenMode Component Logic", () => {
       centerLayout: true,
       fullScreen: false,
       maxWidth: "900px",
-      silentNotifications: true,
+      silenceNotifications: true,
     };
 
     it("should have correct default settings", () => {
@@ -42,7 +42,7 @@ describe("ZenMode Component Logic", () => {
       expect(DEFAULT_ZEN_SETTINGS.centerLayout).toBe(true);
       expect(DEFAULT_ZEN_SETTINGS.fullScreen).toBe(false);
       expect(DEFAULT_ZEN_SETTINGS.maxWidth).toBe("900px");
-      expect(DEFAULT_ZEN_SETTINGS.silentNotifications).toBe(true);
+      expect(DEFAULT_ZEN_SETTINGS.silenceNotifications).toBe(true);
     });
 
     it("should allow custom max width", () => {
