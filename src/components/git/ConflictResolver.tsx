@@ -185,6 +185,8 @@ export function ConflictResolver(props: ConflictResolverProps) {
           <div class="flex rounded overflow-hidden" style={{ background: "var(--surface-active)" }}>
             <button
               class="px-2 py-1 text-xs transition-colors"
+              aria-label="Side by side view"
+              aria-pressed={viewMode() === "side-by-side"}
               style={{
                 background: viewMode() === "side-by-side" ? "var(--accent-primary)" : "transparent",
                 color: viewMode() === "side-by-side" ? "white" : "var(--text-weak)"
@@ -195,6 +197,8 @@ export function ConflictResolver(props: ConflictResolverProps) {
             </button>
             <button
               class="px-2 py-1 text-xs transition-colors"
+              aria-label="Inline view"
+              aria-pressed={viewMode() === "inline"}
               style={{
                 background: viewMode() === "inline" ? "var(--accent-primary)" : "transparent",
                 color: viewMode() === "inline" ? "white" : "var(--text-weak)"
@@ -489,19 +493,51 @@ export function ConflictResolver(props: ConflictResolverProps) {
         <div
           class="fixed inset-0 z-50 flex items-center justify-center"
           style={{ background: "rgba(0, 0, 0, 0.5)" }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="conflict-edit-title"
+          aria-describedby="conflict-edit-desc"
           onClick={() => setCustomEditing(null)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              e.preventDefault();
+              setCustomEditing(null);
+            }
+            if (e.key === "Tab") {
+              const modal = e.currentTarget.querySelector("[data-conflict-modal]") as HTMLElement;
+              if (!modal) return;
+              const focusable = modal.querySelectorAll<HTMLElement>(
+                'button, textarea, [tabindex]:not([tabindex="-1"])'
+              );
+              if (focusable.length === 0) return;
+              const first = focusable[0];
+              const last = focusable[focusable.length - 1];
+              if (e.shiftKey && document.activeElement === first) {
+                e.preventDefault();
+                last.focus();
+              } else if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault();
+                first.focus();
+              }
+            }
+          }}
         >
           <div
+            data-conflict-modal
             class="w-[800px] max-h-[80vh] flex flex-col rounded-lg shadow-xl overflow-hidden"
             style={{ background: "var(--surface-raised)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div class="flex items-center justify-between px-4 py-3 border-b" style={{ "border-color": "var(--border-weak)" }}>
-              <h3 class="text-lg font-medium" style={{ color: "var(--text-base)" }}>
+              <h3 id="conflict-edit-title" class="text-lg font-medium" style={{ color: "var(--text-base)" }}>
                 Edit Resolution
               </h3>
+              <p id="conflict-edit-desc" class="sr-only">
+                Manually edit the conflict resolution content
+              </p>
               <button
                 class="p-1 rounded hover:bg-white/10"
+                aria-label="Close"
                 onClick={() => setCustomEditing(null)}
               >
                 <Icon name="xmark" class="w-5 h-5" style={{ color: "var(--text-weak)" }} />
@@ -509,7 +545,9 @@ export function ConflictResolver(props: ConflictResolverProps) {
             </div>
             <div class="flex-1 overflow-hidden p-4">
               <textarea
+                ref={(el) => requestAnimationFrame(() => el.focus())}
                 class="w-full h-full min-h-[300px] px-4 py-3 rounded font-mono text-sm resize-none outline-none"
+                aria-label="Resolution content"
                 style={{
                   background: "var(--background-stronger)",
                   color: "var(--text-base)",

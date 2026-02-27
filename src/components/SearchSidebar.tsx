@@ -162,6 +162,8 @@ function ToggleButton(props: {
       onClick={props.onClick}
       tooltip={props.title}
       size="sm"
+      aria-label={props.title}
+      aria-pressed={props.active}
     >
       <span style={{ 
         "font-size": "var(--jb-text-muted-size)", 
@@ -1198,6 +1200,8 @@ export function SearchSidebar() {
               "flex-shrink": "0",
             }}
             title={showReplace() ? "Hide Replace" : "Show Replace"}
+            aria-label={showReplace() ? "Hide Replace" : "Show Replace"}
+            aria-expanded={showReplace()}
             onClick={() => setShowReplace(!showReplace())}
             onMouseEnter={(e) => e.currentTarget.style.background = tokens.colors.interactive.hover}
             onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
@@ -1217,6 +1221,7 @@ export function SearchSidebar() {
                 ref={inputRef}
                 type="text"
                 placeholder="Search"
+                aria-label="Search in files"
                 value={query()}
                 onInput={(e) => setQuery(e.currentTarget.value)}
                 onKeyDown={handleKeyDown}
@@ -1236,6 +1241,7 @@ export function SearchSidebar() {
                 <input
                   type="text"
                   placeholder="Replace"
+                  aria-label="Replace"
                   value={replaceText()}
                   onInput={(e) => setReplaceText(e.currentTarget.value)}
                   style={inputInnerStyle}
@@ -1342,6 +1348,8 @@ export function SearchSidebar() {
             active={searchOpenEditorsOnly()}
             tooltip="Search only in Open Editors"
             size="sm"
+            aria-label="Search only in Open Editors"
+            aria-pressed={searchOpenEditorsOnly()}
             onClick={() => {
               setSearchOpenEditorsOnly(!searchOpenEditorsOnly());
               if (query().length >= 1) {
@@ -1357,6 +1365,8 @@ export function SearchSidebar() {
             active={showFilters()}
             tooltip="Toggle Include/Exclude Filters"
             size="sm"
+            aria-label="Toggle Include/Exclude Filters"
+            aria-pressed={showFilters()}
             onClick={() => setShowFilters(!showFilters())}
           >
             <span style={{ "font-size": "var(--jb-text-muted-size)", "font-weight": "600" }}>...</span>

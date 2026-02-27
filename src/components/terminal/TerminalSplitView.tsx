@@ -173,7 +173,7 @@ function Sash(props: SashProps) {
       onKeyDown={handleKeyDown}
       tabIndex={0}
       role="separator"
-      aria-orientation={props.direction}
+      aria-orientation={props.direction === "horizontal" ? "vertical" : "horizontal"}
       aria-label="Resize split panes"
     >
       <div style={hitAreaStyle()} />
@@ -249,6 +249,7 @@ function PaneHeader(props: PaneHeaderProps) {
             style={buttonStyle}
             onClick={props.onMaximize}
             title="Maximize pane"
+            aria-label="Maximize pane"
             onMouseEnter={(e) => {
               e.currentTarget.style.opacity = "1";
               e.currentTarget.style.background = tokens.colors.interactive.hover;
@@ -266,6 +267,7 @@ function PaneHeader(props: PaneHeaderProps) {
             style={buttonStyle}
             onClick={props.onClose}
             title="Close pane"
+            aria-label="Close pane"
             onMouseEnter={(e) => {
               e.currentTarget.style.opacity = "1";
               e.currentTarget.style.background = `color-mix(in srgb, ${tokens.colors.semantic.error} 20%, transparent)`;
@@ -613,6 +615,7 @@ export function SplitButton(props: SplitButtonProps) {
         onClick={() => !props.disabled && setShowMenu(!showMenu())}
         disabled={props.disabled}
         title="Split Terminal"
+        aria-label="Split Terminal"
         onMouseEnter={(e) => {
           if (!props.disabled) {
             e.currentTarget.style.background = tokens.colors.interactive.hover;
@@ -631,6 +634,7 @@ export function SplitButton(props: SplitButtonProps) {
         <div ref={menuRef} style={menuStyle}>
           <button
             style={menuItemStyle}
+            aria-label="Split Right"
             onClick={() => {
               props.onSplitHorizontal();
               setShowMenu(false);
@@ -650,6 +654,7 @@ export function SplitButton(props: SplitButtonProps) {
           </button>
           <button
             style={menuItemStyle}
+            aria-label="Split Down"
             onClick={() => {
               props.onSplitVertical();
               setShowMenu(false);

@@ -180,6 +180,9 @@ export function MergeBranchDialog(props: MergeBranchDialogProps) {
             <button
               type="button"
               onClick={() => setShowBranchDropdown(!showBranchDropdown())}
+              aria-label="Select branch to merge"
+              aria-haspopup="listbox"
+              aria-expanded={showBranchDropdown()}
               style={{
                 width: "100%",
                 display: "flex",
@@ -223,12 +226,13 @@ export function MergeBranchDialog(props: MergeBranchDialogProps) {
                     value={searchQuery()}
                     onInput={(e) => setSearchQuery(e.currentTarget.value)}
                     placeholder="Search branches..."
+                    aria-label="Search branches"
                     autofocus
                   />
                 </div>
 
                 {/* Branch List */}
-                <div style={{ overflow: "auto", "max-height": "200px" }}>
+                <div role="listbox" aria-label="Available branches" style={{ overflow: "auto", "max-height": "200px" }}>
                   <Show when={loadingBranches()}>
                     <div style={{ padding: tokens.spacing.md, "text-align": "center" }}>
                       <Text style={{ "font-size": "12px", color: tokens.colors.text.muted }}>
@@ -247,6 +251,8 @@ export function MergeBranchDialog(props: MergeBranchDialogProps) {
                     {(branch) => (
                       <button
                         type="button"
+                        role="option"
+                        aria-selected={selectedBranch() === branch.name}
                         onClick={() => selectBranch(branch.name)}
                         style={{
                           width: "100%",
