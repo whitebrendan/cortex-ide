@@ -344,6 +344,57 @@ const cortex_SETTINGS_SCHEMA = {
           type: "boolean",
           description: "Auxiliary bar (secondary sidebar) visibility",
           default: false
+        },
+        breadcrumbs: {
+          type: "object",
+          description: "Breadcrumbs navigation settings",
+          properties: {
+            enabled: {
+              type: "boolean",
+              description: "Enable breadcrumbs navigation",
+              default: true
+            },
+            filePath: {
+              type: "string",
+              description: "File path display mode: on = full path, off = hidden, last = only filename",
+              enum: ["on", "off", "last"],
+              default: "on"
+            },
+            symbolPath: {
+              type: "string",
+              description: "Symbol path display mode: on = full hierarchy, off = hidden, last = only current symbol",
+              enum: ["on", "off", "last"],
+              default: "on"
+            },
+            icons: {
+              type: "boolean",
+              description: "Show file type and symbol icons",
+              default: true
+            }
+          }
+        },
+        menuBarVisibility: {
+          type: "string",
+          description: "Menu bar visibility mode",
+          enum: ["classic", "compact", "toggle", "hidden"],
+          default: "classic"
+        },
+        panelPosition: {
+          type: "string",
+          description: "Panel position",
+          enum: ["bottom", "left", "right"],
+          default: "bottom"
+        },
+        panelAlignment: {
+          type: "string",
+          description: "Panel alignment",
+          enum: ["center", "left", "right", "justify"],
+          default: "center"
+        },
+        commandCenterEnabled: {
+          type: "boolean",
+          description: "Show command center (search bar) in title bar",
+          default: true
         }
       }
     },
@@ -690,10 +741,69 @@ const cortex_SETTINGS_SCHEMA = {
           type: "object",
           description: "Workbench editor settings",
           properties: {
+            tabSizing: {
+              type: "string",
+              description: "Tab sizing mode: 'fit' = minimum space needed, 'shrink' = shrink to fit with min width, 'fixed' = all same width",
+              enum: ["fit", "shrink", "fixed"],
+              default: "fit"
+            },
+            tabSizingFixedMinWidth: {
+              type: "number",
+              description: "Minimum width for tabs in shrink mode (pixels)",
+              default: 80,
+              minimum: 40
+            },
+            tabSizingFixedWidth: {
+              type: "number",
+              description: "Fixed width for tabs in fixed mode (pixels)",
+              default: 120,
+              minimum: 40
+            },
             wrapTabs: {
               type: "boolean",
               description: "Wrap tabs to multiple rows when they overflow",
               default: false
+            },
+            showTabCloseButton: {
+              type: "string",
+              description: "When to show the tab close button",
+              enum: ["always", "onHover", "never"],
+              default: "onHover"
+            },
+            tabCloseButtonPosition: {
+              type: "string",
+              description: "Position of the tab close button",
+              enum: ["left", "right"],
+              default: "right"
+            },
+            centeredLayout: {
+              type: "object",
+              description: "Centered editor layout settings",
+              properties: {
+                enabled: {
+                  type: "boolean",
+                  description: "Whether centered layout is enabled",
+                  default: false
+                },
+                maxWidth: {
+                  type: "number",
+                  description: "Maximum editor width in pixels",
+                  default: 1200,
+                  minimum: 400
+                },
+                autoResize: {
+                  type: "boolean",
+                  description: "Auto-adjust width based on viewport",
+                  default: true
+                },
+                sideMarginRatio: {
+                  type: "number",
+                  description: "Ratio of side margins (0-0.4)",
+                  default: 0.15,
+                  minimum: 0,
+                  maximum: 0.4
+                }
+              }
             }
           }
         }
