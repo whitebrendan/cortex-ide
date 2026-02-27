@@ -12,18 +12,12 @@ import { Component, Show, createSignal, createEffect, createMemo, JSX, on } from
 import { CortexModal } from "../cortex/primitives/CortexModal";
 import { CortexButton } from "../cortex/primitives/CortexButton";
 import { CortexIcon } from "../cortex/primitives/CortexIcon";
+import { validateFileName } from "@/lib/validateFileName";
 import type { FileOperationDialogProps } from "./types";
 
-const INVALID_CHARS = /[<>:"|?*]/;
-
 function validateName(name: string, existingNames: string[]): string | null {
-  if (!name || !name.trim()) return "Name cannot be empty";
-  if (INVALID_CHARS.test(name))
-    return 'Name contains invalid characters: < > : " | ? *';
-  if (name === "." || name === "..") return "Invalid name";
-  if (existingNames.includes(name))
-    return "A file with this name already exists";
-  return null;
+  const result = validateFileName(name, existingNames);
+  return result.valid ? null : (result.error ?? "Invalid name");
 }
 
 export const FileOperationDialog: Component<FileOperationDialogProps> = (props) => {
