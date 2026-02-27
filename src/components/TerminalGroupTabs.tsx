@@ -910,6 +910,9 @@ export function TerminalGroupTabs(props: TerminalGroupTabsProps) {
             >
               <Icon name="columns" style={{ width: "14px", height: "14px" }} />
               Split Right
+              <span style={{ "margin-left": "auto", color: tokens.colors.text.muted, "font-size": "11px" }}>
+                Ctrl+Shift+5
+              </span>
             </button>
             <button
               style={menuItemStyle}
@@ -919,6 +922,25 @@ export function TerminalGroupTabs(props: TerminalGroupTabsProps) {
             >
               <Icon name="columns" style={{ width: "14px", height: "14px", transform: "rotate(90deg)" }} />
               Split Down
+              <span style={{ "margin-left": "auto", color: tokens.colors.text.muted, "font-size": "11px" }}>
+                Ctrl+Shift+"
+              </span>
+            </button>
+            <div
+              style={{
+                height: "1px",
+                background: tokens.colors.border.divider,
+                margin: `${tokens.spacing.xs} 0`,
+              }}
+            />
+            <button
+              style={menuItemStyle}
+              onClick={() => handleContextMenuAction("close")}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--jb-surface-hover)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            >
+              <Icon name="xmark" style={{ width: "14px", height: "14px" }} />
+              Close Pane
             </button>
             <div
               style={{
@@ -934,8 +956,31 @@ export function TerminalGroupTabs(props: TerminalGroupTabsProps) {
               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             >
               <Icon name="maximize" style={{ width: "14px", height: "14px" }} />
-              Move to New Group
+              Move to Group
             </button>
+            <Show when={state.groups.length > 0}>
+              <For each={state.groups.filter(g => {
+                const targetGroup = getGroupForTerminal(contextMenu.targetId!);
+                return !targetGroup || g.id !== targetGroup.id;
+              })}>
+                {(group) => (
+                  <button
+                    style={{ ...menuItemStyle, "padding-left": tokens.spacing.lg }}
+                    onClick={() => {
+                      if (contextMenu.targetId) {
+                        moveToGroup({ terminalId: contextMenu.targetId, targetGroupId: group.id });
+                      }
+                      setContextMenu({ visible: false, x: 0, y: 0, type: null, targetId: null });
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--jb-surface-hover)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                  >
+                    <Icon name="columns" style={{ width: "14px", height: "14px", color: group.color || tokens.colors.icon.default }} />
+                    {group.name}
+                  </button>
+                )}
+              </For>
+            </Show>
             <Show when={getGroupForTerminal(contextMenu.targetId!)}>
               <button
                 style={menuItemStyle}
@@ -947,22 +992,6 @@ export function TerminalGroupTabs(props: TerminalGroupTabsProps) {
                 Ungroup
               </button>
             </Show>
-            <div
-              style={{
-                height: "1px",
-                background: tokens.colors.border.divider,
-                margin: `${tokens.spacing.xs} 0`,
-              }}
-            />
-            <button
-              style={menuItemStyle}
-              onClick={() => handleContextMenuAction("close")}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--jb-surface-hover)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-            >
-              <Icon name="xmark" style={{ width: "14px", height: "14px" }} />
-              Close Terminal
-            </button>
           </Show>
           <Show when={contextMenu.type === "group"}>
             <button

@@ -1920,6 +1920,23 @@ export function TerminalPanel() {
     window.addEventListener("terminal:show-rename-dialog", handleShowRenameDialog);
     window.addEventListener("terminal:show-color-picker", handleShowColorPicker);
     
+    const handlePaneResize = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.terminalId) {
+        const instance = terminalInstances.get(detail.terminalId);
+        if (instance) {
+          requestAnimationFrame(() => {
+            instance.fitAddon.fit();
+            const dims = instance.fitAddon.proposeDimensions();
+            if (dims && dims.cols > 0 && dims.rows > 0) {
+              resizeTerminal(detail.terminalId, dims.cols, dims.rows).catch(console.error);
+            }
+          });
+        }
+      }
+    };
+    window.addEventListener("terminal:pane-resize", handlePaneResize);
+    
     onCleanup(() => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("terminal:go-to-next-command", handleGoToNextCommand);
@@ -1927,6 +1944,7 @@ export function TerminalPanel() {
       window.removeEventListener("terminal:select-all", handleSelectAll);
       window.removeEventListener("terminal:show-rename-dialog", handleShowRenameDialog);
       window.removeEventListener("terminal:show-color-picker", handleShowColorPicker);
+      window.removeEventListener("terminal:pane-resize", handlePaneResize);
       
       // Dispose all terminal instances with proper cleanup
       terminalInstances.forEach((instance) => {

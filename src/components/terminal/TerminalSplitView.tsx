@@ -360,6 +360,20 @@ export function TerminalSplitView(props: TerminalSplitViewProps) {
     resizeObserver?.disconnect();
   });
 
+  // Notify all terminal panes to refit after resize
+  const notifyTerminalRefit = () => {
+    if (!containerRef) return;
+    const panes = containerRef.querySelectorAll("[data-terminal-pane]");
+    panes.forEach((pane) => {
+      const terminalId = (pane as HTMLElement).dataset.terminalPane;
+      if (terminalId) {
+        window.dispatchEvent(
+          new CustomEvent("terminal:pane-resize", { detail: { terminalId } })
+        );
+      }
+    });
+  };
+
   // Handle sash resize
   const handleSashResize = (index: number, delta: number) => {
     const size = isHorizontal() ? containerSize().width : containerSize().height;
@@ -391,6 +405,9 @@ export function TerminalSplitView(props: TerminalSplitViewProps) {
     // Notify parent of ratio change
     props.onSplitRatioChange(props.group.id, index, newRatio1);
     props.onSplitRatioChange(props.group.id, index + 1, newRatio2);
+
+    // Propagate resize to xterm.js fit() in all panes
+    notifyTerminalRefit();
   };
 
   // Reset ratio to equal distribution on double-click
@@ -413,7 +430,7 @@ export function TerminalSplitView(props: TerminalSplitViewProps) {
     "user-select": isResizing() ? "none" : "auto",
   });
 
-  const paneStyle = (index: number): JSX.CSSProperties => {
+  const paneStyle = (index: number, isActive: boolean): JSX.CSSProperties => {
     const size = paneSizes()[index];
     return {
       position: "relative",
@@ -423,6 +440,10 @@ export function TerminalSplitView(props: TerminalSplitViewProps) {
       [isHorizontal() ? "height" : "width"]: "100%",
       "flex-shrink": "0",
       overflow: "hidden",
+      "border": isActive
+        ? `1px solid ${tokens.colors.accent.primary}`
+        : `1px solid transparent`,
+      transition: "border-color 150ms ease",
     };
   };
 
@@ -448,7 +469,7 @@ export function TerminalSplitView(props: TerminalSplitViewProps) {
       <For each={terminalsInGroup()}>
         {(terminal, index) => (
           <div
-            style={paneStyle(index())}
+            style={paneStyle(index(), props.activeTerminalId === terminal.id)}
             onClick={() => props.onSelectTerminal(terminal.id)}
             data-terminal-pane={terminal.id}
           >
@@ -481,7 +502,10 @@ export function TerminalSplitView(props: TerminalSplitViewProps) {
             position={position}
             onResize={(delta) => handleSashResize(index(), delta)}
             onResizeStart={() => setIsResizing(true)}
-            onResizeEnd={() => setIsResizing(false)}
+            onResizeEnd={() => {
+              setIsResizing(false);
+              notifyTerminalRefit();
+            }}
             onDoubleClick={() => handleSashDoubleClick(index())}
           />
         )}
@@ -626,6 +650,9 @@ export function SplitButton(props: SplitButtonProps) {
           >
             <Icon name="ellipsis-vertical" size={14} style={{ transform: "rotate(90deg)" }} />
             <span>Split Down</span>
+            <span style={{ "margin-left": "auto", color: tokens.colors.text.muted, "font-size": "11px" }}>
+              Ctrl+Shift+"
+            </span>
           </button>
         </div>
       </Show>

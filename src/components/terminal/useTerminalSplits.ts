@@ -368,12 +368,11 @@ export function useTerminalSplits(options: UseTerminalSplitsOptions): UseTermina
     const handleKeyDown = (e: KeyboardEvent) => {
       const { key, ctrlKey, shiftKey, altKey } = e;
 
-      // Ctrl+Shift+5: Split terminal (default horizontal)
+      // Ctrl+Shift+5: Split terminal right (horizontal layout)
       if (ctrlKey && shiftKey && key === "5") {
         e.preventDefault();
         const activeId = activeTerminalId();
         if (activeId) {
-          // Dispatch event to create new terminal and split
           window.dispatchEvent(
             new CustomEvent("terminal:split", {
               detail: { terminalId: activeId, direction: "horizontal" },
@@ -383,8 +382,22 @@ export function useTerminalSplits(options: UseTerminalSplitsOptions): UseTermina
         return;
       }
 
-      // Alt+Arrow: Navigate between splits
-      if (altKey && !ctrlKey && !shiftKey) {
+      // Ctrl+Shift+": Split terminal down (vertical layout)
+      if (ctrlKey && shiftKey && (key === '"' || key === "'")) {
+        e.preventDefault();
+        const activeId = activeTerminalId();
+        if (activeId) {
+          window.dispatchEvent(
+            new CustomEvent("terminal:split", {
+              detail: { terminalId: activeId, direction: "vertical" },
+            })
+          );
+        }
+        return;
+      }
+
+      // Ctrl+Alt+Arrow: Navigate between splits
+      if (ctrlKey && altKey && !shiftKey) {
         const activeId = activeTerminalId();
         if (!activeId) return;
 

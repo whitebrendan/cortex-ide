@@ -403,15 +403,22 @@ export function TerminalSplitPanel(props: TerminalSplitPanelProps) {
     const handleKeyDown = (e: KeyboardEvent) => {
       const { key, ctrlKey, shiftKey, altKey } = e;
 
-      // Ctrl+Shift+5: Split terminal horizontally
+      // Ctrl+Shift+5: Split terminal right (horizontal layout)
       if (ctrlKey && shiftKey && key === "5") {
         e.preventDefault();
         handleSplitHorizontal();
         return;
       }
 
-      // Alt+Arrow: Navigate between splits
-      if (altKey && !ctrlKey && !shiftKey) {
+      // Ctrl+Shift+": Split terminal down (vertical layout)
+      if (ctrlKey && shiftKey && (key === '"' || key === "'")) {
+        e.preventDefault();
+        handleSplitVertical();
+        return;
+      }
+
+      // Ctrl+Alt+Arrow: Navigate between splits
+      if (ctrlKey && altKey && !shiftKey) {
         const group = activeGroup();
         if (!group || group.terminalIds.length <= 1) return;
 

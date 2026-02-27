@@ -52,7 +52,7 @@ export function TerminalGroupCommands() {
       {
         id: "terminal.splitTerminalVertical",
         label: "Terminal: Split Terminal Down",
-        shortcut: "Ctrl+Shift+4",
+        shortcut: 'Ctrl+Shift+"',
         category: "Terminal",
         action: async () => {
           const terminalId = state.activeTerminalId;
@@ -140,7 +140,7 @@ export function TerminalGroupCommands() {
       {
         id: "terminal.focusNextTerminalInGroup",
         label: "Terminal: Focus Next Terminal in Group",
-        shortcut: "Alt+Right",
+        shortcut: "Ctrl+Alt+Right",
         category: "Terminal",
         action: () => {
           const terminalId = state.activeTerminalId;
@@ -157,7 +157,7 @@ export function TerminalGroupCommands() {
       {
         id: "terminal.focusPreviousTerminalInGroup",
         label: "Terminal: Focus Previous Terminal in Group",
-        shortcut: "Alt+Left",
+        shortcut: "Ctrl+Alt+Left",
         category: "Terminal",
         action: () => {
           const terminalId = state.activeTerminalId;
@@ -253,12 +253,18 @@ export function TerminalGroupCommands() {
 
     // Register keyboard shortcuts via window event
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Alt+Left/Right for navigating within group
-      if (e.altKey && !e.ctrlKey && !e.shiftKey) {
+      // Ctrl+Alt+Left/Right for navigating within group
+      if (e.ctrlKey && e.altKey && !e.shiftKey) {
         if (e.key === "ArrowLeft") {
           e.preventDefault();
           commands.find((c) => c.id === "terminal.focusPreviousTerminalInGroup")?.action();
         } else if (e.key === "ArrowRight") {
+          e.preventDefault();
+          commands.find((c) => c.id === "terminal.focusNextTerminalInGroup")?.action();
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          commands.find((c) => c.id === "terminal.focusPreviousTerminalInGroup")?.action();
+        } else if (e.key === "ArrowDown") {
           e.preventDefault();
           commands.find((c) => c.id === "terminal.focusNextTerminalInGroup")?.action();
         }
@@ -275,14 +281,14 @@ export function TerminalGroupCommands() {
         }
       }
 
-      // Ctrl+Shift+5 for split horizontal
+      // Ctrl+Shift+5 for split right (horizontal)
       if (e.ctrlKey && e.shiftKey && e.key === "5") {
         e.preventDefault();
         commands.find((c) => c.id === "terminal.splitTerminal")?.action();
       }
 
-      // Ctrl+Shift+4 for split vertical
-      if (e.ctrlKey && e.shiftKey && e.key === "4") {
+      // Ctrl+Shift+" for split down (vertical)
+      if (e.ctrlKey && e.shiftKey && (e.key === '"' || e.key === "'")) {
         e.preventDefault();
         commands.find((c) => c.id === "terminal.splitTerminalVertical")?.action();
       }

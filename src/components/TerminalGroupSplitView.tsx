@@ -10,6 +10,7 @@ import {
   useTerminals,
   TerminalInfo,
   TerminalGroup,
+  MoveToGroupOptions,
 } from "@/context/TerminalsContext";
 import { tokens } from "@/design-system/tokens";
 
@@ -42,11 +43,12 @@ interface TerminalGroupSplitViewProps {
 const MIN_PANE_SIZE = 80; // Minimum pane size in pixels
 
 export function TerminalGroupSplitView(props: TerminalGroupSplitViewProps) {
-  const { state, setGroupSplitRatios } = useTerminals();
+  const { state, setGroupSplitRatios, moveToGroup, getGroupForTerminal } = useTerminals();
 
   // Local state
   const [isResizing, setIsResizing] = createSignal(false);
   const [resizingIndex, setResizingIndex] = createSignal<number | null>(null);
+  const [dragOverTerminalId, setDragOverTerminalId] = createSignal<string | null>(null);
 
   let containerRef: HTMLDivElement | undefined;
 
@@ -139,6 +141,13 @@ export function TerminalGroupSplitView(props: TerminalGroupSplitViewProps) {
       document.removeEventListener("mouseup", handleMouseUp);
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
+
+      // Propagate resize to xterm.js fit() in all panes
+      props.group.terminalIds.forEach((terminalId) => {
+        window.dispatchEvent(
+          new CustomEvent("terminal:pane-resize", { detail: { terminalId } })
+        );
+      });
     };
 
     document.addEventListener("mousemove", handleMouseMove);
@@ -167,6 +176,9 @@ export function TerminalGroupSplitView(props: TerminalGroupSplitViewProps) {
     "min-width": isHorizontal() ? `${MIN_PANE_SIZE}px` : undefined,
     "min-height": !isHorizontal() ? `${MIN_PANE_SIZE}px` : undefined,
     background: "var(--jb-surface-base)",
+    border: isActive
+      ? `1px solid ${tokens.colors.accent.primary}`
+      : `1px solid transparent`,
     "border-top": isActive ? `2px solid ${tokens.colors.semantic.primary}` : "2px solid transparent",
     transition: isResizing() ? "none" : "border-color var(--cortex-transition-fast)",
   });
@@ -270,7 +282,12 @@ export function TerminalGroupSplitView(props: TerminalGroupSplitViewProps) {
           return (
             <>
               <div
-                style={getPaneStyle(index(), isActive())}
+                style={{
+                  ...getPaneStyle(index(), isActive()),
+                  outline: dragOverTerminalId() === terminal.id
+                    ? `2px dashed ${tokens.colors.semantic.primary}`
+                    : undefined,
+                }}
                 onClick={() => props.onSelectTerminal?.(terminal.id)}
                 onMouseEnter={(e) => {
                   const closeBtn = e.currentTarget.querySelector(
@@ -283,6 +300,28 @@ export function TerminalGroupSplitView(props: TerminalGroupSplitViewProps) {
                     "[data-close-btn]"
                   ) as HTMLElement;
                   if (closeBtn) closeBtn.style.opacity = "0";
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer!.dropEffect = "move";
+                  setDragOverTerminalId(terminal.id);
+                }}
+                onDragLeave={() => setDragOverTerminalId(null)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOverTerminalId(null);
+                  const draggedTerminalId = e.dataTransfer?.getData("text/plain");
+                  if (draggedTerminalId && draggedTerminalId !== terminal.id) {
+                    const targetGroup = getGroupForTerminal(terminal.id);
+                    if (targetGroup) {
+                      const position = targetGroup.terminalIds.indexOf(terminal.id);
+                      moveToGroup({
+                        terminalId: draggedTerminalId,
+                        targetGroupId: targetGroup.id,
+                        position,
+                      } as MoveToGroupOptions);
+                    }
+                  }
                 }}
               >
                 {/* Terminal container - xterm will be mounted here */}
