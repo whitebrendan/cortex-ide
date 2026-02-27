@@ -45,14 +45,17 @@ function HighlightedText(props: { segments: FuzzyHighlightSegment[] }) {
 }
 
 function KeybindingBadge(props: { shortcut: string }) {
-  const keys = () => props.shortcut.split(/\s*\+\s*/).map(k => k.trim());
+  const chordGroups = () => props.shortcut.split(" ").map(chord => chord.split("+"));
   return (
     <div class="flex items-center gap-0.5 ml-auto shrink-0" style={{ "font-size": "9px", "font-family": "'SF Mono', 'JetBrains Mono', monospace" }}>
-      <For each={keys()}>{(key, idx) => (<>
-        <Show when={idx() > 0}><span style={{ margin: "0 1px", color: "var(--jb-text-muted-color)" }}>+</span></Show>
-        <span style={{ display: "inline-flex", "align-items": "center", "justify-content": "center", "min-width": "14px",
-          padding: "1px 4px", "border-radius": "var(--cortex-radius-sm)", background: "rgba(255,255,255,0.06)",
-          color: "var(--jb-text-muted-color)", border: "1px solid rgba(255,255,255,0.06)" }}>{key}</span>
+      <For each={chordGroups()}>{(group, chordIdx) => (<>
+        <Show when={chordIdx() > 0}><span style={{ margin: "0 3px" }}>{" "}</span></Show>
+        <For each={group}>{(key, keyIdx) => (<>
+          <Show when={keyIdx() > 0}><span style={{ margin: "0 1px", color: "var(--jb-text-muted-color)" }}>+</span></Show>
+          <span style={{ display: "inline-flex", "align-items": "center", "justify-content": "center", "min-width": "14px",
+            padding: "1px 4px", "border-radius": "var(--cortex-radius-sm)", background: "rgba(255,255,255,0.06)",
+            color: "var(--jb-text-muted-color)", border: "1px solid rgba(255,255,255,0.06)" }}>{key}</span>
+        </>)}</For>
       </>)}</For>
     </div>
   );
@@ -99,7 +102,7 @@ export function PaletteCommandPalette() {
       const lr = fuzzyMatch(q, c.label);
       const cr = c.category ? fuzzyMatch(q, c.category) : { score: 0, matches: [] as number[] };
       const best = lr.score >= cr.score ? lr : cr;
-      return { ...c, score: best.score, matchSegments: best === lr ? fuzzyHighlight(c.label, lr.matches) : fuzzyHighlight(c.label, []), isRecent: false };
+      return { ...c, score: best.score, matchSegments: fuzzyHighlight(c.label, lr.matches), isRecent: false };
     }).filter(c => c.score > 0).sort((a, b) => b.score - a.score);
     return { recent: [] as ScoredCommand[], rest: scored };
   });

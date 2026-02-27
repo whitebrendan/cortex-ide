@@ -34,7 +34,7 @@ interface ScoredCommand {
 
 interface GroupedSection { category: string; items: ScoredCommand[]; }
 
-const parseShortcut = (s: string): string[] => s.split(/\s*\+\s*/).map(k => k.trim());
+const parseShortcut = (s: string): string[][] => s.split(" ").map(chord => chord.split("+"));
 
 function HighlightedText(props: { text: string; matches: number[] }) {
   const segments = (): FuzzyHighlightSegment[] => fuzzyHighlight(props.text, props.matches);
@@ -145,7 +145,7 @@ export function CortexCommandPalette() {
       .map(c => {
         const lr = fuzzyMatch(q, c.label);
         const cr = c.category ? fuzzyMatch(q, c.category) : { score: 0, matches: [] as number[] };
-        return { ...c, score: Math.max(lr.score, cr.score), matches: lr.score >= cr.score ? lr.matches : [] as number[] };
+        return { ...c, score: Math.max(lr.score, cr.score), matches: lr.score > 0 ? lr.matches : [] as number[] };
       })
       .filter(c => c.score > 0)
       .sort((a, b) => b.score - a.score);
@@ -256,9 +256,12 @@ function CommandRow(props: {
       </span>
       <Show when={props.cmd.shortcut}>
         <div style={shortcutContainerStyle}>
-          <For each={parseShortcut(props.cmd.shortcut!)}>{(key, ki) => (<>
-            <Show when={ki() > 0}><span style={shortcutSepStyle}>+</span></Show>
-            <span style={shortcutKeyStyle}>{key}</span>
+          <For each={parseShortcut(props.cmd.shortcut!)}>{(chordGroup, chordIdx) => (<>
+            <Show when={chordIdx() > 0}><span style={{ margin: "0 4px" }}>{" "}</span></Show>
+            <For each={chordGroup}>{(key, ki) => (<>
+              <Show when={ki() > 0}><span style={shortcutSepStyle}>+</span></Show>
+              <span style={shortcutKeyStyle}>{key}</span>
+            </>)}</For>
           </>)}</For>
         </div>
       </Show>

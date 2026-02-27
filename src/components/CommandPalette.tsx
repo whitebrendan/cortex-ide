@@ -137,7 +137,7 @@ export function CommandPalette() {
         return {
           ...cmd,
           score: bestScore,
-          matches: labelMatch.score >= categoryMatch.score ? labelMatch.matches : [],
+          matches: labelMatch.score > 0 ? labelMatch.matches : [],
           isRecent: false,
         };
       })
@@ -231,9 +231,10 @@ export function CommandPalette() {
     executeCommand(id);
   };
 
-  // Parse shortcut into keybinding keys for VS Code styling
-  const parseShortcut = (shortcut: string): string[] => {
-    return shortcut.split(/\s*\+\s*/).map(key => key.trim());
+  // Parse shortcut into chord groups for VS Code styling
+  // E.g. 'Ctrl+K Ctrl+S' → [['Ctrl','K'], ['Ctrl','S']]
+  const parseShortcut = (shortcut: string): string[][] => {
+    return shortcut.split(" ").map(chord => chord.split("+"));
   };
 
   // JetBrains styled popup container
@@ -444,12 +445,21 @@ export function CommandPalette() {
                         <Show when={cmd.shortcut}>
                           <div style={keybindingStyle}>
                             <For each={parseShortcut(cmd.shortcut!)}>
-                              {(key, keyIndex) => (
+                              {(chordGroup, chordIndex) => (
                                 <>
-                                  <Show when={keyIndex() > 0}>
-                                    <span style={{ margin: "0 2px" }}>+</span>
+                                  <Show when={chordIndex() > 0}>
+                                    <span style={{ margin: "0 4px" }}>{" "}</span>
                                   </Show>
-                                  <span style={keybindingKeyStyle}>{key}</span>
+                                  <For each={chordGroup}>
+                                    {(key, keyIndex) => (
+                                      <>
+                                        <Show when={keyIndex() > 0}>
+                                          <span style={{ margin: "0 2px" }}>+</span>
+                                        </Show>
+                                        <span style={keybindingKeyStyle}>{key}</span>
+                                      </>
+                                    )}
+                                  </For>
                                 </>
                               )}
                             </For>
@@ -509,12 +519,21 @@ export function CommandPalette() {
                       <Show when={cmd.shortcut}>
                         <div style={keybindingStyle}>
                           <For each={parseShortcut(cmd.shortcut!)}>
-                            {(key, keyIndex) => (
+                            {(chordGroup, chordIndex) => (
                               <>
-                                <Show when={keyIndex() > 0}>
-                                  <span style={{ margin: "0 2px" }}>+</span>
+                                <Show when={chordIndex() > 0}>
+                                  <span style={{ margin: "0 4px" }}>{" "}</span>
                                 </Show>
-                                <span style={keybindingKeyStyle}>{key}</span>
+                                <For each={chordGroup}>
+                                  {(key, keyIndex) => (
+                                    <>
+                                      <Show when={keyIndex() > 0}>
+                                        <span style={{ margin: "0 2px" }}>+</span>
+                                      </Show>
+                                      <span style={keybindingKeyStyle}>{key}</span>
+                                    </>
+                                  )}
+                                </For>
                               </>
                             )}
                           </For>
