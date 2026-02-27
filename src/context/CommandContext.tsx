@@ -257,6 +257,13 @@ export function CommandProvider(props: { children: JSX.Element }) {
         return;
       }
 
+      // Open Snippet Manager: Ctrl+Alt+S
+      if ((e.ctrlKey || e.metaKey) && e.altKey && !e.shiftKey && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent("snippets:open"));
+        return;
+      }
+
       // Toggle Screencast Mode: Ctrl+Alt+K
       if ((e.ctrlKey || e.metaKey) && e.altKey && e.key === "k") {
         e.preventDefault();
@@ -2053,6 +2060,16 @@ export function CommandProvider(props: { children: JSX.Element }) {
           if (confirm("Clear all bookmarks?")) {
             window.dispatchEvent(new CustomEvent("bookmarks:clear-all"));
           }
+        },
+      },
+      // Snippets commands
+      {
+        id: "snippets.openManager",
+        label: "Snippets: Open Snippet Manager",
+        shortcut: "Ctrl+Alt+S",
+        category: "Snippets",
+        action: () => {
+          window.dispatchEvent(new CustomEvent("snippets:open"));
         },
       },
       // Screencast Mode commands

@@ -64,7 +64,7 @@ const STORAGE_KEYS = {
 } as const;
 
 const VALID_MODES: ViewMode[] = ["vibe", "ide"];
-const VALID_SIDEBAR_TABS: SidebarTab[] = ["files", "search", "git", "debug", "extensions", "agents", "themes", "plugins", "account"];
+const VALID_SIDEBAR_TABS: SidebarTab[] = ["files", "search", "git", "debug", "extensions", "agents", "themes", "plugins", "account", "docs"];
 const VALID_CHAT_STATES: ChatPanelState[] = ["minimized", "expanded", "home"];
 
 function loadLayoutState() {

@@ -11,6 +11,7 @@ const CortexExtensionsPanel = lazy(() => import("@/components/cortex/CortexExten
 const CortexThemePicker = lazy(() => import("@/components/cortex/CortexThemePicker").then(m => ({ default: m.CortexThemePicker })));
 const CortexPluginsPanel = lazy(() => import("@/components/cortex/CortexPluginsPanel").then(m => ({ default: m.CortexPluginsPanel })));
 const CortexAccountPanel = lazy(() => import("@/components/cortex/CortexAccountPanel").then(m => ({ default: m.CortexAccountPanel })));
+const CortexDocumentationPanel = lazy(() => import("@/components/cortex/CortexDocumentationPanel").then(m => ({ default: m.CortexDocumentationPanel })));
 
 function EmptyExplorer(props: { onOpenFolder: () => void }) {
   return (
@@ -153,6 +154,12 @@ export function CortexSidebarContainer(props: CortexSidebarContainerProps) {
           <Show when={props.sidebarTab === "account"}>
             <Suspense fallback={<SidebarSkeleton />}>
               <CortexAccountPanel />
+            </Suspense>
+          </Show>
+
+          <Show when={props.sidebarTab === "docs"}>
+            <Suspense fallback={<SidebarSkeleton />}>
+              <CortexDocumentationPanel />
             </Suspense>
           </Show>
         </div>

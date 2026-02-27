@@ -26,7 +26,8 @@ export type SidebarTab =
   | "codemap"
   | "design"
   | "testing"
-  | "remote";
+  | "remote"
+  | "docs";
 
 /** Bottom panel tabs */
 export type BottomPanelTab = 
