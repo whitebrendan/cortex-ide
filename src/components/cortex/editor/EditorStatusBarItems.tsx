@@ -78,7 +78,7 @@ export const EditorStatusBarItems: Component<EditorStatusBarItemsProps> = (props
   const handleEncodingSelect = (item: QuickPickItem) => {
     setActiveMenu(null);
     window.dispatchEvent(
-      new CustomEvent("editor:encoding-change", {
+      new CustomEvent("encoding:changed", {
         detail: { encoding: item.label },
       })
     );

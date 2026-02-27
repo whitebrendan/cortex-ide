@@ -259,7 +259,7 @@ export function StatusBarProvider(props: ParentProps) {
     window.addEventListener("editor:cursor-change", handleCursorChange);
     window.addEventListener("editor:selection-change", handleSelectionChange);
     window.addEventListener("editor:language-change", handleLanguageChange);
-    window.addEventListener("editor:encoding-change", handleEncodingChange);
+    window.addEventListener("encoding:changed", handleEncodingChange);
     window.addEventListener("editor:indentation-change", handleIndentationChange);
     window.addEventListener("editor:line-ending-change", handleLineEndingChange);
     window.addEventListener("git:branch-change", handleGitBranchChange);
@@ -270,7 +270,7 @@ export function StatusBarProvider(props: ParentProps) {
     window.removeEventListener("editor:cursor-change", handleCursorChange);
     window.removeEventListener("editor:selection-change", handleSelectionChange);
     window.removeEventListener("editor:language-change", handleLanguageChange);
-    window.removeEventListener("editor:encoding-change", handleEncodingChange);
+    window.removeEventListener("encoding:changed", handleEncodingChange);
     window.removeEventListener("editor:indentation-change", handleIndentationChange);
     window.removeEventListener("editor:line-ending-change", handleLineEndingChange);
     window.removeEventListener("git:branch-change", handleGitBranchChange);

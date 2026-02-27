@@ -1,4 +1,4 @@
-import { createContext, useContext, ParentProps, onMount, onCleanup, createEffect } from "solid-js";
+import { createContext, useContext, ParentProps, onMount, onCleanup } from "solid-js";
 import { createStore, produce } from "solid-js/store";
 import { invoke } from "@tauri-apps/api/core";
 import { useCommands } from "./CommandContext";
@@ -172,6 +172,7 @@ function expandPath(path: string): string {
 }
 
 export function JournalProvider(props: ParentProps) {
+  const commands = useCommands();
   let autoSaveTimer: ReturnType<typeof setInterval> | null = null;
   
   const [state, setState] = createStore<JournalState>({
@@ -636,9 +637,7 @@ export function JournalProvider(props: ParentProps) {
     });
   });
 
-  createEffect(() => {
-    const commands = useCommands();
-    
+  onMount(() => {
     commands.registerCommand({
       id: "journal-open-today",
       label: "Journal: Open Today's Entry",
@@ -646,7 +645,7 @@ export function JournalProvider(props: ParentProps) {
       category: "Journal",
       action: openTodayEntry,
     });
-    
+
     commands.registerCommand({
       id: "journal-new-entry",
       label: "Journal: New Entry",
@@ -656,7 +655,7 @@ export function JournalProvider(props: ParentProps) {
         openEntry(new Date());
       },
     });
-    
+
     commands.registerCommand({
       id: "journal-search",
       label: "Journal: Search Entries",
@@ -665,7 +664,7 @@ export function JournalProvider(props: ParentProps) {
         setShowJournalPanel(true);
       },
     });
-    
+
     commands.registerCommand({
       id: "journal-show-calendar",
       label: "Journal: Show Calendar",
@@ -673,6 +672,13 @@ export function JournalProvider(props: ParentProps) {
       action: () => {
         setShowJournalPanel(true);
       },
+    });
+
+    onCleanup(() => {
+      commands.unregisterCommand("journal-open-today");
+      commands.unregisterCommand("journal-new-entry");
+      commands.unregisterCommand("journal-search");
+      commands.unregisterCommand("journal-show-calendar");
     });
   });
 
