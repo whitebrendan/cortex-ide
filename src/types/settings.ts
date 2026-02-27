@@ -77,6 +77,14 @@ export interface EditorSettings {
   minimapEnabled: boolean;
   /** Minimap width in pixels */
   minimapWidth: number;
+  /** Render actual characters in minimap instead of color blocks */
+  minimapRenderCharacters: boolean;
+  /** Side to render minimap on */
+  minimapSide: "right" | "left";
+  /** Minimap scale factor (1-3) */
+  minimapScale: number;
+  /** When to show the minimap slider */
+  minimapShowSlider: "always" | "mouseover";
   /** Enable bracket pair colorization */
   bracketPairColorization: boolean;
   /** Auto closing brackets behavior */

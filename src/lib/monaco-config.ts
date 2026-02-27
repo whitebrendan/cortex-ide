@@ -75,11 +75,11 @@ export function buildEditorOptions(
     minimap: {
       enabled: settings.minimapEnabled ?? true,
       autohide: "mouseover",
-      side: "right",
-      showSlider: "mouseover",
-      renderCharacters: false,
+      side: settings.minimapSide ?? "right",
+      showSlider: settings.minimapShowSlider ?? "mouseover",
+      renderCharacters: settings.minimapRenderCharacters ?? false,
       maxColumn: settings.minimapWidth ?? 80,
-      scale: 1,
+      scale: settings.minimapScale ?? 1,
       size: "proportional",
     },
 

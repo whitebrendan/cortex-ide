@@ -62,6 +62,10 @@ export interface EditorSettings {
   lineNumbers: "on" | "off" | "relative" | "interval";
   minimapEnabled: boolean;
   minimapWidth: number;
+  minimapRenderCharacters: boolean;
+  minimapSide: "right" | "left";
+  minimapScale: number;
+  minimapShowSlider: "always" | "mouseover";
   bracketPairColorization: boolean;
   autoClosingBrackets: "always" | "languageDefined" | "beforeWhitespace" | "never";
   autoIndent: boolean;
@@ -642,6 +646,10 @@ const DEFAULT_EDITOR: EditorSettings = {
   lineNumbers: "on",
   minimapEnabled: true,
   minimapWidth: 100,
+  minimapRenderCharacters: false,
+  minimapSide: "right",
+  minimapScale: 1,
+  minimapShowSlider: "mouseover",
   bracketPairColorization: true,
   autoClosingBrackets: "always",
   autoIndent: true,
@@ -1140,6 +1148,9 @@ function mergeAndValidateSettings(loaded: Partial<CortexSettings>): CortexSettin
   merged.editor.tabSize = clampNum(merged.editor.tabSize, 1, 32, DEFAULT_SETTINGS.editor.tabSize);
   merged.editor.lineHeight = clampNum(merged.editor.lineHeight, 0.5, 5, DEFAULT_SETTINGS.editor.lineHeight);
   merged.editor.minimapWidth = clampNum(merged.editor.minimapWidth, 0, 500, DEFAULT_SETTINGS.editor.minimapWidth);
+  merged.editor.minimapScale = clampNum(merged.editor.minimapScale, 1, 3, DEFAULT_SETTINGS.editor.minimapScale);
+  merged.editor.minimapSide = enumStr(merged.editor.minimapSide, ["right", "left"] as const, "right");
+  merged.editor.minimapShowSlider = enumStr(merged.editor.minimapShowSlider, ["always", "mouseover"] as const, "mouseover");
   merged.theme.uiFontSize = clampNum(merged.theme.uiFontSize, 8, 40, DEFAULT_SETTINGS.theme.uiFontSize);
   merged.theme.zoomLevel = clampNum(merged.theme.zoomLevel, 0.25, 5, DEFAULT_SETTINGS.theme.zoomLevel);
   merged.terminal.fontSize = clampNum(merged.terminal.fontSize, 1, 200, DEFAULT_SETTINGS.terminal.fontSize);
@@ -1751,7 +1762,7 @@ const updateCommandPaletteSetting = async <K extends keyof CommandPaletteSetting
       insertSpaces: e.insertSpaces,
       wordWrap: e.wordWrap,
       lineNumbers: e.lineNumbers,
-      minimap: { enabled: e.minimapEnabled, maxColumn: e.minimapWidth },
+      minimap: { enabled: e.minimapEnabled, maxColumn: e.minimapWidth, renderCharacters: e.minimapRenderCharacters, side: e.minimapSide, scale: e.minimapScale, showSlider: e.minimapShowSlider },
       bracketPairColorization: { enabled: e.bracketPairColorization },
       autoClosingBrackets: e.autoClosingBrackets,
       autoIndent: e.autoIndent ? "full" : "none",

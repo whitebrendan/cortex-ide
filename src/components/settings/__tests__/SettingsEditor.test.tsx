@@ -7,7 +7,8 @@ vi.mock("@/context/SettingsContext", () => {
     editor: {
       fontFamily: "JetBrains Mono", fontSize: 14, lineHeight: 1.5, tabSize: 2,
       insertSpaces: true, wordWrap: "off", lineNumbers: "on", minimapEnabled: true,
-      minimapWidth: 120, bracketPairColorization: true, autoClosingBrackets: "languageDefined",
+      minimapWidth: 120, minimapRenderCharacters: false, minimapSide: "right", minimapScale: 1, minimapShowSlider: "mouseover",
+      bracketPairColorization: true, autoClosingBrackets: "languageDefined",
       autoIndent: true, formatOnSave: false, formatOnPaste: false, formatOnType: false,
       cursorStyle: "line", cursorBlink: "blink", renderWhitespace: "none",
       scrollBeyondLastLine: true, smoothScrolling: false, mouseWheelZoom: false,

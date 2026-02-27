@@ -34,6 +34,17 @@ vi.mock("@tauri-apps/plugin-process", () => ({ exit: vi.fn(), relaunch: vi.fn() 
 vi.mock("@tauri-apps/plugin-os", () => ({ platform: vi.fn(() => Promise.resolve("linux")), arch: vi.fn(() => Promise.resolve("x86_64")), type: vi.fn(() => Promise.resolve("Linux")), version: vi.fn(() => Promise.resolve("5.0")), locale: vi.fn(() => Promise.resolve("en-US")), hostname: vi.fn(() => Promise.resolve("test")) }));
 vi.mock("@tauri-apps/plugin-store", () => ({ Store: vi.fn(() => ({ get: vi.fn(() => Promise.resolve(null)), set: vi.fn(() => Promise.resolve()), delete: vi.fn(() => Promise.resolve()), clear: vi.fn(() => Promise.resolve()), keys: vi.fn(() => Promise.resolve([])), values: vi.fn(() => Promise.resolve([])), entries: vi.fn(() => Promise.resolve([])), length: vi.fn(() => Promise.resolve(0)), save: vi.fn(() => Promise.resolve()), onKeyChange: vi.fn(() => Promise.resolve(vi.fn())) })), load: vi.fn(() => Promise.resolve({ get: vi.fn(() => Promise.resolve(null)), set: vi.fn(() => Promise.resolve()), delete: vi.fn(() => Promise.resolve()), save: vi.fn(() => Promise.resolve()), keys: vi.fn(() => Promise.resolve([])), values: vi.fn(() => Promise.resolve([])), entries: vi.fn(() => Promise.resolve([])), length: vi.fn(() => Promise.resolve(0)), onKeyChange: vi.fn(() => Promise.resolve(vi.fn())) })) }));
 
+vi.mock("@/components/editor/MinimapController", () => ({
+  useMinimapController: vi.fn(() => ({
+    minimapOptions: vi.fn(() => ({ enabled: true, side: "right", showSlider: "mouseover", renderCharacters: false, maxColumn: 80, scale: 1, size: "proportional" })),
+    toggleMinimap: vi.fn(),
+    setRenderMode: vi.fn(),
+    setSizeMode: vi.fn(),
+    setSide: vi.fn(),
+    setScale: vi.fn(),
+  })),
+}));
+
 import { EditorMinimap } from "../EditorMinimap";
 
 describe("EditorMinimap coverage", () => {
@@ -41,10 +52,9 @@ describe("EditorMinimap coverage", () => {
     expect(EditorMinimap).toBeDefined();
     try {
       const { createRoot } = require("solid-js");
-      createRoot((d: any) => { try { EditorMinimap({}); } catch(_e) {} d(); });
+      createRoot((d: any) => { try { EditorMinimap({ editor: () => null, monaco: () => null }); } catch(_e) {} d(); });
     } catch (_e) {}
-    try { EditorMinimap({}); } catch (_e) {}
-    try { EditorMinimap({ key: "value", enabled: true, items: [1,2,3] }); } catch (_e) {}
+    try { EditorMinimap({ editor: () => null, monaco: () => null }); } catch (_e) {}
   });
 
 });

@@ -126,6 +126,30 @@ const cortex_SETTINGS_SCHEMA = {
           minimum: 50,
           maximum: 300
         },
+        minimapRenderCharacters: {
+          type: "boolean",
+          description: "Render actual characters in minimap instead of color blocks",
+          default: false
+        },
+        minimapSide: {
+          type: "string",
+          description: "Side to render minimap on",
+          enum: ["right", "left"],
+          default: "right"
+        },
+        minimapScale: {
+          type: "number",
+          description: "Minimap scale factor",
+          default: 1,
+          minimum: 1,
+          maximum: 3
+        },
+        minimapShowSlider: {
+          type: "string",
+          description: "When to show the minimap slider",
+          enum: ["always", "mouseover"],
+          default: "mouseover"
+        },
         bracketPairColorization: {
           type: "boolean",
           description: "Enable bracket pair colorization",

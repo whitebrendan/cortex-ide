@@ -131,6 +131,16 @@ const SETTINGS_REGISTRY: SettingDefinition[] = [
   ]},
   { id: "editor.minimapEnabled", key: "minimapEnabled", section: "editor", label: "Minimap Enabled", description: "Controls whether the minimap is shown.", type: "boolean", defaultValue: DEFAULT_SETTINGS.editor.minimapEnabled },
   { id: "editor.minimapWidth", key: "minimapWidth", section: "editor", label: "Minimap Width", description: "Controls the maximum width of the minimap.", type: "number", defaultValue: DEFAULT_SETTINGS.editor.minimapWidth, min: 50, max: 300 },
+  { id: "editor.minimapRenderCharacters", key: "minimapRenderCharacters", section: "editor", label: "Minimap Render Characters", description: "Render actual characters in the minimap instead of color blocks.", type: "boolean", defaultValue: DEFAULT_SETTINGS.editor.minimapRenderCharacters },
+  { id: "editor.minimapSide", key: "minimapSide", section: "editor", label: "Minimap Side", description: "Controls the side where the minimap is rendered.", type: "enum", defaultValue: DEFAULT_SETTINGS.editor.minimapSide, enumValues: [
+    { value: "right", label: "Right" },
+    { value: "left", label: "Left" },
+  ]},
+  { id: "editor.minimapScale", key: "minimapScale", section: "editor", label: "Minimap Scale", description: "Scale of content drawn in the minimap (1-3).", type: "number", defaultValue: DEFAULT_SETTINGS.editor.minimapScale, min: 1, max: 3 },
+  { id: "editor.minimapShowSlider", key: "minimapShowSlider", section: "editor", label: "Minimap Show Slider", description: "Controls when the minimap slider is shown.", type: "enum", defaultValue: DEFAULT_SETTINGS.editor.minimapShowSlider, enumValues: [
+    { value: "mouseover", label: "On Mouse Over" },
+    { value: "always", label: "Always" },
+  ]},
   { id: "editor.bracketPairColorization", key: "bracketPairColorization", section: "editor", label: "Bracket Pair Colorization", description: "Controls whether bracket pair colorization is enabled.", type: "boolean", defaultValue: DEFAULT_SETTINGS.editor.bracketPairColorization },
   { id: "editor.autoClosingBrackets", key: "autoClosingBrackets", section: "editor", label: "Auto Closing Brackets", description: "Controls whether the editor should automatically close brackets.", type: "enum", defaultValue: DEFAULT_SETTINGS.editor.autoClosingBrackets, languageOverride: ["javascript", "typescript", "json", "html"], enumValues: [
     { value: "always", label: "Always" },

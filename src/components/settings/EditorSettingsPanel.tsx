@@ -546,6 +546,71 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
               onBlur={(e) => e.currentTarget.style.borderColor = hasOverride("minimapWidth") ? "var(--jb-border-focus)" : "var(--jb-border-default)"}
             />
           </SettingRowWithOverride>
+          <SettingRowWithOverride
+            label="Render Characters"
+            settingKey="minimapRenderCharacters"
+            hasOverride={hasOverride("minimapRenderCharacters")}
+            onReset={() => resetOverride("minimapRenderCharacters")}
+          >
+            <Toggle
+              checked={editor().minimapRenderCharacters}
+              onChange={(checked) => updateSetting("minimapRenderCharacters", checked)}
+            />
+          </SettingRowWithOverride>
+          <SettingRowWithOverride
+            label="Side"
+            settingKey="minimapSide"
+            hasOverride={hasOverride("minimapSide")}
+            onReset={() => resetOverride("minimapSide")}
+          >
+            <select
+              value={editor().minimapSide}
+              onChange={(e) => updateSetting("minimapSide", e.currentTarget.value as "right" | "left")}
+              style={getSelectStyle(hasOverride("minimapSide"))}
+              onFocus={(e) => e.currentTarget.style.borderColor = "var(--jb-border-focus)"}
+              onBlur={(e) => e.currentTarget.style.borderColor = hasOverride("minimapSide") ? "var(--jb-border-focus)" : "var(--jb-border-default)"}
+            >
+              <option value="right">Right</option>
+              <option value="left">Left</option>
+            </select>
+          </SettingRowWithOverride>
+          <SettingRowWithOverride
+            label="Scale"
+            settingKey="minimapScale"
+            hasOverride={hasOverride("minimapScale")}
+            onReset={() => resetOverride("minimapScale")}
+          >
+            <select
+              value={editor().minimapScale.toString()}
+              onChange={(e) => updateSetting("minimapScale", parseFloat(e.currentTarget.value))}
+              style={getSelectStyle(hasOverride("minimapScale"))}
+              onFocus={(e) => e.currentTarget.style.borderColor = "var(--jb-border-focus)"}
+              onBlur={(e) => e.currentTarget.style.borderColor = hasOverride("minimapScale") ? "var(--jb-border-focus)" : "var(--jb-border-default)"}
+            >
+              <option value="1">1x</option>
+              <option value="1.5">1.5x</option>
+              <option value="2">2x</option>
+              <option value="2.5">2.5x</option>
+              <option value="3">3x</option>
+            </select>
+          </SettingRowWithOverride>
+          <SettingRowWithOverride
+            label="Show Slider"
+            settingKey="minimapShowSlider"
+            hasOverride={hasOverride("minimapShowSlider")}
+            onReset={() => resetOverride("minimapShowSlider")}
+          >
+            <select
+              value={editor().minimapShowSlider}
+              onChange={(e) => updateSetting("minimapShowSlider", e.currentTarget.value as "always" | "mouseover")}
+              style={getSelectStyle(hasOverride("minimapShowSlider"))}
+              onFocus={(e) => e.currentTarget.style.borderColor = "var(--jb-border-focus)"}
+              onBlur={(e) => e.currentTarget.style.borderColor = hasOverride("minimapShowSlider") ? "var(--jb-border-focus)" : "var(--jb-border-default)"}
+            >
+              <option value="mouseover">On Mouse Over</option>
+              <option value="always">Always</option>
+            </select>
+          </SettingRowWithOverride>
         </Show>
       </Card>
 
@@ -877,7 +942,8 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
                 const keys: (keyof EditorSettings)[] = [
                   "fontFamily", "fontSize", "lineHeight", "tabSize", "insertSpaces",
                   "autoIndent", "wordWrap", "lineNumbers", "renderWhitespace",
-                  "minimapEnabled", "minimapWidth",
+                  "minimapEnabled", "minimapWidth", "minimapRenderCharacters",
+                  "minimapSide", "minimapScale", "minimapShowSlider",
                   "cursorStyle", "cursorBlink", "bracketPairColorization",
                   "autoClosingBrackets", "guidesBracketPairs", "formatOnSave",
                   "formatOnPaste", "foldingEnabled", "showFoldingControls",

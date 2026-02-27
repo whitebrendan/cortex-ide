@@ -41,15 +41,30 @@ export function EditorProvider(props: ParentProps) {
     previewTab: null,
     gridState: loadGridState(),
     useGridLayout: loadUseGridLayout(),
-    minimapSettings: {
-      enabled: true,
-      side: "right",
-      showSlider: "mouseover",
-      renderCharacters: true,
-      maxColumn: 80,
-      scale: 1,
-      sizeMode: "proportional",
-    },
+    minimapSettings: (() => {
+      try {
+        const s = useSettings().effectiveSettings().editor;
+        return {
+          enabled: s.minimapEnabled ?? true,
+          side: s.minimapSide ?? "right",
+          showSlider: s.minimapShowSlider ?? "mouseover",
+          renderCharacters: s.minimapRenderCharacters ?? false,
+          maxColumn: s.minimapWidth ?? 80,
+          scale: s.minimapScale ?? 1,
+          sizeMode: "proportional" as const,
+        };
+      } catch {
+        return {
+          enabled: true,
+          side: "right" as const,
+          showSlider: "mouseover" as const,
+          renderCharacters: false,
+          maxColumn: 80,
+          scale: 1,
+          sizeMode: "proportional" as const,
+        };
+      }
+    })(),
     breadcrumbSymbolPath: [],
     groupLockState: {},
     groupNames: {},
@@ -366,11 +381,11 @@ export function EditorProvider(props: ParentProps) {
         renderControlCharacters: s.renderControlCharacters,
         minimap: {
           enabled: s.minimapEnabled ?? state.minimapSettings.enabled,
-          renderCharacters: state.minimapSettings.renderCharacters,
-          side: state.minimapSettings.side,
-          showSlider: state.minimapSettings.showSlider,
-          maxColumn: state.minimapSettings.maxColumn,
-          scale: state.minimapSettings.scale,
+          renderCharacters: s.minimapRenderCharacters ?? state.minimapSettings.renderCharacters,
+          side: s.minimapSide ?? state.minimapSettings.side,
+          showSlider: s.minimapShowSlider ?? state.minimapSettings.showSlider,
+          maxColumn: s.minimapWidth ?? state.minimapSettings.maxColumn,
+          scale: s.minimapScale ?? state.minimapSettings.scale,
           size: state.minimapSettings.sizeMode,
         },
         guides: { indentation: s.guidesIndentation, bracketPairs: s.guidesBracketPairs },
