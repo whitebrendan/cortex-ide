@@ -110,9 +110,7 @@ export function CortexSidebarContainer(props: CortexSidebarContainerProps) {
 
           <Show when={props.sidebarTab === "search"}>
             <Suspense fallback={<SidebarSkeleton />}>
-              <div style={{ width: "100%", "min-width": "0", overflow: "hidden" }}>
-                <SearchSidebar />
-              </div>
+              <SearchSidebar />
             </Suspense>
           </Show>
 

@@ -375,6 +375,32 @@ export function SearchSidebar() {
   onMount(() => {
     setTimeout(() => inputRef?.focus(), 100);
     
+    // Listen for editor selection to populate search input
+    const handleSelectionForSearch = (e: Event) => {
+      const detail = (e as CustomEvent<{ text: string }>).detail;
+      if (detail?.text) {
+        setQuery(detail.text);
+        setTimeout(() => inputRef?.focus(), 50);
+      }
+    };
+    window.addEventListener("editor:selection-for-search", handleSelectionForSearch);
+    onCleanup(() => window.removeEventListener("editor:selection-for-search", handleSelectionForSearch));
+
+    // Listen for view:search to focus input
+    const handleViewSearch = () => {
+      setTimeout(() => inputRef?.focus(), 100);
+    };
+    window.addEventListener("view:search", handleViewSearch);
+    onCleanup(() => window.removeEventListener("view:search", handleViewSearch));
+
+    // Listen for search:focus-replace to show and focus replace input
+    const handleFocusReplace = () => {
+      setShowReplace(true);
+      setTimeout(() => inputRef?.focus(), 100);
+    };
+    window.addEventListener("search:focus-replace", handleFocusReplace);
+    onCleanup(() => window.removeEventListener("search:focus-replace", handleFocusReplace));
+
     // ResizeObserver for container height (for virtual scrolling)
     if (resultsContainerRef) {
       const observer = new ResizeObserver(entries => {
@@ -952,6 +978,7 @@ export function SearchSidebar() {
     border: "none",
     height: `${ITEM_HEIGHT}px`,
     "font-weight": "600",
+    "min-width": "0",
     background: isExpanded ? tokens.colors.interactive.selected : "transparent",
     transition: "background var(--cortex-transition-fast)",
   });
@@ -966,6 +993,7 @@ export function SearchSidebar() {
     background: "transparent",
     border: "none",
     height: `${ITEM_HEIGHT}px`,
+    "min-width": "0",
     "font-size": "var(--jb-text-muted-size)",
     transition: "background var(--cortex-transition-fast)",
   };
@@ -1000,6 +1028,7 @@ export function SearchSidebar() {
     "text-align": "left",
     cursor: "pointer",
     border: "none",
+    "min-width": "0",
     height: `${ITEM_HEIGHT}px`,
     background: isExpanded ? tokens.colors.interactive.selected : "transparent",
     transition: "background var(--cortex-transition-fast)",
@@ -1025,16 +1054,18 @@ export function SearchSidebar() {
     "white-space": "nowrap",
     "line-height": "20px",
     flex: "1",
+    "min-width": "0",
     color: tokens.colors.text.muted,
   };
 
   return (
-    <div style={ui.panel}>
+    <div style={{ ...ui.panel, "min-width": "0", overflow: "hidden" }}>
       {/* Header */}
       <SidebarHeader
         title="Search"
+        style={{ "min-width": "0" }}
         actions={
-          <>
+          <div style={{ display: "flex", "align-items": "center", gap: "4px", "flex-wrap": "wrap", "min-width": "0" }}>
             <IconButton
               tooltip="Refresh"
               size="sm"
@@ -1139,14 +1170,14 @@ export function SearchSidebar() {
             >
               <Icon name="square-minus" style={ui.icon} />
             </IconButton>
-          </>
+          </div>
         }
       />
 
       {/* Search Input Section */}
-      <div style={{ padding: "8px 12px", display: "flex", "flex-direction": "column", gap: "4px" }}>
+      <div style={{ padding: "8px 12px", display: "flex", "flex-direction": "column", gap: "4px", "min-width": "0" }}>
         {/* Main Search Row */}
-        <div style={{ display: "flex", "align-items": "flex-start", gap: "2px" }}>
+        <div style={{ display: "flex", "align-items": "flex-start", gap: "2px", "min-width": "0" }}>
           {/* Replace Toggle Chevron - smaller and closer to inputs */}
           <button
             style={{
@@ -1173,7 +1204,7 @@ export function SearchSidebar() {
           </button>
           
           {/* Input Group */}
-          <div style={{ flex: "1", display: "flex", "flex-direction": "column", gap: "1px" }}>
+          <div style={{ flex: "1", display: "flex", "flex-direction": "column", gap: "1px", "min-width": "0" }}>
             {/* Search Input Row */}
             <div style={{
               ...inputRowStyle,
@@ -1266,7 +1297,7 @@ export function SearchSidebar() {
         </Show>
         
         {/* Search Options Row - Toggle buttons moved here for better responsiveness */}
-        <div style={{ display: "flex", "align-items": "center", gap: tokens.spacing.sm, "padding-left": "16px", "flex-wrap": "wrap" }}>
+        <div style={{ display: "flex", "align-items": "center", gap: tokens.spacing.sm, "padding-left": "16px", "flex-wrap": "wrap", "min-width": "0" }}>
           {/* Case Sensitive */}
           <ToggleButton
             active={caseSensitive()}
@@ -1332,18 +1363,18 @@ export function SearchSidebar() {
 
         {/* Include/Exclude Filters */}
         <Show when={showFilters()}>
-          <div style={{ display: "flex", "flex-direction": "column", gap: tokens.spacing.sm, "padding-left": "16px" }}>
+          <div style={{ display: "flex", "flex-direction": "column", gap: tokens.spacing.sm, "padding-left": "16px", "min-width": "0" }}>
             <Input
               placeholder="files to include (e.g., *.ts, src/**)"
               value={includePattern()}
               onInput={(e) => setIncludePattern(e.currentTarget.value)}
-              style={{ height: "24px", "font-size": "var(--jb-text-body-size)" }}
+              style={{ height: "24px", "font-size": "var(--jb-text-body-size)", "min-width": "0" }}
             />
             <Input
               placeholder="files to exclude"
               value={excludePattern()}
               onInput={(e) => setExcludePattern(e.currentTarget.value)}
-              style={{ height: "24px", "font-size": "var(--jb-text-body-size)" }}
+              style={{ height: "24px", "font-size": "var(--jb-text-body-size)", "min-width": "0" }}
             />
           </div>
         </Show>

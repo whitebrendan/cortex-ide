@@ -178,8 +178,8 @@ export function CommandProvider(props: { children: JSX.Element }) {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "F") {
         e.preventDefault();
         closeAllModals();
-        setShowProjectSearch(true);
         window.dispatchEvent(new CustomEvent("view:search"));
+        window.dispatchEvent(new CustomEvent("editor:get-selection-for-search"));
         return;
       }
 
@@ -318,7 +318,7 @@ export function CommandProvider(props: { children: JSX.Element }) {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "H") {
         e.preventDefault();
         closeAllModals();
-        setShowProjectSearch(true);
+        window.dispatchEvent(new CustomEvent("view:search"));
         window.dispatchEvent(new CustomEvent("search:focus-replace"));
         return;
       }
@@ -427,7 +427,10 @@ export function CommandProvider(props: { children: JSX.Element }) {
         label: "Find in Project",
         shortcut: "Ctrl+Shift+F",
         category: "Search",
-        action: () => setShowProjectSearch(true),
+        action: () => {
+          window.dispatchEvent(new CustomEvent("view:search"));
+          window.dispatchEvent(new CustomEvent("editor:get-selection-for-search"));
+        },
       },
       {
         id: "go-to-line",
@@ -1098,7 +1101,7 @@ export function CommandProvider(props: { children: JSX.Element }) {
         shortcut: "Ctrl+Shift+H",
         category: "Search",
         action: () => {
-          setShowProjectSearch(true);
+          window.dispatchEvent(new CustomEvent("view:search"));
           window.dispatchEvent(new CustomEvent("search:focus-replace"));
         },
       },

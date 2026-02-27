@@ -113,6 +113,19 @@ export function EditorBreadcrumbs(props: EditorBreadcrumbsProps) {
       }
     };
 
+    const handleGetSelectionForSearch = () => {
+      const model = editor.getModel();
+      const selection = editor.getSelection();
+      if (model && selection && !selection.isEmpty()) {
+        const selectedText = model.getValueInRange(selection);
+        window.dispatchEvent(
+          new CustomEvent("editor:selection-for-search", {
+            detail: { text: selectedText },
+          }),
+        );
+      }
+    };
+
     const handleGetActiveFileForTerminal = () => {
       const currentFile = props.activeFile();
       if (currentFile?.path) {
@@ -279,6 +292,7 @@ export function EditorBreadcrumbs(props: EditorBreadcrumbsProps) {
     window.addEventListener("editor:command", handleEditorCommand as unknown as EventListener);
     window.addEventListener("editor:action", handleEditorAction as EventListener);
     window.addEventListener("editor:get-selection-for-terminal", handleGetSelectionForTerminal);
+    window.addEventListener("editor:get-selection-for-search", handleGetSelectionForSearch);
     window.addEventListener("editor:get-active-file-for-terminal", handleGetActiveFileForTerminal);
 
     onCleanup(() => {
@@ -291,6 +305,7 @@ export function EditorBreadcrumbs(props: EditorBreadcrumbsProps) {
       window.removeEventListener("editor:command", handleEditorCommand as unknown as EventListener);
       window.removeEventListener("editor:action", handleEditorAction as EventListener);
       window.removeEventListener("editor:get-selection-for-terminal", handleGetSelectionForTerminal);
+      window.removeEventListener("editor:get-selection-for-search", handleGetSelectionForSearch);
       window.removeEventListener("editor:get-active-file-for-terminal", handleGetActiveFileForTerminal);
     });
   });
