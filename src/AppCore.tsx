@@ -37,7 +37,6 @@ import { useLayout } from "@/context/LayoutContext";
 import { useSettings } from "@/context/SettingsContext";
 import { useNotifications } from "@/context/NotificationsContext";
 import { useOutput } from "@/context/OutputContext";
-import { useSettings } from "@/context/SettingsContext";
 import { useWindowEvents } from "@/hooks/useWindowEvents";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { initGlobalErrorHandler } from "@/lib/error-handler";
