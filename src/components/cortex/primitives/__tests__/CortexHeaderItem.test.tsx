@@ -66,7 +66,7 @@ describe("CortexHeaderItem", () => {
         <CortexHeaderItem label="File" isActive={true} />
       ));
       const button = getByRole("button") as HTMLElement;
-      expect(button.style.background).toBe("rgb(28, 28, 29)");
+      expect(button.style.background).toBe("var(--cortex-bg-secondary)");
     });
 
     it("has primary text color when active", () => {
@@ -127,7 +127,7 @@ describe("CortexHeaderItem", () => {
       const button = getByRole("button") as HTMLElement;
       const mouseEnterEvent = new MouseEvent("mouseenter", { bubbles: true });
       button.dispatchEvent(mouseEnterEvent);
-      expect(button.style.background).toBe("rgb(28, 28, 29)");
+      expect(button.style.background).toBe("var(--cortex-bg-secondary)");
     });
 
     it("applies primary text color on hover", () => {

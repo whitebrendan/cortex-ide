@@ -29,7 +29,7 @@ export const CortexSmallButton: Component<CortexSmallButtonProps> = (props) => {
   const [active, setActive] = createSignal(false);
 
   const getBackground = (): string => {
-    if (active() && !local.disabled) return "var(--cortex-bg-primary, #141415)";
+    if (active() && !local.disabled) return "var(--cortex-bg-primary)";
     if (hovered() && !local.disabled) return "var(--cortex-bg-hover, #252628)";
     return "var(--cortex-small-btn-bg, #1A1B1F)";
   };

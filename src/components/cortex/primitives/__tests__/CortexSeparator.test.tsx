@@ -75,7 +75,7 @@ describe("CortexSeparator", () => {
       const { getByRole } = render(() => <CortexSeparator />);
       const separator = getByRole("separator");
       const line = separator.querySelector("div") as HTMLElement;
-      expect(line.style.borderBottom).toBe("1px solid rgb(46, 47, 49)");
+      expect(line.style.borderBottom).toBe("1px solid var(--cortex-border-default)");
     });
   });
 
