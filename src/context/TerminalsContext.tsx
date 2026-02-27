@@ -300,6 +300,14 @@ interface TerminalsContextValue {
   addEnvironmentVariable: (terminalId: string, key: string, value: string) => void;
   removeEnvironmentVariable: (terminalId: string, key: string) => void;
   getInheritedEnvironment: () => Promise<Record<string, string>>;
+  // ============================================================================
+  // NEW: Per-tab split layout tracking
+  // ============================================================================
+  getTabSplitLayout: (tabId: string) => TerminalGroup | undefined;
+  setTabSplitLayout: (tabId: string, group: TerminalGroup) => void;
+  removeTabSplitLayout: (tabId: string) => void;
+  closeTerminalTab: (tabId: string) => Promise<void>;
+  tabSplitLayouts: () => Map<string, TerminalGroup>;
 }
 
 const TerminalsContext = createContext<TerminalsContextValue>();
@@ -315,6 +323,7 @@ const PERSISTED_TERMINALS_KEY = "cortex_terminal_persisted";
 const RECENT_COMMANDS_KEY = "cortex_terminal_recent_commands";
 const COMMAND_HISTORY_KEY = "cortex_terminal_command_history";
 const TERMINAL_ENV_KEY = "cortex_terminal_environments";
+const TAB_SPLIT_LAYOUTS_KEY = "cortex_terminal_tab_split_layouts";
 
 // ============================================================================
 // Run Command Configuration
@@ -687,6 +696,7 @@ export const TerminalsProvider: ParentComponent = (props) => {
       loadPersistedTerminals();
       loadRecentCommands();
       loadTerminalEnvironments();
+      loadTabSplitLayouts();
       await reconnectPersistedTerminals();
     }, 100);
 
@@ -749,6 +759,13 @@ export const TerminalsProvider: ParentComponent = (props) => {
   // ============================================================================
   const [terminalEnvironments, setTerminalEnvironments] = createSignal<
     Map<string, TerminalEnvironment>
+  >(new Map());
+
+  // ============================================================================
+  // NEW: Per-tab split layouts
+  // ============================================================================
+  const [tabSplitLayouts, setTabSplitLayouts] = createSignal<
+    Map<string, TerminalGroup>
   >(new Map());
 
   // Output subscribers - indexed by terminal ID
@@ -855,6 +872,32 @@ export const TerminalsProvider: ParentComponent = (props) => {
       newMap.delete(id);
       return newMap;
     });
+
+    // Clean up tab split layouts containing this terminal
+    setTabSplitLayouts((prev: Map<string, TerminalGroup>) => {
+      const newMap = new Map<string, TerminalGroup>(prev);
+      let changed = false;
+      newMap.forEach((group: TerminalGroup, tabId: string) => {
+        const idx = group.terminalIds.indexOf(id);
+        if (idx !== -1) {
+          const updatedIds = group.terminalIds.filter((tid: string) => tid !== id);
+          if (updatedIds.length === 0) {
+            newMap.delete(tabId);
+          } else {
+            const count = updatedIds.length;
+            const updated: TerminalGroup = {
+              ...group,
+              terminalIds: updatedIds,
+              splitRatios: Array(count).fill(1 / count),
+            };
+            newMap.set(tabId, updated);
+          }
+          changed = true;
+        }
+      });
+      return changed ? newMap : prev;
+    });
+    saveTabSplitLayouts();
     
     setState(produce((s) => {
       // Remove terminal from any group it belongs to
@@ -2600,6 +2643,85 @@ export const TerminalsProvider: ParentComponent = (props) => {
     }
   };
 
+  // ============================================================================
+  // NEW: Per-tab split layout functions
+  // ============================================================================
+
+  const loadTabSplitLayouts = (): void => {
+    try {
+      const stored = localStorage.getItem(TAB_SPLIT_LAYOUTS_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as Record<string, TerminalGroup>;
+        const newMap = new Map<string, TerminalGroup>();
+        for (const [tabId, group] of Object.entries(parsed)) {
+          newMap.set(tabId, group);
+        }
+        setTabSplitLayouts(newMap);
+      }
+    } catch (e) {
+      terminalLogger.error("Failed to load tab split layouts:", e);
+    }
+  };
+
+  const saveTabSplitLayouts = (): void => {
+    try {
+      const layouts = tabSplitLayouts();
+      const obj: Record<string, TerminalGroup> = {};
+      layouts.forEach((group, tabId) => {
+        obj[tabId] = group;
+      });
+      localStorage.setItem(TAB_SPLIT_LAYOUTS_KEY, JSON.stringify(obj));
+    } catch (e) {
+      terminalLogger.error("Failed to save tab split layouts:", e);
+    }
+  };
+
+  const getTabSplitLayout = (tabId: string): TerminalGroup | undefined => {
+    return tabSplitLayouts().get(tabId);
+  };
+
+  const setTabSplitLayout = (tabId: string, group: TerminalGroup): void => {
+    setTabSplitLayouts(prev => {
+      const newMap = new Map(prev);
+      newMap.set(tabId, group);
+      return newMap;
+    });
+    saveTabSplitLayouts();
+  };
+
+  const removeTabSplitLayout = (tabId: string): void => {
+    setTabSplitLayouts(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(tabId);
+      return newMap;
+    });
+    saveTabSplitLayouts();
+  };
+
+  const closeTerminalTab = async (tabId: string): Promise<void> => {
+    const layout = tabSplitLayouts().get(tabId);
+    const terminalIdsToClose: string[] = [];
+
+    if (layout) {
+      terminalIdsToClose.push(...layout.terminalIds);
+    } else {
+      terminalIdsToClose.push(tabId);
+    }
+
+    const closePromises = terminalIdsToClose.map(async (termId) => {
+      try {
+        await closeTerminal(termId);
+      } catch (e) {
+        terminalLogger.error(`Failed to close terminal ${termId} in tab ${tabId}:`, e);
+      }
+    });
+
+    await Promise.all(closePromises);
+    removeTabSplitLayout(tabId);
+
+    terminalLogger.debug(`Closed terminal tab ${tabId} with ${terminalIdsToClose.length} pane(s)`);
+  };
+
   /**
    * Create an SSH terminal connected to a remote host
    */
@@ -2879,6 +3001,65 @@ export const TerminalsProvider: ParentComponent = (props) => {
       } catch (e) {
         terminalLogger.error("Failed to split terminal:", e);
       }
+    }
+  };
+  const handleSplitVertical = async () => {
+    const activeId = state.activeTerminalId;
+    if (activeId) {
+      try {
+        const newTerminal = await splitTerminalInGroup(activeId, "vertical");
+        openTerminal(newTerminal.id);
+      } catch (e) {
+        terminalLogger.error("Failed to split terminal vertically:", e);
+      }
+    }
+  };
+  const handleSplitHorizontal = async () => {
+    const activeId = state.activeTerminalId;
+    if (activeId) {
+      try {
+        const newTerminal = await splitTerminalInGroup(activeId, "horizontal");
+        openTerminal(newTerminal.id);
+      } catch (e) {
+        terminalLogger.error("Failed to split terminal horizontally:", e);
+      }
+    }
+  };
+  const handleCloseSplitPane = async () => {
+    const activeId = state.activeTerminalId;
+    if (activeId) {
+      try {
+        await closeTerminal(activeId);
+      } catch (e) {
+        terminalLogger.error("Failed to close split pane:", e);
+      }
+    }
+  };
+  const handleNavigateSplit = (e: CustomEvent<{ direction: string }>) => {
+    const direction = e.detail?.direction;
+    if (!direction) return;
+    const activeId = state.activeTerminalId;
+    if (!activeId) return;
+    const group = getGroupForTerminal(activeId);
+    if (!group || group.terminalIds.length <= 1) return;
+    const currentIndex = group.terminalIds.indexOf(activeId);
+    const isHorizontal = group.splitDirection === "horizontal";
+    let targetIndex = currentIndex;
+    if (isHorizontal) {
+      if (direction === "left" && currentIndex > 0) targetIndex = currentIndex - 1;
+      else if (direction === "right" && currentIndex < group.terminalIds.length - 1) targetIndex = currentIndex + 1;
+    } else {
+      if (direction === "up" && currentIndex > 0) targetIndex = currentIndex - 1;
+      else if (direction === "down" && currentIndex < group.terminalIds.length - 1) targetIndex = currentIndex + 1;
+    }
+    if (targetIndex !== currentIndex) {
+      setActiveTerminal(group.terminalIds[targetIndex]);
+    }
+  };
+  const handleCloseTab = async (e: CustomEvent<{ tabId: string }>) => {
+    const tabId = e.detail?.tabId;
+    if (tabId) {
+      await closeTerminalTab(tabId);
     }
   };
   const handleClear = () => {
@@ -3175,6 +3356,11 @@ export const TerminalsProvider: ParentComponent = (props) => {
       window.removeEventListener("terminal:toggle", handleToggle);
       window.removeEventListener("terminal:new", handleNew);
       window.removeEventListener("terminal:split", handleSplit);
+      window.removeEventListener("terminal:split-vertical", handleSplitVertical);
+      window.removeEventListener("terminal:split-horizontal", handleSplitHorizontal);
+      window.removeEventListener("terminal:close-split-pane", handleCloseSplitPane);
+      window.removeEventListener("terminal:navigate-split", handleNavigateSplit as unknown as EventListener);
+      window.removeEventListener("terminal:close-tab", handleCloseTab as unknown as EventListener);
       window.removeEventListener("terminal:clear", handleClear);
       window.removeEventListener("terminal:kill", handleKill);
       window.removeEventListener("terminal:write-active", handleWriteActive as unknown as EventListener);
@@ -3219,6 +3405,11 @@ export const TerminalsProvider: ParentComponent = (props) => {
       window.addEventListener("terminal:toggle", handleToggle);
       window.addEventListener("terminal:new", handleNew);
       window.addEventListener("terminal:split", handleSplit);
+      window.addEventListener("terminal:split-vertical", handleSplitVertical);
+      window.addEventListener("terminal:split-horizontal", handleSplitHorizontal);
+      window.addEventListener("terminal:close-split-pane", handleCloseSplitPane);
+      window.addEventListener("terminal:navigate-split", handleNavigateSplit as unknown as EventListener);
+      window.addEventListener("terminal:close-tab", handleCloseTab as unknown as EventListener);
       window.addEventListener("terminal:clear", handleClear);
       window.addEventListener("terminal:kill", handleKill);
       window.addEventListener("terminal:write-active", handleWriteActive as unknown as EventListener);
@@ -3335,6 +3526,12 @@ export const TerminalsProvider: ParentComponent = (props) => {
         addEnvironmentVariable,
         removeEnvironmentVariable,
         getInheritedEnvironment,
+        // NEW: Per-tab split layouts
+        getTabSplitLayout,
+        setTabSplitLayout,
+        removeTabSplitLayout,
+        closeTerminalTab,
+        tabSplitLayouts: () => tabSplitLayouts(),
       }}
     >
       {props.children}

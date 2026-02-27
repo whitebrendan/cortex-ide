@@ -1728,6 +1728,69 @@ export function CommandProvider(props: { children: JSX.Element }) {
         },
       },
       {
+        id: "terminal.splitVertical",
+        label: "Split Terminal Vertically",
+        shortcut: "Ctrl+Shift+5",
+        category: "Terminal",
+        action: () => {
+          window.dispatchEvent(new CustomEvent("terminal:split-vertical"));
+        },
+      },
+      {
+        id: "terminal.splitHorizontal",
+        label: "Split Terminal Horizontally",
+        shortcut: 'Ctrl+Shift+"',
+        category: "Terminal",
+        action: () => {
+          window.dispatchEvent(new CustomEvent("terminal:split-horizontal"));
+        },
+      },
+      {
+        id: "terminal.closeSplitPane",
+        label: "Close Active Split Pane",
+        shortcut: "Ctrl+Shift+W",
+        category: "Terminal",
+        action: () => {
+          window.dispatchEvent(new CustomEvent("terminal:close-split-pane"));
+        },
+      },
+      {
+        id: "terminal.navigateSplitLeft",
+        label: "Navigate Split Left",
+        shortcut: "Alt+Left",
+        category: "Terminal",
+        action: () => {
+          window.dispatchEvent(new CustomEvent("terminal:navigate-split", { detail: { direction: "left" } }));
+        },
+      },
+      {
+        id: "terminal.navigateSplitRight",
+        label: "Navigate Split Right",
+        shortcut: "Alt+Right",
+        category: "Terminal",
+        action: () => {
+          window.dispatchEvent(new CustomEvent("terminal:navigate-split", { detail: { direction: "right" } }));
+        },
+      },
+      {
+        id: "terminal.navigateSplitUp",
+        label: "Navigate Split Up",
+        shortcut: "Alt+Up",
+        category: "Terminal",
+        action: () => {
+          window.dispatchEvent(new CustomEvent("terminal:navigate-split", { detail: { direction: "up" } }));
+        },
+      },
+      {
+        id: "terminal.navigateSplitDown",
+        label: "Navigate Split Down",
+        shortcut: "Alt+Down",
+        category: "Terminal",
+        action: () => {
+          window.dispatchEvent(new CustomEvent("terminal:navigate-split", { detail: { direction: "down" } }));
+        },
+      },
+      {
         id: "terminal.focus",
         label: "Focus Terminal",
         category: "Terminal",

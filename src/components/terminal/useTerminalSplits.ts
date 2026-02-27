@@ -47,6 +47,8 @@ export interface UseTerminalSplitsOptions {
   enableKeyboardShortcuts?: boolean;
   /** Storage key for persistence */
   storageKey?: string;
+  /** Tab ID to scope split state to a specific terminal tab */
+  tabId?: string;
 }
 
 export interface UseTerminalSplitsReturn {
@@ -122,9 +124,11 @@ export function useTerminalSplits(options: UseTerminalSplitsOptions): UseTermina
     onActiveChange,
     enableKeyboardShortcuts = true,
     storageKey = "default",
+    tabId,
   } = options;
 
-  const fullStorageKey = `${STORAGE_KEY_PREFIX}${storageKey}`;
+  const effectiveStorageKey = tabId ? `${STORAGE_KEY_PREFIX}tab_${tabId}` : `${STORAGE_KEY_PREFIX}${storageKey}`;
+  const fullStorageKey = effectiveStorageKey;
 
   // Initialize state from storage or empty
   const initialState = loadFromStorage(fullStorageKey) || {
@@ -366,38 +370,32 @@ export function useTerminalSplits(options: UseTerminalSplitsOptions): UseTermina
     if (!enableKeyboardShortcuts) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      const { key, ctrlKey, shiftKey, altKey } = e;
+      const { key, ctrlKey, shiftKey, altKey, metaKey } = e;
+      const mod = ctrlKey || metaKey;
 
-      // Ctrl+Shift+5: Split terminal right (horizontal layout)
-      if (ctrlKey && shiftKey && key === "5") {
+      // Ctrl+Shift+5 / Cmd+Shift+5: Split terminal vertically
+      if (mod && shiftKey && key === "5") {
         e.preventDefault();
-        const activeId = activeTerminalId();
-        if (activeId) {
-          window.dispatchEvent(
-            new CustomEvent("terminal:split", {
-              detail: { terminalId: activeId, direction: "horizontal" },
-            })
-          );
-        }
+        window.dispatchEvent(new CustomEvent("terminal:split-vertical"));
         return;
       }
 
-      // Ctrl+Shift+": Split terminal down (vertical layout)
-      if (ctrlKey && shiftKey && (key === '"' || key === "'")) {
+      // Ctrl+Shift+" : Split terminal horizontally
+      if (mod && shiftKey && (key === '"' || key === "'")) {
         e.preventDefault();
-        const activeId = activeTerminalId();
-        if (activeId) {
-          window.dispatchEvent(
-            new CustomEvent("terminal:split", {
-              detail: { terminalId: activeId, direction: "vertical" },
-            })
-          );
-        }
+        window.dispatchEvent(new CustomEvent("terminal:split-horizontal"));
         return;
       }
 
-      // Ctrl+Alt+Arrow: Navigate between splits
-      if (ctrlKey && altKey && !shiftKey) {
+      // Ctrl+Shift+W: Close active split pane
+      if (mod && shiftKey && key === "W") {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent("terminal:close-split-pane"));
+        return;
+      }
+
+      // Alt+Arrow: Navigate between splits
+      if (altKey && !ctrlKey && !metaKey && !shiftKey) {
         const activeId = activeTerminalId();
         if (!activeId) return;
 
