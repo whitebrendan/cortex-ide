@@ -69,6 +69,7 @@ const TREE_ID_TO_SECTION: Record<string, keyof CortexSettings | null> = {
   "ai": null,
   "models": "ai",
   "ai_completion": "ai",
+  "git": "git",
   "extensions": "extensions",
 };
 
@@ -167,7 +168,7 @@ function SettingsTreeItem(props: {
   // Filter logic: if showModifiedOnly is true, only show items with modifications
   const shouldShow = () => !props.showModifiedOnly || hasModifications();
 
-  const isActive = () => props.activeSection === props.item.id;
+  const isActive = () => props.activeSection === props.item.id || (!isExpanded() && props.item.children?.some(c => c.id === props.activeSection));
 
   return (
     <Show when={shouldShow()}>
@@ -385,7 +386,16 @@ export function SettingsDialog(props: SettingsDialogProps) {
   const getModifiedCount = (itemId: string): number => {
     const section = TREE_ID_TO_SECTION[itemId];
     if (!section) return 0;
-    return settings.getModifiedCountForSection(section);
+    const currentSection = settings.effectiveSettings()[section];
+    const defaultSection = DEFAULT_SETTINGS[section];
+    if (!currentSection || !defaultSection || typeof currentSection !== "object" || typeof defaultSection !== "object") return 0;
+    let count = 0;
+    for (const key of Object.keys(defaultSection as object)) {
+      const cv = (currentSection as Record<string, unknown>)[key];
+      const dv = (defaultSection as Record<string, unknown>)[key];
+      if (JSON.stringify(cv) !== JSON.stringify(dv)) count++;
+    }
+    return count;
   };
   
   // Get total modified settings count
@@ -1874,5 +1884,3 @@ export function SettingsDialog(props: SettingsDialogProps) {
 
 // Re-export helper components for use in sub-panels
 export { SettingSourceBadge, WorkspaceOverrideIndicator, SettingRow };
-
-
