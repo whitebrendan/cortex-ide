@@ -598,6 +598,22 @@ export function TerminalPanel() {
     splits.updateSplitRatio(groupId, index, ratio);
   };
 
+  // Callback for TerminalSplitView to request xterm fit on all split panes after resize
+  const handleFitTerminals = (terminalIds: string[]) => {
+    for (const tid of terminalIds) {
+      const instance = terminalInstances.get(tid);
+      if (instance) {
+        requestAnimationFrame(() => {
+          instance.fitAddon.fit();
+          const dims = instance.fitAddon.proposeDimensions();
+          if (dims && dims.cols > 0 && dims.rows > 0) {
+            resizeTerminal(tid, dims.cols, dims.rows).catch(console.error);
+          }
+        });
+      }
+    }
+  };
+
   // Render a terminal pane inside the split view
   const renderSplitTerminalPane = (terminal: TerminalInfo, _isActive: boolean): JSX.Element => {
     return (
@@ -2433,6 +2449,7 @@ export function TerminalPanel() {
               onSelectTerminal={setActiveTerminal}
               onCloseTerminal={handleCloseSplitTerminal}
               onSplitRatioChange={handleSplitRatioChange}
+              onFitTerminals={handleFitTerminals}
               minPaneSize={100}
               showHeaders={true}
               renderTerminal={renderSplitTerminalPane}
