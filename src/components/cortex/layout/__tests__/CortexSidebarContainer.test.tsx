@@ -28,8 +28,8 @@ vi.mock("@/components/cortex/CortexGitPanel", () => ({
   CortexGitPanel: () => <div data-testid="git-panel">Git</div>,
 }));
 
-vi.mock("@/components/cortex/CortexSearchPanel", () => ({
-  CortexSearchPanel: () => <div data-testid="search-panel">Search</div>,
+vi.mock("@/components/SearchSidebar", () => ({
+  SearchSidebar: () => <div data-testid="search-panel">Search</div>,
 }));
 
 vi.mock("@/components/cortex/CortexDebugPanel", () => ({

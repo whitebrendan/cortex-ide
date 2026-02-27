@@ -68,8 +68,8 @@ vi.mock("@/components/FileExplorer", () => ({
   FileExplorer: () => <div data-testid="panel-files">File Explorer Panel</div>,
 }));
 
-vi.mock("@/components/cortex/CortexSearchPanel", () => ({
-  CortexSearchPanel: () => <div data-testid="panel-search">Search Panel</div>,
+vi.mock("@/components/SearchSidebar", () => ({
+  SearchSidebar: () => <div data-testid="panel-search">Search Panel</div>,
 }));
 
 vi.mock("@/components/cortex/CortexGitPanel", () => ({

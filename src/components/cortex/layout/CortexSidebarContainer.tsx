@@ -5,7 +5,7 @@ import { SidebarSkeleton, SIDEBAR_MIN_WIDTH, SIDEBAR_MAX_WIDTH } from "./types";
 const AgentPanel = lazy(() => import("@/components/ai/AgentPanel").then(m => ({ default: m.AgentPanel })));
 const RealFileExplorer = lazy(() => import("@/components/FileExplorer").then(m => ({ default: m.FileExplorer })));
 const CortexGitPanel = lazy(() => import("@/components/cortex/CortexGitPanel").then(m => ({ default: m.CortexGitPanel })));
-const CortexSearchPanel = lazy(() => import("@/components/cortex/CortexSearchPanel").then(m => ({ default: m.CortexSearchPanel })));
+const SearchSidebar = lazy(() => import("@/components/SearchSidebar").then(m => ({ default: m.SearchSidebar })));
 const CortexDebugPanel = lazy(() => import("@/components/cortex/CortexDebugPanel").then(m => ({ default: m.CortexDebugPanel })));
 const CortexExtensionsPanel = lazy(() => import("@/components/cortex/CortexExtensionsPanel").then(m => ({ default: m.CortexExtensionsPanel })));
 const CortexThemePicker = lazy(() => import("@/components/cortex/CortexThemePicker").then(m => ({ default: m.CortexThemePicker })));
@@ -110,7 +110,9 @@ export function CortexSidebarContainer(props: CortexSidebarContainerProps) {
 
           <Show when={props.sidebarTab === "search"}>
             <Suspense fallback={<SidebarSkeleton />}>
-              <CortexSearchPanel />
+              <div style={{ width: "100%", "min-width": "0", overflow: "hidden" }}>
+                <SearchSidebar />
+              </div>
             </Suspense>
           </Show>
 

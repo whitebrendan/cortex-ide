@@ -179,6 +179,7 @@ export function CommandProvider(props: { children: JSX.Element }) {
         e.preventDefault();
         closeAllModals();
         setShowProjectSearch(true);
+        window.dispatchEvent(new CustomEvent("view:search"));
         return;
       }
 
