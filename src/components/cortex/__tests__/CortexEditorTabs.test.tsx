@@ -134,8 +134,8 @@ describe("CortexEditorTabs", () => {
       const activeTab = tabElements[0] as HTMLElement;
       const inactiveTab = tabElements[1] as HTMLElement;
 
-      // Figma design: active tab bg #252628 (renders as rgb(37, 38, 40))
-      expect(activeTab?.style.background).toContain("rgb(37, 38, 40)");
+      // Active tab uses CSS variable for bg
+      expect(activeTab?.style.background).toContain("var(--cortex-bg-elevated)");
       expect(inactiveTab?.style.background).toBe("transparent");
     });
 
@@ -147,8 +147,8 @@ describe("CortexEditorTabs", () => {
       ));
 
       const activeTab = container.querySelector('[role="tab"]') as HTMLElement;
-      // Figma design: active tab has bg #252628 and top border-radius 8px, no lime bottom border
-      expect(activeTab?.style.background).toContain("rgb(37, 38, 40)");
+      // Active tab uses CSS variable for bg and top border-radius 8px
+      expect(activeTab?.style.background).toContain("var(--cortex-bg-elevated)");
       expect(activeTab?.style.borderTopLeftRadius).toBe("8px");
       expect(activeTab?.style.borderTopRightRadius).toBe("8px");
     });
