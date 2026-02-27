@@ -398,17 +398,6 @@ export function CommandProvider(props: { children: JSX.Element }) {
 
     window.addEventListener("keydown", handleKeyDown);
     onCleanup(() => window.removeEventListener("keydown", handleKeyDown));
-
-    const handlePaletteToggle = () => {
-      if (showCommandPalette()) {
-        setShowCommandPalette(false);
-      } else {
-        closeAllModals();
-        setShowCommandPalette(true);
-      }
-    };
-    window.addEventListener("command-palette:toggle", handlePaletteToggle);
-    onCleanup(() => window.removeEventListener("command-palette:toggle", handlePaletteToggle));
   });
 
   onMount(() => {
