@@ -399,9 +399,9 @@ pub struct ZenModeSettings {
     /// Restore windows when exiting zen mode
     #[serde(default = "default_true")]
     pub restore: bool,
-    /// Silent notifications in zen mode
+    /// Silence notifications in zen mode
     #[serde(default = "default_true")]
-    pub silent_notifications: bool,
+    pub silence_notifications: bool,
 }
 
 fn default_true() -> bool {
@@ -418,7 +418,7 @@ impl Default for ZenModeSettings {
             center_layout: true,
             full_screen: true,
             restore: true,
-            silent_notifications: true,
+            silence_notifications: true,
         }
     }
 }

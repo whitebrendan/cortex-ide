@@ -723,7 +723,7 @@ const cortex_SETTINGS_SCHEMA = {
         },
         silenceNotifications: {
           type: "boolean",
-          description: "Controls whether notifications are silenced when zen mode is active",
+          description: "Silence all notifications when zen mode is active. When enabled, notification toasts and popups are suppressed to minimize distractions.",
           default: true
         },
         restore: {

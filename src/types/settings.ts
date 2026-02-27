@@ -698,7 +698,7 @@ export interface ZenModeSettings {
   showLineNumbers: boolean;
   /** Hide editor line numbers in zen mode (overrides showLineNumbers) */
   hideLineNumbers: boolean;
-  /** Silence notifications in zen mode */
+  /** Silence all notifications when zen mode is active */
   silenceNotifications: boolean;
   /** Restore window state when exiting zen mode */
   restore: boolean;

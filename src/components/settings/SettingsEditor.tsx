@@ -365,7 +365,7 @@ const SETTINGS_REGISTRY: SettingDefinition[] = [
   { id: "zenMode.fullScreen", key: "fullScreen", section: "zenMode", label: "Full Screen", description: "Enter full screen when zen mode is activated.", type: "boolean", defaultValue: DEFAULT_SETTINGS.zenMode.fullScreen },
   { id: "zenMode.showLineNumbers", key: "showLineNumbers", section: "zenMode", label: "Show Line Numbers", description: "Show line numbers in zen mode.", type: "boolean", defaultValue: DEFAULT_SETTINGS.zenMode.showLineNumbers },
   { id: "zenMode.hideLineNumbers", key: "hideLineNumbers", section: "zenMode", label: "Hide Line Numbers", description: "Hide editor line numbers in zen mode. Overrides 'Show Line Numbers' when enabled.", type: "boolean", defaultValue: DEFAULT_SETTINGS.zenMode.hideLineNumbers },
-  { id: "zenMode.silenceNotifications", key: "silenceNotifications", section: "zenMode", label: "Silence Notifications", description: "Controls whether notifications are silenced (suppressed) when zen mode is active.", type: "boolean", defaultValue: DEFAULT_SETTINGS.zenMode.silenceNotifications },
+  { id: "zenMode.silenceNotifications", key: "silenceNotifications", section: "zenMode", label: "Silence Notifications", description: "Silence all notifications when zen mode is active. When enabled, notification toasts and popups are suppressed to minimize distractions.", type: "boolean", defaultValue: DEFAULT_SETTINGS.zenMode.silenceNotifications },
   { id: "zenMode.restore", key: "restore", section: "zenMode", label: "Restore", description: "Restore the previous window state when exiting zen mode.", type: "boolean", defaultValue: DEFAULT_SETTINGS.zenMode.restore },
 
   // Search Settings
