@@ -155,6 +155,7 @@ function TabOverflowDropdown(props: TabOverflowDropdownProps) {
 // ============================================================================
 
 interface TabProps {
+  ref?: (el: HTMLDivElement) => void;
   file: OpenFile;
   isActive: boolean;
   isGroupFocused?: boolean;
@@ -177,6 +178,9 @@ interface TabProps {
   onContextMenu: (e: MouseEvent) => void;
   onDragStart: (e: DragEvent) => void;
   onDragEnd: (e: DragEvent) => void;
+  onDragOver: (e: DragEvent) => void;
+  onDragLeave: () => void;
+  onDrop: (e: DragEvent) => void;
   isDraggedOver: boolean;
   dropPosition?: "left" | "right" | null;
   isFirstTab?: boolean;
@@ -421,6 +425,7 @@ function Tab(props: TabProps) {
   
   return (
     <div
+      ref={(el) => { props.ref?.(el); }}
       class={tabClasses()}
       style={getTabStyle()}
       onMouseEnter={() => setIsHovered(true)}
@@ -432,6 +437,9 @@ function Tab(props: TabProps) {
       draggable={true}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onDragOver={props.onDragOver}
+      onDragLeave={props.onDragLeave}
+      onDrop={props.onDrop}
     >
       {/* Active tab top border is handled inline in getTabStyle() */}
       
@@ -1048,7 +1056,6 @@ export function TabBar(props: TabBarProps) {
         <For each={sortedFiles()}>
           {(file, index) => {
             let tabRef: HTMLDivElement | undefined;
-            const state = dragState();
             const isFirst = index() === 0;
             const isLast = index() === sortedFiles().length - 1;
             const isPinned = isTabPinned(file.id);
@@ -1062,14 +1069,9 @@ export function TabBar(props: TabBarProps) {
             const isAfterActive = currentIdx === activeIdx + 1 && activeIdx < files.length - 1;
             
             return (
-              <div
-                ref={tabRef}
-                style={{ display: "contents" }}
-                onDragOver={(e) => tabRef && handleDragOver(e, file.id, tabRef)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, file.id)}
-              >
+              <>
 <Tab
+                  ref={(el: HTMLDivElement) => { tabRef = el; }}
                   file={file}
                   isActive={activeFileId() === file.id}
                   isGroupFocused={isGroupFocused()}
@@ -1096,8 +1098,11 @@ export function TabBar(props: TabBarProps) {
                   onContextMenu={(e) => handleContextMenu(e, file)}
                   onDragStart={(e) => handleDragStart(e, file.id)}
                   onDragEnd={handleDragEnd}
-                  isDraggedOver={state.overId === file.id}
-                  dropPosition={state.overId === file.id ? state.position : null}
+                  onDragOver={(e) => tabRef && handleDragOver(e, file.id, tabRef)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, file.id)}
+                  isDraggedOver={dragState().overId === file.id}
+                  dropPosition={dragState().overId === file.id ? dragState().position : null}
                   isFirstTab={isFirst}
                   isLastTab={isLast}
                   isBeforeActive={isBeforeActive}
@@ -1114,7 +1119,7 @@ export function TabBar(props: TabBarProps) {
                     margin: "0 2px",
                   }} />
                 </Show>
-              </div>
+              </>
             );
           }}
         </For>
