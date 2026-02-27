@@ -9,24 +9,14 @@ interface EditorMinimapProps {
 }
 
 export function EditorMinimap(props: EditorMinimapProps) {
-  const { minimapOptions, toggleMinimap } = useMinimapController();
+  const minimapCtrl = useMinimapController();
 
   createEffect(() => {
     const editor = props.editor();
     if (!editor) return;
 
-    const opts = minimapOptions();
-    editor.updateOptions({
-      minimap: {
-        enabled: opts.enabled,
-        side: opts.side,
-        showSlider: opts.showSlider,
-        renderCharacters: opts.renderCharacters,
-        maxColumn: opts.maxColumn,
-        scale: opts.scale,
-        size: opts.size,
-      },
-    });
+    const newOptions = minimapCtrl.minimapOptions();
+    editor.updateOptions({ minimap: newOptions });
   });
 
   createEffect(() => {
@@ -35,7 +25,7 @@ export function EditorMinimap(props: EditorMinimapProps) {
     if (!editor || !monaco) return;
 
     const handleToggleMinimap = () => {
-      toggleMinimap();
+      minimapCtrl.toggleMinimap();
     };
 
     window.addEventListener("editor:toggle-minimap", handleToggleMinimap);

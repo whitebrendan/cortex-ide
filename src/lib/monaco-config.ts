@@ -78,7 +78,7 @@ export function buildEditorOptions(
       side: settings.minimapSide ?? "right",
       showSlider: settings.minimapShowSlider ?? "mouseover",
       renderCharacters: settings.minimapRenderCharacters ?? false,
-      maxColumn: settings.minimapWidth ?? 80,
+      maxColumn: settings.minimapMaxColumn ?? 80,
       scale: settings.minimapScale ?? 1,
       size: "proportional",
     },

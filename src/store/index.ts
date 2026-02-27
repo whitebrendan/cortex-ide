@@ -30,6 +30,7 @@ export {
   type WordWrapMode,
   type AutoSaveMode,
   type Keybinding,
+  type MinimapStoreSettings,
   type SettingsState,
   type SettingsActions,
 } from "./settings";

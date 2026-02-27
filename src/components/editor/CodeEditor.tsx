@@ -60,6 +60,7 @@ import {
 } from "./core/EditorInstance";
 import { EditorToolbar } from "./core/EditorToolbar";
 import { EditorMinimap } from "./core/EditorMinimap";
+import { useMinimapController } from "@/components/editor/MinimapController";
 import { EditorBreadcrumbs } from "./core/EditorBreadcrumbs";
 import { EditorDiffView } from "./core/EditorDiffView";
 import { EditorFindReplace } from "./core/EditorFindReplace";
@@ -488,6 +489,7 @@ export function CodeEditor(props: CodeEditorProps) {
   const [isDraggingOver, setIsDraggingOver] = createSignal(false);
 
   const debugHover = useDebugHover();
+  const minimapCtrl = useMinimapController();
 
   const instance = createEditorInstance({
     file: () => props.file,
@@ -588,6 +590,13 @@ export function CodeEditor(props: CodeEditorProps) {
   };
 
   const parameterHints = useParameterHints(instance.editor(), instance.monaco(), getSignatureHelpFromLSP);
+
+  createEffect(() => {
+    const editor = instance.editor();
+    if (!editor) return;
+    const opts = minimapCtrl.minimapOptions();
+    editor.updateOptions({ minimap: opts });
+  });
 
   createEffect(() => {
     const codeLensConfig = settingsState.settings.editor.codeLens;

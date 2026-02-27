@@ -31,6 +31,16 @@ export interface Keybinding {
   when?: string;
 }
 
+/** Minimap settings */
+export interface MinimapStoreSettings {
+  enabled: boolean;
+  side: "right" | "left";
+  showSlider: "always" | "mouseover";
+  renderCharacters: boolean;
+  maxColumn: number;
+  scale: number;
+}
+
 /** Settings store state */
 export interface SettingsState {
   theme: ThemeMode;
@@ -38,7 +48,7 @@ export interface SettingsState {
   fontFamily: string;
   tabSize: number;
   wordWrap: WordWrapMode;
-  minimap: boolean;
+  minimap: MinimapStoreSettings;
   autoSave: AutoSaveMode;
   keybindings: Keybinding[];
 }
@@ -50,7 +60,7 @@ export interface SettingsActions {
   setFontFamily: (family: string) => void;
   setTabSize: (size: number) => void;
   setWordWrap: (mode: WordWrapMode) => void;
-  setMinimap: (enabled: boolean) => void;
+  setMinimap: (settings: Partial<MinimapStoreSettings>) => void;
   setAutoSave: (mode: AutoSaveMode) => void;
   updateKeybinding: (command: string, key: string, when?: string) => void;
   removeKeybinding: (command: string) => void;
@@ -61,13 +71,22 @@ export interface SettingsActions {
 // Default State
 // ============================================================================
 
+const DEFAULT_MINIMAP: MinimapStoreSettings = {
+  enabled: true,
+  side: "right",
+  showSlider: "mouseover",
+  renderCharacters: false,
+  maxColumn: 80,
+  scale: 1,
+};
+
 const DEFAULT_SETTINGS: SettingsState = {
   theme: "dark",
   fontSize: 14,
   fontFamily: "'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, monospace",
   tabSize: 2,
   wordWrap: "off",
-  minimap: true,
+  minimap: { ...DEFAULT_MINIMAP },
   autoSave: "off",
   keybindings: [],
 };
@@ -105,9 +124,14 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
         state.wordWrap = mode;
       }),
 
-    setMinimap: (enabled: boolean) =>
+    setMinimap: (settings: Partial<MinimapStoreSettings>) =>
       set((state: SettingsState & SettingsActions) => {
-        state.minimap = enabled;
+        if (settings.enabled !== undefined) state.minimap.enabled = settings.enabled;
+        if (settings.side !== undefined) state.minimap.side = settings.side;
+        if (settings.showSlider !== undefined) state.minimap.showSlider = settings.showSlider;
+        if (settings.renderCharacters !== undefined) state.minimap.renderCharacters = settings.renderCharacters;
+        if (settings.maxColumn !== undefined) state.minimap.maxColumn = Math.max(1, Math.min(300, settings.maxColumn));
+        if (settings.scale !== undefined) state.minimap.scale = Math.max(1, Math.min(3, settings.scale));
       }),
 
     setAutoSave: (mode: AutoSaveMode) =>
@@ -141,7 +165,7 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
         state.fontFamily = DEFAULT_SETTINGS.fontFamily;
         state.tabSize = DEFAULT_SETTINGS.tabSize;
         state.wordWrap = DEFAULT_SETTINGS.wordWrap;
-        state.minimap = DEFAULT_SETTINGS.minimap;
+        state.minimap = { ...DEFAULT_MINIMAP };
         state.autoSave = DEFAULT_SETTINGS.autoSave;
         state.keybindings = [...DEFAULT_SETTINGS.keybindings];
       }),

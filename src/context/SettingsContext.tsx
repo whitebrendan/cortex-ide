@@ -62,10 +62,11 @@ export interface EditorSettings {
   lineNumbers: "on" | "off" | "relative" | "interval";
   minimapEnabled: boolean;
   minimapWidth: number;
-  minimapRenderCharacters: boolean;
   minimapSide: "right" | "left";
-  minimapScale: number;
   minimapShowSlider: "always" | "mouseover";
+  minimapRenderCharacters: boolean;
+  minimapMaxColumn: number;
+  minimapScale: number;
   bracketPairColorization: boolean;
   autoClosingBrackets: "always" | "languageDefined" | "beforeWhitespace" | "never";
   autoIndent: boolean;
@@ -519,6 +520,11 @@ export interface LanguageEditorOverride {
   wordWrap?: "off" | "on" | "wordWrapColumn" | "bounded";
   lineNumbers?: "on" | "off" | "relative" | "interval";
   minimapEnabled?: boolean;
+  minimapSide?: "right" | "left";
+  minimapShowSlider?: "always" | "mouseover";
+  minimapRenderCharacters?: boolean;
+  minimapMaxColumn?: number;
+  minimapScale?: number;
   bracketPairColorization?: boolean;
   autoClosingBrackets?: "always" | "languageDefined" | "beforeWhitespace" | "never";
   autoIndent?: boolean;
@@ -646,10 +652,11 @@ const DEFAULT_EDITOR: EditorSettings = {
   lineNumbers: "on",
   minimapEnabled: true,
   minimapWidth: 100,
-  minimapRenderCharacters: false,
   minimapSide: "right",
-  minimapScale: 1,
   minimapShowSlider: "mouseover",
+  minimapRenderCharacters: false,
+  minimapMaxColumn: 80,
+  minimapScale: 1,
   bracketPairColorization: true,
   autoClosingBrackets: "always",
   autoIndent: true,
@@ -1148,6 +1155,7 @@ function mergeAndValidateSettings(loaded: Partial<CortexSettings>): CortexSettin
   merged.editor.tabSize = clampNum(merged.editor.tabSize, 1, 32, DEFAULT_SETTINGS.editor.tabSize);
   merged.editor.lineHeight = clampNum(merged.editor.lineHeight, 0.5, 5, DEFAULT_SETTINGS.editor.lineHeight);
   merged.editor.minimapWidth = clampNum(merged.editor.minimapWidth, 0, 500, DEFAULT_SETTINGS.editor.minimapWidth);
+  merged.editor.minimapMaxColumn = clampNum(merged.editor.minimapMaxColumn, 1, 300, DEFAULT_SETTINGS.editor.minimapMaxColumn);
   merged.editor.minimapScale = clampNum(merged.editor.minimapScale, 1, 3, DEFAULT_SETTINGS.editor.minimapScale);
   merged.editor.minimapSide = enumStr(merged.editor.minimapSide, ["right", "left"] as const, "right");
   merged.editor.minimapShowSlider = enumStr(merged.editor.minimapShowSlider, ["always", "mouseover"] as const, "mouseover");
@@ -1762,7 +1770,7 @@ const updateCommandPaletteSetting = async <K extends keyof CommandPaletteSetting
       insertSpaces: e.insertSpaces,
       wordWrap: e.wordWrap,
       lineNumbers: e.lineNumbers,
-      minimap: { enabled: e.minimapEnabled, maxColumn: e.minimapWidth, renderCharacters: e.minimapRenderCharacters, side: e.minimapSide, scale: e.minimapScale, showSlider: e.minimapShowSlider },
+      minimap: { enabled: e.minimapEnabled, side: e.minimapSide, showSlider: e.minimapShowSlider, renderCharacters: e.minimapRenderCharacters, maxColumn: e.minimapMaxColumn, scale: e.minimapScale },
       bracketPairColorization: { enabled: e.bracketPairColorization },
       autoClosingBrackets: e.autoClosingBrackets,
       autoIndent: e.autoIndent ? "full" : "none",

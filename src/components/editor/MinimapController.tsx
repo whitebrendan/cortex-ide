@@ -1,48 +1,48 @@
 /**
  * MinimapController - Wires minimap settings to Monaco editor options.
- * Provides functions to update minimap render mode and size mode.
+ * Reads from SettingsContext as single source of truth.
  */
 import { createMemo, type Component, type JSX } from "solid-js";
-import { useEditor } from "@/context/EditorContext";
+import { useSettings } from "@/context/SettingsContext";
 
 export interface MinimapControllerProps {
   onOptionsChange?: (options: Record<string, unknown>) => void;
 }
 
 export const MinimapController: Component<MinimapControllerProps> = (_props) => {
-  const editor = useEditor();
-  const settings = () => editor.state.minimapSettings;
+  const settings = useSettings();
+  const editor = () => settings.effectiveSettings().editor;
 
   const minimapOptions = createMemo(() => ({
     minimap: {
-      enabled: settings().enabled,
-      side: settings().side,
-      showSlider: settings().showSlider,
-      renderCharacters: settings().renderCharacters,
-      maxColumn: settings().maxColumn,
-      scale: settings().scale,
-      size: settings().sizeMode ?? "proportional",
+      enabled: editor().minimapEnabled,
+      side: editor().minimapSide,
+      showSlider: editor().minimapShowSlider,
+      renderCharacters: editor().minimapRenderCharacters,
+      maxColumn: editor().minimapMaxColumn,
+      scale: editor().minimapScale,
+      size: "proportional" as const,
     },
   }));
 
   const toggleMinimap = () => {
-    editor.updateMinimapSettings({ enabled: !settings().enabled });
+    settings.updateEditorSetting("minimapEnabled", !editor().minimapEnabled);
   };
 
   const setRenderMode = (renderCharacters: boolean) => {
-    editor.updateMinimapSettings({ renderCharacters });
+    settings.updateEditorSetting("minimapRenderCharacters", renderCharacters);
   };
 
-  const setSizeMode = (sizeMode: "proportional" | "fill" | "fit") => {
-    editor.updateMinimapSettings({ sizeMode });
+  const setSizeMode = (_sizeMode: "proportional" | "fill" | "fit") => {
+    // Size mode is not persisted in settings store
   };
 
   const setSide = (side: "right" | "left") => {
-    editor.updateMinimapSettings({ side });
+    settings.updateEditorSetting("minimapSide", side);
   };
 
   const setScale = (scale: number) => {
-    editor.updateMinimapSettings({ scale: Math.max(1, Math.min(3, scale)) });
+    settings.updateEditorSetting("minimapScale", Math.max(1, Math.min(3, scale)));
   };
 
   return {
@@ -56,26 +56,28 @@ export const MinimapController: Component<MinimapControllerProps> = (_props) => 
 };
 
 export function useMinimapController() {
-  const editor = useEditor();
-  const settings = () => editor.state.minimapSettings;
+  const settings = useSettings();
+  const editor = () => settings.effectiveSettings().editor;
 
   const minimapOptions = createMemo(() => ({
-    enabled: settings().enabled,
-    side: settings().side,
-    showSlider: settings().showSlider,
-    renderCharacters: settings().renderCharacters,
-    maxColumn: settings().maxColumn,
-    scale: settings().scale,
-    size: settings().sizeMode ?? "proportional",
+    enabled: editor().minimapEnabled,
+    side: editor().minimapSide,
+    showSlider: editor().minimapShowSlider,
+    renderCharacters: editor().minimapRenderCharacters,
+    maxColumn: editor().minimapMaxColumn,
+    scale: editor().minimapScale,
+    size: "proportional" as "proportional" | "fill" | "fit",
   }));
 
   return {
     minimapOptions,
-    toggleMinimap: () => editor.updateMinimapSettings({ enabled: !settings().enabled }),
-    setRenderMode: (renderCharacters: boolean) => editor.updateMinimapSettings({ renderCharacters }),
-    setSizeMode: (sizeMode: "proportional" | "fill" | "fit") => editor.updateMinimapSettings({ sizeMode }),
-    setSide: (side: "right" | "left") => editor.updateMinimapSettings({ side }),
-    setScale: (scale: number) => editor.updateMinimapSettings({ scale: Math.max(1, Math.min(3, scale)) }),
+    toggleMinimap: () => settings.updateEditorSetting("minimapEnabled", !editor().minimapEnabled),
+    setRenderMode: (renderCharacters: boolean) => settings.updateEditorSetting("minimapRenderCharacters", renderCharacters),
+    setSizeMode: (_sizeMode: "proportional" | "fill" | "fit") => { /* Size mode not persisted */ },
+    setSide: (side: "right" | "left") => settings.updateEditorSetting("minimapSide", side),
+    setScale: (scale: number) => settings.updateEditorSetting("minimapScale", Math.max(1, Math.min(3, scale))),
+    setShowSlider: (showSlider: "always" | "mouseover") => settings.updateEditorSetting("minimapShowSlider", showSlider),
+    setMaxColumn: (maxColumn: number) => settings.updateEditorSetting("minimapMaxColumn", Math.max(1, Math.min(300, maxColumn))),
   };
 }
 
@@ -222,12 +224,7 @@ export const MinimapSettingsPanel: Component<MinimapSettingsPanelProps> = (props
         <select
           style={selectStyle}
           value={opts().showSlider}
-          onChange={(e) => {
-            const editor = useEditor();
-            editor.updateMinimapSettings({
-              showSlider: e.currentTarget.value as "always" | "mouseover",
-            });
-          }}
+          onChange={(e) => controller.setShowSlider(e.currentTarget.value as "always" | "mouseover")}
         >
           <option value="mouseover">On Mouse Over</option>
           <option value="always">Always</option>

@@ -4,7 +4,7 @@
  */
 import { createSignal, createEffect, onCleanup, Show, For, type JSX } from "solid-js";
 import { Portal } from "solid-js/web";
-import { useEditor } from "@/context/EditorContext";
+import { useMinimapController } from "@/components/editor/MinimapController";
 import { tokens } from "@/design-system/tokens";
 
 export interface MinimapSettingsProps {
@@ -27,11 +27,11 @@ const separatorStyle: JSX.CSSProperties = {
 };
 
 export function MinimapSettings(props: MinimapSettingsProps) {
-  const editor = useEditor();
+  const controller = useMinimapController();
   const [hovered, setHovered] = createSignal<string | null>(null);
   let menuRef: HTMLDivElement | undefined;
 
-  const settings = () => editor.state.minimapSettings;
+  const settings = () => controller.minimapOptions();
 
   createEffect(() => {
     const onOutside = (e: MouseEvent) => {
@@ -52,16 +52,15 @@ export function MinimapSettings(props: MinimapSettingsProps) {
 
   const items = (): MenuItem[] => {
     const s = settings();
-    const update = editor.updateMinimapSettings;
     return [
-      { label: "Toggle Minimap", value: "toggle", group: "toggle", checked: s.enabled, action: () => update({ enabled: !s.enabled }) },
-      { label: "Render Characters", value: "characters", group: "render", checked: s.renderCharacters, action: () => update({ renderCharacters: true }) },
-      { label: "Render Blocks", value: "blocks", group: "render", checked: !s.renderCharacters, action: () => update({ renderCharacters: false }) },
-      { label: "Proportional", value: "proportional", group: "size", checked: s.sizeMode === "proportional", action: () => update({ sizeMode: "proportional" }) },
-      { label: "Fill", value: "fill", group: "size", checked: s.sizeMode === "fill", action: () => update({ sizeMode: "fill" }) },
-      { label: "Fit", value: "fit", group: "size", checked: s.sizeMode === "fit", action: () => update({ sizeMode: "fit" }) },
-      { label: "Side: Right", value: "right", group: "side", checked: s.side === "right", action: () => update({ side: "right" }) },
-      { label: "Side: Left", value: "left", group: "side", checked: s.side === "left", action: () => update({ side: "left" }) },
+      { label: "Toggle Minimap", value: "toggle", group: "toggle", checked: s.enabled, action: () => controller.toggleMinimap() },
+      { label: "Render Characters", value: "characters", group: "render", checked: s.renderCharacters, action: () => controller.setRenderMode(true) },
+      { label: "Render Blocks", value: "blocks", group: "render", checked: !s.renderCharacters, action: () => controller.setRenderMode(false) },
+      { label: "Proportional", value: "proportional", group: "size", checked: s.size === "proportional", action: () => controller.setSizeMode("proportional") },
+      { label: "Fill", value: "fill", group: "size", checked: s.size === "fill", action: () => controller.setSizeMode("fill") },
+      { label: "Fit", value: "fit", group: "size", checked: s.size === "fit", action: () => controller.setSizeMode("fit") },
+      { label: "Side: Right", value: "right", group: "side", checked: s.side === "right", action: () => controller.setSide("right") },
+      { label: "Side: Left", value: "left", group: "side", checked: s.side === "left", action: () => controller.setSide("left") },
     ];
   };
 
