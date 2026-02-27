@@ -387,7 +387,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Tab Size" 
           settingKey="tabSize"
           hasOverride={hasOverride("tabSize")}
+          isModified={isModified("tabSize")}
           onReset={() => resetOverride("tabSize")}
+          onResetToDefault={() => resetToDefault("tabSize")}
         >
           <select
             value={editor().tabSize.toString()}
@@ -405,7 +407,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Insert Spaces" 
           settingKey="insertSpaces"
           hasOverride={hasOverride("insertSpaces")}
+          isModified={isModified("insertSpaces")}
           onReset={() => resetOverride("insertSpaces")}
+          onResetToDefault={() => resetToDefault("insertSpaces")}
         >
           <Toggle
             checked={editor().insertSpaces}
@@ -416,7 +420,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Auto Indent" 
           settingKey="autoIndent"
           hasOverride={hasOverride("autoIndent")}
+          isModified={isModified("autoIndent")}
           onReset={() => resetOverride("autoIndent")}
+          onResetToDefault={() => resetToDefault("autoIndent")}
         >
           <Toggle
             checked={editor().autoIndent}
@@ -432,7 +438,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Word Wrap" 
           settingKey="wordWrap"
           hasOverride={hasOverride("wordWrap")}
+          isModified={isModified("wordWrap")}
           onReset={() => resetOverride("wordWrap")}
+          onResetToDefault={() => resetToDefault("wordWrap")}
         >
           <select
             value={editor().wordWrap}
@@ -451,7 +459,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
             label="Word Wrap Column"
             settingKey="wordWrapColumn"
             hasOverride={hasOverride("wordWrapColumn")}
+            isModified={isModified("wordWrapColumn")}
             onReset={() => resetOverride("wordWrapColumn")}
+            onResetToDefault={() => resetToDefault("wordWrapColumn")}
           >
             <input
               type="number"
@@ -469,7 +479,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Line Numbers" 
           settingKey="lineNumbers"
           hasOverride={hasOverride("lineNumbers")}
+          isModified={isModified("lineNumbers")}
           onReset={() => resetOverride("lineNumbers")}
+          onResetToDefault={() => resetToDefault("lineNumbers")}
         >
           <select
             value={editor().lineNumbers}
@@ -487,7 +499,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Render Whitespace" 
           settingKey="renderWhitespace"
           hasOverride={hasOverride("renderWhitespace")}
+          isModified={isModified("renderWhitespace")}
           onReset={() => resetOverride("renderWhitespace")}
+          onResetToDefault={() => resetToDefault("renderWhitespace")}
         >
           <select
             value={editor().renderWhitespace}
@@ -505,7 +519,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Render Control Characters" 
           settingKey="renderControlCharacters"
           hasOverride={hasOverride("renderControlCharacters")}
+          isModified={isModified("renderControlCharacters")}
           onReset={() => resetOverride("renderControlCharacters")}
+          onResetToDefault={() => resetToDefault("renderControlCharacters")}
         >
           <Toggle
             checked={editor().renderControlCharacters}
@@ -521,7 +537,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Enable Minimap" 
           settingKey="minimapEnabled"
           hasOverride={hasOverride("minimapEnabled")}
+          isModified={isModified("minimapEnabled")}
           onReset={() => resetOverride("minimapEnabled")}
+          onResetToDefault={() => resetToDefault("minimapEnabled")}
         >
           <Toggle
             checked={editor().minimapEnabled}
@@ -533,7 +551,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
             label="Side"
             settingKey="minimapSide"
             hasOverride={hasOverride("minimapSide")}
+            isModified={isModified("minimapSide")}
             onReset={() => resetOverride("minimapSide")}
+            onResetToDefault={() => resetToDefault("minimapSide")}
           >
             <select
               value={editor().minimapSide}
@@ -550,7 +570,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
             label="Show Slider"
             settingKey="minimapShowSlider"
             hasOverride={hasOverride("minimapShowSlider")}
+            isModified={isModified("minimapShowSlider")}
             onReset={() => resetOverride("minimapShowSlider")}
+            onResetToDefault={() => resetToDefault("minimapShowSlider")}
           >
             <select
               value={editor().minimapShowSlider}
@@ -567,7 +589,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
             label="Render Characters"
             settingKey="minimapRenderCharacters"
             hasOverride={hasOverride("minimapRenderCharacters")}
+            isModified={isModified("minimapRenderCharacters")}
             onReset={() => resetOverride("minimapRenderCharacters")}
+            onResetToDefault={() => resetToDefault("minimapRenderCharacters")}
           >
             <Toggle
               checked={editor().minimapRenderCharacters}
@@ -578,7 +602,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
             label="Max Column"
             settingKey="minimapMaxColumn"
             hasOverride={hasOverride("minimapMaxColumn")}
+            isModified={isModified("minimapMaxColumn")}
             onReset={() => resetOverride("minimapMaxColumn")}
+            onResetToDefault={() => resetToDefault("minimapMaxColumn")}
           >
             <input
               type="number"
@@ -595,7 +621,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
             label="Scale"
             settingKey="minimapScale"
             hasOverride={hasOverride("minimapScale")}
+            isModified={isModified("minimapScale")}
             onReset={() => resetOverride("minimapScale")}
+            onResetToDefault={() => resetToDefault("minimapScale")}
           >
             <select
               value={editor().minimapScale.toString()}
@@ -621,7 +649,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Cursor Style" 
           settingKey="cursorStyle"
           hasOverride={hasOverride("cursorStyle")}
+          isModified={isModified("cursorStyle")}
           onReset={() => resetOverride("cursorStyle")}
+          onResetToDefault={() => resetToDefault("cursorStyle")}
         >
           <select
             value={editor().cursorStyle}
@@ -639,7 +669,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Cursor Blinking" 
           settingKey="cursorBlink"
           hasOverride={hasOverride("cursorBlink")}
+          isModified={isModified("cursorBlink")}
           onReset={() => resetOverride("cursorBlink")}
+          onResetToDefault={() => resetToDefault("cursorBlink")}
         >
           <select
             value={editor().cursorBlink}
@@ -662,7 +694,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Bracket Pair Colorization" 
           settingKey="bracketPairColorization"
           hasOverride={hasOverride("bracketPairColorization")}
+          isModified={isModified("bracketPairColorization")}
           onReset={() => resetOverride("bracketPairColorization")}
+          onResetToDefault={() => resetToDefault("bracketPairColorization")}
         >
           <Toggle
             checked={editor().bracketPairColorization}
@@ -673,7 +707,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Auto Closing Brackets" 
           settingKey="autoClosingBrackets"
           hasOverride={hasOverride("autoClosingBrackets")}
+          isModified={isModified("autoClosingBrackets")}
           onReset={() => resetOverride("autoClosingBrackets")}
+          onResetToDefault={() => resetToDefault("autoClosingBrackets")}
         >
           <select
             value={editor().autoClosingBrackets}
@@ -691,7 +727,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Bracket Pair Guides" 
           settingKey="guidesBracketPairs"
           hasOverride={hasOverride("guidesBracketPairs")}
+          isModified={isModified("guidesBracketPairs")}
           onReset={() => resetOverride("guidesBracketPairs")}
+          onResetToDefault={() => resetToDefault("guidesBracketPairs")}
         >
           <Toggle
             checked={editor().guidesBracketPairs}
@@ -707,7 +745,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Format On Save" 
           settingKey="formatOnSave"
           hasOverride={hasOverride("formatOnSave")}
+          isModified={isModified("formatOnSave")}
           onReset={() => resetOverride("formatOnSave")}
+          onResetToDefault={() => resetToDefault("formatOnSave")}
         >
           <Toggle
             checked={editor().formatOnSave}
@@ -718,7 +758,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Format On Paste" 
           settingKey="formatOnPaste"
           hasOverride={hasOverride("formatOnPaste")}
+          isModified={isModified("formatOnPaste")}
           onReset={() => resetOverride("formatOnPaste")}
+          onResetToDefault={() => resetToDefault("formatOnPaste")}
         >
           <Toggle
             checked={editor().formatOnPaste}
@@ -734,7 +776,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Enable Folding" 
           settingKey="foldingEnabled"
           hasOverride={hasOverride("foldingEnabled")}
+          isModified={isModified("foldingEnabled")}
           onReset={() => resetOverride("foldingEnabled")}
+          onResetToDefault={() => resetToDefault("foldingEnabled")}
         >
           <Toggle
             checked={editor().foldingEnabled}
@@ -746,7 +790,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
             label="Show Folding Controls" 
             settingKey="showFoldingControls"
             hasOverride={hasOverride("showFoldingControls")}
+            isModified={isModified("showFoldingControls")}
             onReset={() => resetOverride("showFoldingControls")}
+            onResetToDefault={() => resetToDefault("showFoldingControls")}
           >
             <select
               value={editor().showFoldingControls}
@@ -770,7 +816,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Scroll Beyond Last Line" 
           settingKey="scrollBeyondLastLine"
           hasOverride={hasOverride("scrollBeyondLastLine")}
+          isModified={isModified("scrollBeyondLastLine")}
           onReset={() => resetOverride("scrollBeyondLastLine")}
+          onResetToDefault={() => resetToDefault("scrollBeyondLastLine")}
         >
           <Toggle
             checked={editor().scrollBeyondLastLine}
@@ -781,7 +829,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Smooth Scrolling" 
           settingKey="smoothScrolling"
           hasOverride={hasOverride("smoothScrolling")}
+          isModified={isModified("smoothScrolling")}
           onReset={() => resetOverride("smoothScrolling")}
+          onResetToDefault={() => resetToDefault("smoothScrolling")}
         >
           <Toggle
             checked={editor().smoothScrolling}
@@ -792,7 +842,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Mouse Wheel Zoom" 
           settingKey="mouseWheelZoom"
           hasOverride={hasOverride("mouseWheelZoom")}
+          isModified={isModified("mouseWheelZoom")}
           onReset={() => resetOverride("mouseWheelZoom")}
+          onResetToDefault={() => resetToDefault("mouseWheelZoom")}
         >
           <Toggle
             checked={editor().mouseWheelZoom}
@@ -808,7 +860,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Indentation Guides" 
           settingKey="guidesIndentation"
           hasOverride={hasOverride("guidesIndentation")}
+          isModified={isModified("guidesIndentation")}
           onReset={() => resetOverride("guidesIndentation")}
+          onResetToDefault={() => resetToDefault("guidesIndentation")}
         >
           <Toggle
             checked={editor().guidesIndentation}
@@ -819,7 +873,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Highlight Active Indent Guide" 
           settingKey="highlightActiveIndentGuide"
           hasOverride={hasOverride("highlightActiveIndentGuide")}
+          isModified={isModified("highlightActiveIndentGuide")}
           onReset={() => resetOverride("highlightActiveIndentGuide")}
+          onResetToDefault={() => resetToDefault("highlightActiveIndentGuide")}
         >
           <Toggle
             checked={editor().highlightActiveIndentGuide}
@@ -835,7 +891,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Linked Editing" 
           settingKey="linkedEditing"
           hasOverride={hasOverride("linkedEditing")}
+          isModified={isModified("linkedEditing")}
           onReset={() => resetOverride("linkedEditing")}
+          onResetToDefault={() => resetToDefault("linkedEditing")}
         >
           <Toggle
             checked={editor().linkedEditing}
@@ -846,7 +904,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Rename On Type" 
           settingKey="renameOnType"
           hasOverride={hasOverride("renameOnType")}
+          isModified={isModified("renameOnType")}
           onReset={() => resetOverride("renameOnType")}
+          onResetToDefault={() => resetToDefault("renameOnType")}
         >
           <Toggle
             checked={editor().renameOnType}
@@ -857,7 +917,9 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           label="Sticky Scroll" 
           settingKey="stickyScrollEnabled"
           hasOverride={hasOverride("stickyScrollEnabled")}
+          isModified={isModified("stickyScrollEnabled")}
           onReset={() => resetOverride("stickyScrollEnabled")}
+          onResetToDefault={() => resetToDefault("stickyScrollEnabled")}
         >
           <Toggle
             checked={editor().stickyScrollEnabled}

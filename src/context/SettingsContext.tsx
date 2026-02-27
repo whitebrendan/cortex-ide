@@ -1368,8 +1368,18 @@ export function SettingsProvider(props: ParentProps) {
     await updateSettings("editor", { ...wsState.userSettings.editor, codeLens: newCodeLens });
   };
 
+  let _syncingWrapTabs = false;
   const updateThemeSetting = async <K extends keyof ThemeSettings>(key: K, value: ThemeSettings[K]) => {
     await updateSettings("theme", { ...wsState.userSettings.theme, [key]: value });
+    // Sync theme.wrapTabs → workbench.editor.wrapTabs
+    if (key === "wrapTabs" && !_syncingWrapTabs) {
+      _syncingWrapTabs = true;
+      try {
+        await updateWorkbenchEditorSetting("wrapTabs", value as boolean);
+      } finally {
+        _syncingWrapTabs = false;
+      }
+    }
   };
 
   const updateTerminalSetting = async <K extends keyof TerminalSettings>(key: K, value: TerminalSettings[K]) => {
@@ -1426,6 +1436,15 @@ const updateCommandPaletteSetting = async <K extends keyof CommandPaletteSetting
     const currentEditor = currentWorkbench.editor ?? DEFAULT_WORKBENCH_EDITOR;
     const newEditor = { ...currentEditor, [key]: value };
     await updateSettings("workbench", { ...currentWorkbench, editor: newEditor });
+    // Sync workbench.editor.wrapTabs → theme.wrapTabs (canonical)
+    if (key === "wrapTabs" && !_syncingWrapTabs) {
+      _syncingWrapTabs = true;
+      try {
+        await updateThemeSetting("wrapTabs", value as boolean);
+      } finally {
+        _syncingWrapTabs = false;
+      }
+    }
   };
 
   const updateCenteredLayoutSetting = async <K extends keyof CenteredLayoutSettings>(key: K, value: CenteredLayoutSettings[K]) => {

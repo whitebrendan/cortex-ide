@@ -30,16 +30,6 @@ function safeExplorerSettings(settings: CortexSettings | null | undefined) {
 }
 
 /**
- * Safe accessor for files settings with fallback defaults.
- */
-function safeFilesSettings(settings: CortexSettings | null | undefined) {
-  const files = settings?.files ?? DEFAULT_SETTINGS.files;
-  return {
-    confirmDragAndDrop: files?.confirmDragAndDrop ?? DEFAULT_SETTINGS.files.confirmDragAndDrop,
-  };
-}
-
-/**
  * Safe accessor for theme settings with fallback defaults.
  */
 function safeThemeSettings(settings: CortexSettings | null | undefined) {
@@ -1237,35 +1227,6 @@ export function SettingsDialog(props: SettingsDialogProps) {
                   </Show>
                 </div>
                   
-                <div>
-                  <Text as="h3" size="sm" weight="medium" style={{ "margin-bottom": "12px", color: "var(--jb-text-body-color)" }}>Drag and Drop</Text>
-                    <OptionCard
-                      selected={safeFilesSettings(settings.effectiveSettings()).confirmDragAndDrop}
-                      onSelect={async () => {
-                        const currentValue = safeFilesSettings(settings.effectiveSettings()).confirmDragAndDrop;
-                        if (settingsScope() === "workspace") {
-                          await settings.setWorkspaceSetting("files", "confirmDragAndDrop", !currentValue);
-                        } else {
-                          await settings.updateFilesSetting("confirmDragAndDrop", !currentValue);
-                        }
-                      }}
-                      title="Confirm Drag and Drop"
-                      description="Show a confirmation dialog before moving files via drag and drop in the file explorer"
-                    />
-                  </div>
-                  
-                  {/* Reset workspace explorer override */}
-                  <Show when={settingsScope() === "workspace" && settings.hasWorkspaceOverride("files", "confirmDragAndDrop")}>
-                    <UIButton
-                      onClick={() => settings.resetWorkspaceSetting("files", "confirmDragAndDrop")}
-                      variant="ghost"
-                      size="sm"
-                      icon={<Icon name="rotate-left" style={{ width: "12px", height: "12px" }} />}
-                      style={{ color: "var(--cortex-info)" }}
-                    >
-                      Reset to user setting
-                    </UIButton>
-                  </Show>
                 </div>
               </div>
 

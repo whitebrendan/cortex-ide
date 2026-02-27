@@ -12,6 +12,7 @@
 import { createContext, useContext, ParentProps, createEffect, onMount } from "solid-js";
 import { createStore, produce } from "solid-js/store";
 import { invoke } from "@tauri-apps/api/core";
+import { useSettings } from "@/context/SettingsContext";
 
 /** Supported formatter types */
 export type FormatterType = "prettier" | "rustfmt" | "black" | "gofmt" | "clangformat" | "biome" | "deno";
@@ -242,8 +243,23 @@ const BUILTIN_LANGUAGE_FORMATTERS: Record<string, FormatterType[]> = {
 };
 
 export function FormatterProvider(props: ParentProps) {
+  let settingsCtx: ReturnType<typeof useSettings> | null = null;
+  try {
+    settingsCtx = useSettings();
+  } catch {
+    // SettingsProvider may not be available in tests
+  }
+
+  const initialSettings = loadSettings();
+  // Seed formatOnSave/formatOnPaste from SettingsContext if available
+  if (settingsCtx) {
+    const editorSettings = settingsCtx.effectiveSettings().editor;
+    initialSettings.formatOnSave = editorSettings.formatOnSave;
+    initialSettings.formatOnPaste = editorSettings.formatOnPaste;
+  }
+
   const [state, setState] = createStore<FormatterState>({
-    settings: loadSettings(),
+    settings: initialSettings,
     status: "idle",
     lastError: null,
     availableFormatters: [],
@@ -254,6 +270,17 @@ export function FormatterProvider(props: ParentProps) {
     showFormatterSelector: false,
     selectorLanguage: null,
   });
+
+  // Sync formatOnSave/formatOnPaste from SettingsContext (single source of truth)
+  if (settingsCtx) {
+    createEffect(() => {
+      const editorSettings = settingsCtx!.effectiveSettings().editor;
+      setState(produce((draft) => {
+        draft.settings.formatOnSave = editorSettings.formatOnSave;
+        draft.settings.formatOnPaste = editorSettings.formatOnPaste;
+      }));
+    });
+  }
 
   // Save settings when they change
   createEffect(() => {
@@ -385,6 +412,15 @@ export function FormatterProvider(props: ParentProps) {
   };
 
   const updateSettings = (settings: Partial<FormatterSettings>): void => {
+    // Write formatOnSave/formatOnPaste through to SettingsContext (single source of truth)
+    if (settingsCtx) {
+      if (settings.formatOnSave !== undefined) {
+        settingsCtx.updateEditorSetting("formatOnSave", settings.formatOnSave);
+      }
+      if (settings.formatOnPaste !== undefined) {
+        settingsCtx.updateEditorSetting("formatOnPaste", settings.formatOnPaste);
+      }
+    }
     setState(
       produce((draft) => {
         if (settings.enabled !== undefined) draft.settings.enabled = settings.enabled;
