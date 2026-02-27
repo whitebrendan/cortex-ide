@@ -260,7 +260,7 @@ const SETTINGS_REGISTRY: SettingDefinition[] = [
     { value: "right", label: "Right" },
     { value: "justify", label: "Justify" },
   ]},
-  { id: "theme.breadcrumbs.icons", key: "breadcrumbs", section: "theme", subSection: "breadcrumbs", label: "Breadcrumbs: Icons", description: "Controls whether breadcrumbs show file type and symbol icons.", type: "boolean", defaultValue: DEFAULT_SETTINGS.theme.breadcrumbs.icons },
+  { id: "theme.breadcrumbs.icons", key: "icons", section: "theme", subSection: "breadcrumbs", label: "Breadcrumbs: Icons", description: "Controls whether breadcrumbs show file type and symbol icons.", type: "boolean", defaultValue: DEFAULT_SETTINGS.theme.breadcrumbs.icons },
 
   // Terminal Settings
   { id: "terminal.shellPath", key: "shellPath", section: "terminal", label: "Shell Path", description: "The path of the shell that the terminal uses.", type: "string", defaultValue: DEFAULT_SETTINGS.terminal.shellPath, placeholder: "Leave empty for default shell" },
