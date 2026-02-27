@@ -84,6 +84,7 @@ export interface VirtualItemProps {
   indentGuidesEnabled: boolean;
   enablePreview: boolean;
   isEntering: boolean;
+  siblingNames?: string[];
   onSelect: (path: string, event?: MouseEvent) => void;
   onOpen: (entry: FileEntry) => void;
   onOpenPreview: (entry: FileEntry) => void;

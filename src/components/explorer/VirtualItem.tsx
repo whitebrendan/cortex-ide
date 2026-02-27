@@ -259,7 +259,7 @@ export function VirtualItem(props: VirtualItemProps) {
           </span>
         }
       >
-        <div class="flex flex-col flex-1 min-w-0 relative">
+        <div style={{ flex: "1", "min-width": "0", position: "relative" }}>
           <input
             ref={inputRef}
             type="text"
@@ -276,11 +276,39 @@ export function VirtualItem(props: VirtualItemProps) {
               }
             }}
             onClick={(e) => e.stopPropagation()}
+            style={{
+              "border-color": renameError()
+                ? "var(--state-error, var(--cortex-error, #ef4444))"
+                : undefined,
+            }}
+            aria-invalid={renameError() !== null}
+            aria-describedby={renameError() ? "rename-error" : undefined}
           />
           <Show when={renameError()}>
-            <span class="absolute top-full left-0 mt-px px-1 py-px text-[10px] leading-tight text-[var(--cortex-error)] bg-[var(--cortex-surface-base)] border border-[var(--cortex-error)] rounded-sm z-50 whitespace-nowrap">
+            <div
+              id="rename-error"
+              role="alert"
+              style={{
+                position: "absolute",
+                top: "100%",
+                left: "0",
+                "z-index": "10",
+                "margin-top": "2px",
+                padding: "2px 6px",
+                "font-size": "11px",
+                "line-height": "1.4",
+                color: "var(--state-error, var(--cortex-error, #ef4444))",
+                background: "var(--surface-elevated, var(--cortex-surface-base, var(--surface-base)))",
+                border: "1px solid var(--state-error, var(--cortex-error, #ef4444))",
+                "border-radius": "var(--radius-sm, 4px)",
+                "white-space": "nowrap",
+                "max-width": "300px",
+                overflow: "hidden",
+                "text-overflow": "ellipsis",
+              }}
+            >
               {renameError()}
-            </span>
+            </div>
           </Show>
         </div>
       </Show>
