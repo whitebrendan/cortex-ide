@@ -24,7 +24,7 @@ import { safeGetItem, safeSetItem } from "@/utils/safeStorage";
 import CortexTitleBar from "./CortexTitleBar";
 import { WindowResizers } from "./titlebar/WindowResizers";
 import { ChatPanelState, ChatMessage } from "./CortexChatPanel";
-import { Agent } from "./CortexAgentSidebar";
+import { Agent, WorkspaceFolderInfo } from "./CortexAgentSidebar";
 import { FileChange } from "./CortexChangesPanel";
 import { Message } from "./CortexConversationView";
 import { ApprovalDialog } from "@/components/ApprovalDialog";
@@ -36,6 +36,7 @@ import { useSDK } from "@/context/SDKContext";
 import { useAIAgent } from "@/context/ai/AIAgentContext";
 import { useAIProvider } from "@/context/ai/AIProviderContext";
 import { useMultiRepo } from "@/context/MultiRepoContext";
+import { useWorkspace } from "@/context/WorkspaceContext";
 import { useCommands } from "@/context/CommandContext";
 import { createLogger } from "@/utils/logger";
 import { FileEditHandlers } from "./handlers/FileEditHandlers";
@@ -101,6 +102,8 @@ export function CortexDesktopLayout(props: ParentProps) {
   const sdk = useSDK();
   const commands = useCommands();
 
+  let workspace: ReturnType<typeof useWorkspace> | null = null;
+  try { workspace = useWorkspace(); } catch { /* not available */ }
   let aiAgent: ReturnType<typeof useAIAgent> | null = null;
   try { aiAgent = useAIAgent(); } catch { /* not available */ }
   let multiRepo: ReturnType<typeof useMultiRepo> | null = null;
@@ -182,6 +185,23 @@ export function CortexDesktopLayout(props: ParentProps) {
   });
   const projectName = createMemo(() => { const p = projectPath(); if (!p || p === ".") return "Cortex"; return p.replace(/\\/g, "/").split("/").pop() || "Cortex"; });
   const activeFile = createMemo(() => editor.state.openFiles.find(f => f.id === editor.state.activeFileId));
+
+  const workspaceFolders = createMemo((): WorkspaceFolderInfo[] => {
+    if (!workspace) return [];
+    return workspace.folders().map(f => ({ path: f.path, name: f.name }));
+  });
+
+  const activeWorkspaceFolder = createMemo(() => workspace?.activeFolder() ?? null);
+
+  const handleFolderChange = (path: string) => {
+    if (workspace) {
+      workspace.setActiveFolder(path);
+    }
+    const label = getWindowLabel();
+    safeSetItem(`cortex_current_project_${label}`, path);
+    if (label === "main") safeSetItem("cortex_current_project", path);
+    window.dispatchEvent(new CustomEvent("workspace:open-folder", { detail: { path } }));
+  };
 
   const statusBarBranch = createMemo(() => multiRepo?.activeRepository()?.branch ?? null);
   const statusBarIsSyncing = createMemo(() => multiRepo?.activeRepository()?.status === "loading");
@@ -310,6 +330,7 @@ export function CortexDesktopLayout(props: ParentProps) {
               onInputChange={setChatInput} onSubmit={handleChatSubmit} onFileSelect={handleFileSelect}
               onRunCommand={(cmd) => setTerminalOutput(prev => [...prev, `$ ${cmd}`, "Running..."])}
               onRun={() => setTerminalOutput(prev => [...prev, "$ npm run dev", "Starting..."])}
+              workspaceFolders={workspaceFolders()} activeFolder={activeWorkspaceFolder()} onFolderChange={handleFolderChange}
             />
           }
           ideContent={() =>

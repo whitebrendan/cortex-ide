@@ -31,6 +31,11 @@ export interface Agent {
   toolCalls?: string[];
 }
 
+export interface WorkspaceFolderInfo {
+  path: string;
+  name: string;
+}
+
 export interface CortexAgentSidebarProps {
   projectName?: string;
   agents: Agent[];
@@ -41,6 +46,9 @@ export interface CortexAgentSidebarProps {
   onSearch?: () => void;
   onAgentSpawn?: (agent: Agent) => void;
   onAgentTaskAssign?: (agentId: string, prompt: string) => void;
+  workspaceFolders?: WorkspaceFolderInfo[];
+  activeFolder?: string | null;
+  onFolderChange?: (path: string) => void;
   class?: string;
   style?: JSX.CSSProperties;
 }
@@ -161,13 +169,35 @@ export const CortexAgentSidebar: Component<CortexAgentSidebarProps> = (props) =>
         "align-items": "center", gap: "10px",
         "border-bottom": "1px solid var(--cortex-border-default)", "flex-shrink": "0",
       }}>
-        <span style={{
-          flex: "1", "font-family": "var(--cortex-font-sans)", "font-size": "18px",
-          "font-weight": "var(--cortex-font-medium)", color: "var(--cortex-text-on-surface)", "text-align": "center",
-          overflow: "hidden", "text-overflow": "ellipsis", "white-space": "nowrap",
-        }}>
-          {props.projectName || "Home"}
-        </span>
+        <Show when={(props.workspaceFolders?.length ?? 0) > 1} fallback={
+          <span style={{
+            flex: "1", "font-family": "var(--cortex-font-sans)", "font-size": "18px",
+            "font-weight": "var(--cortex-font-medium)", color: "var(--cortex-text-on-surface)", "text-align": "center",
+            overflow: "hidden", "text-overflow": "ellipsis", "white-space": "nowrap",
+          }}>
+            {props.projectName || "Home"}
+          </span>
+        }>
+          <select
+            data-testid="workspace-folder-selector"
+            value={props.activeFolder ?? ""}
+            onChange={(e) => props.onFolderChange?.(e.currentTarget.value)}
+            style={{
+              flex: "1", "font-family": "var(--cortex-font-sans)", "font-size": "14px",
+              "font-weight": "var(--cortex-font-medium)", color: "var(--cortex-text-on-surface)",
+              background: "var(--cortex-bg-secondary)", border: "1px solid var(--cortex-border-default)",
+              "border-radius": "var(--cortex-radius-sm)", padding: "4px 8px",
+              cursor: "pointer", outline: "none", "min-width": "0",
+              overflow: "hidden", "text-overflow": "ellipsis",
+            }}
+          >
+            <For each={props.workspaceFolders}>
+              {(folder) => (
+                <option value={folder.path}>{folder.name}</option>
+              )}
+            </For>
+          </select>
+        </Show>
         <CortexIconButton icon="search" size={20} onClick={props.onSearch} />
       </div>
 

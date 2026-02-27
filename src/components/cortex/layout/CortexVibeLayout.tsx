@@ -1,4 +1,4 @@
-import { CortexAgentSidebar, Agent } from "@/components/cortex/CortexAgentSidebar";
+import { CortexAgentSidebar, Agent, WorkspaceFolderInfo } from "@/components/cortex/CortexAgentSidebar";
 import { CortexChangesPanel, FileChange } from "@/components/cortex/CortexChangesPanel";
 import { CortexConversationView, Message } from "@/components/cortex/CortexConversationView";
 
@@ -21,6 +21,9 @@ export interface CortexVibeLayoutProps {
   onFileSelect: (path: string) => void;
   onRunCommand: (cmd: string) => void;
   onRun: () => void;
+  workspaceFolders?: WorkspaceFolderInfo[];
+  activeFolder?: string | null;
+  onFolderChange?: (path: string) => void;
 }
 
 export function CortexVibeLayout(props: CortexVibeLayoutProps) {
@@ -33,6 +36,9 @@ export function CortexVibeLayout(props: CortexVibeLayoutProps) {
         onConversationSelect={props.onConversationSelect}
         onAgentToggle={props.onAgentToggle}
         onNewWorkspace={props.onNewWorkspace}
+        workspaceFolders={props.workspaceFolders}
+        activeFolder={props.activeFolder}
+        onFolderChange={props.onFolderChange}
       />
 
       <div style={{

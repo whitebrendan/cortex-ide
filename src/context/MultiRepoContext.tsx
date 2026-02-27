@@ -19,6 +19,7 @@ import {
 } from "solid-js";
 import { createStore, produce } from "solid-js/store";
 import { invoke } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useWorkspace } from "./WorkspaceContext";
 import { gitLogger } from "../utils/logger";
 import { debounce } from "../utils/decorators";
@@ -409,10 +410,10 @@ export function MultiRepoProvider(props: ParentProps) {
   };
   
   // Debounced update with idle wait (VS Code pattern: 1000ms debounce)
-  const _eventuallyUpdateWhenIdleAndWait = debounce(async () => {
+  const eventuallyUpdateWhenIdleAndWait = debounce(async () => {
     await whenIdleAndFocused();
     await refreshActiveRepository();
-  }, 1000);
+  }, 1500);
   
   // Track and execute git operations with retry and error handling
   const executeGitOperation = async <T,>(
@@ -545,15 +546,33 @@ export function MultiRepoProvider(props: ParentProps) {
     // Set up autofetch interval based on settings
     setupAutofetchInterval();
     
-    // Refresh is now triggered by:
-    // - File watcher events (git:repository-changed)
-    // - User actions
-    // - The eventuallyUpdateWhenIdleAndWait function
+    // Listen for file save events to trigger git status refresh
+    const handleFileSaved = () => {
+      gitLogger.debug("File saved, scheduling git status refresh");
+      eventuallyUpdateWhenIdleAndWait();
+    };
+    window.addEventListener("cortex:file-saved", handleFileSaved);
+    window.addEventListener("file:saved", handleFileSaved);
+    
+    // Listen for Tauri backend git:repository-changed events
+    let unlistenGitChanged: UnlistenFn | null = null;
+    listen<string>("git:repository-changed", () => {
+      gitLogger.debug("Git repository changed (backend watcher), scheduling refresh");
+      eventuallyUpdateWhenIdleAndWait();
+    }).then(fn => {
+      unlistenGitChanged = fn;
+    }).catch(err => {
+      gitLogger.debug("Failed to listen for git:repository-changed:", err);
+    });
     
     onCleanup(() => {
       if (autofetchIntervalId !== null) {
         clearInterval(autofetchIntervalId);
       }
+      window.removeEventListener("cortex:file-saved", handleFileSaved);
+      window.removeEventListener("file:saved", handleFileSaved);
+      unlistenGitChanged?.();
+      eventuallyUpdateWhenIdleAndWait.cancel();
     });
   });
   
@@ -1386,7 +1405,6 @@ export function MultiRepoProvider(props: ParentProps) {
 
   // Suppress unused warnings - these are kept for future use
   void _REFRESH_INTERVAL;
-  void _eventuallyUpdateWhenIdleAndWait;
 
   const contextValue: MultiRepoContextValue = {
     state,
