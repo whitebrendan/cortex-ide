@@ -445,13 +445,16 @@ export function useFileTree(props: VirtualizedFileTreeProps) {
     }
 
     const handleReveal = async (e: CustomEvent<ExplorerRevealPayload>) => {
-      const targetPath = e.detail.path.replace(/\\/g, "/");
-      const normalizedRoot = props.rootPath.replace(/\\/g, "/");
+      const targetPath = e.detail.path;
+      const rootPath = props.rootPath;
+      const sep = rootPath.includes("\\") ? "\\" : "/";
+      const normalizedTarget = targetPath.replace(/\\/g, "/");
+      const normalizedRoot = rootPath.replace(/\\/g, "/");
       
-      if (targetPath.startsWith(normalizedRoot)) {
-        const relative = targetPath.slice(normalizedRoot.length).replace(/^[/\\]/, "");
+      if (normalizedTarget.startsWith(normalizedRoot)) {
+        const relative = normalizedTarget.slice(normalizedRoot.length).replace(/^[/\\]/, "");
         const parts = relative.split("/");
-        let current = normalizedRoot;
+        let current = rootPath;
         
         for (const part of parts) {
           if (!part) continue;
@@ -467,15 +470,15 @@ export function useFileTree(props: VirtualizedFileTreeProps) {
             await loadDirectoryChildren(pathToBeExpanded);
           }
           
-          current = `${current}/${part}`;
+          current = `${current}${sep}${part}`;
         }
         
-        props.onSelectPaths([e.detail.path]);
-        setLastSelectedPath(e.detail.path);
+        props.onSelectPaths([targetPath]);
+        setLastSelectedPath(targetPath);
         
         setTimeout(() => {
           const index = flattenedItems().findIndex(item => 
-            item.entry.path.replace(/\\/g, "/") === targetPath
+            item.entry.path === targetPath
           );
           if (index !== -1 && containerRef) {
             containerRef.scrollTop = index * ITEM_HEIGHT - containerHeight() / 3;
