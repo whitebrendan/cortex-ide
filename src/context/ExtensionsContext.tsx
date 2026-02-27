@@ -495,7 +495,8 @@ export function ExtensionsProvider(props: ParentProps) {
     setLoading(true);
     setError(null);
     try {
-      const loaded = await invoke<Extension[]>("load_extensions");
+      const rawLoaded = await invoke<Extension[]>("load_extensions");
+      const loaded = Array.isArray(rawLoaded) ? rawLoaded : [];
       batch(() => {
         setExtensions(loaded);
         const enabled = loaded.filter((ext) => ext.enabled);
@@ -695,7 +696,8 @@ export function ExtensionsProvider(props: ParentProps) {
     setError(null);
 
     try {
-      const currentExtensions = extensions();
+      const rawExtensions = extensions();
+      const currentExtensions = Array.isArray(rawExtensions) ? rawExtensions : [];
       if (currentExtensions.length === 0) {
         return [];
       }

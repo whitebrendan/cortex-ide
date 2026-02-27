@@ -181,15 +181,21 @@ function ExtensionCommandRegistrar(): null {
   const commands = useCommands();
   
   createEffect(() => {
-    const currentExtensions = extensions.enabledExtensions();
-    const cmds = currentExtensions.flatMap(ext => 
-      (ext.manifest?.contributes?.commands || []).map(contrib => ({
-        id: contrib.command,
-        label: contrib.title,
-        category: contrib.category || ext.manifest?.name || 'Unknown',
-        action: () => extensions.executeExtensionCommand(contrib.command)
-      }))
-    );
+    const rawExtensions = extensions.enabledExtensions();
+    const currentExtensions = Array.isArray(rawExtensions) ? rawExtensions : [];
+    let cmds: { id: string; label: string; category: string; action: () => Promise<any> }[] = [];
+    try {
+      cmds = currentExtensions.flatMap(ext => 
+        (ext.manifest?.contributes?.commands || []).map(contrib => ({
+          id: contrib.command,
+          label: contrib.title,
+          category: contrib.category || ext.manifest?.name || 'Unknown',
+          action: () => extensions.executeExtensionCommand(contrib.command)
+        }))
+      );
+    } catch (err) {
+      console.error("Failed to register extension commands:", err);
+    }
     
     cmds.forEach(cmd => commands.registerCommand(cmd));
     

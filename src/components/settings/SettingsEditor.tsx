@@ -105,6 +105,9 @@ interface FilterSuggestion {
   description: string;
 }
 
+// Module-level signal to persist TOC section across re-renders / focus changes
+const [persistedActiveSection, setPersistedActiveSection] = createSignal("editor");
+
 // =============================================================================
 // SETTINGS REGISTRY
 // =============================================================================
@@ -2006,7 +2009,8 @@ export function SettingsEditor(props: SettingsEditorProps) {
   }
   
   const [searchQuery, setSearchQuery] = createSignal("");
-  const [activeSection, setActiveSection] = createSignal("editor");
+  const activeSection = persistedActiveSection;
+  const setActiveSection = setPersistedActiveSection;
   const [activeTabId, setActiveTabId] = createSignal<string>(
     props.initialFolderPath 
       ? `folder-${props.initialFolderPath}` 

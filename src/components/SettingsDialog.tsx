@@ -50,6 +50,9 @@ function safeThemeSettings(settings: CortexSettings | null | undefined) {
   };
 }
 
+// Module-level signal to persist TOC section across re-renders / focus changes
+const [persistedDialogSection, setPersistedDialogSection] = createSignal<string>("general");
+
 /** Map tree item IDs to settings sections for modified count */
 const TREE_ID_TO_SECTION: Record<string, keyof CortexSettings | null> = {
   "common": null,
@@ -350,12 +353,14 @@ export function SettingsDialog(props: SettingsDialogProps) {
   const formatter = useFormatter();
   useMultiRepo(); // Context provider hook (values not destructured yet)
   const settings = useSettings();
-  const [activeTab, setActiveTab] = createSignal<string>(props.initialSection ?? "general");
+  const activeTab = persistedDialogSection;
+  const setActiveTab = setPersistedDialogSection;
   const [searchQuery, setSearchQuery] = createSignal("");
   
-  // Scroll to initial section on mount
+  // Apply initialSection only on first mount when explicitly provided
   onMount(() => {
     if (props.initialSection) {
+      setActiveTab(props.initialSection);
       setTimeout(() => {
         scrollToSection(props.initialSection!);
       }, 100);
