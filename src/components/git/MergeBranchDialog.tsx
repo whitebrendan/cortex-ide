@@ -22,6 +22,7 @@ export interface MergeBranchDialogProps {
   onCancel: () => void;
   loading?: boolean;
   error?: string | null;
+  sourceBranch?: string | null;
 }
 
 export function MergeBranchDialog(props: MergeBranchDialogProps) {
@@ -46,6 +47,9 @@ export function MergeBranchDialog(props: MergeBranchDialogProps) {
     if (props.open) {
       resetForm();
       fetchBranches();
+      if (props.sourceBranch) {
+        setSelectedBranch(props.sourceBranch);
+      }
     }
   });
 

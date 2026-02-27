@@ -25,6 +25,7 @@ import {
 } from "@/components/ui";
 import { tokens } from '@/design-system/tokens';
 
+const LazyMergeBranchDialog = lazy(() => import("./MergeBranchDialog").then(m => ({ default: m.MergeBranchDialog })));
 const LazyMergeEditor = lazy(() => import("./MergeEditor").then(m => ({ default: m.MergeEditor })));
 const LazyBranchComparison = lazy(() => import("./BranchComparison").then(m => ({ default: m.BranchComparison })));
 // Note: Box, Flex, VStack, HStack from '@/design-system/primitives/Flex' prepared for layout refactoring
@@ -92,6 +93,10 @@ const [signCommits, setSignCommits] = createSignal(false);
   const [resolvingFile, setResolvingFile] = createSignal<string | null>(null);
   const [showMergeEditor, setShowMergeEditor] = createSignal(false);
   const [mergeEditorContent, setMergeEditorContent] = createSignal<string | null>(null);
+  const [showMergeDialog, setShowMergeDialog] = createSignal(false);
+  const [mergeSourceBranch, setMergeSourceBranch] = createSignal<string | null>(null);
+  const [mergeLoading, setMergeLoading] = createSignal(false);
+  const [mergeError, setMergeError] = createSignal<string | null>(null);
 
   // Commit message validation settings (defaults as per conventional commit guidelines)
   const INPUT_VALIDATION_SUBJECT_LENGTH = 50;
@@ -707,11 +712,20 @@ const [signCommits, setSignCommits] = createSignal(false);
     }
   };
 
-  const mergeBranch = async (branchName: string, closeBranchSelector = true) => {
+  const openMergeDialog = (branchName?: string) => {
+    batch(() => {
+      setMergeSourceBranch(branchName || null);
+      setMergeError(null);
+      setShowMergeDialog(true);
+    });
+  };
+
+  const handleMergeConfirm = async (branchName: string, _options: { noFf: boolean; message?: string }) => {
     const repo = activeRepo();
     if (!repo) return;
 
-    setOperationLoading("merge");
+    setMergeLoading(true);
+    setMergeError(null);
     setMergeBranchTarget(branchName);
     try {
       const result = await multiRepo.mergeBranch(repo.id, branchName);
@@ -721,15 +735,18 @@ const [signCommits, setSignCommits] = createSignal(false);
       } else {
         setMergeBranchTarget(null);
       }
-      if (closeBranchSelector) {
+      batch(() => {
+        setShowMergeDialog(false);
         setShowBranchSelector(false);
-      }
+      });
     } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      setMergeError(errMsg);
       showError("Failed to merge branch");
       console.error("Failed to merge branch:", err);
       setMergeBranchTarget(null);
     } finally {
-      setOperationLoading(null);
+      setMergeLoading(false);
     }
   };
 
@@ -1600,7 +1617,7 @@ const [signCommits, setSignCommits] = createSignal(false);
                         <IconButton
                           size="sm"
                           tooltip={`Merge ${b.name} into current branch`}
-                          onClick={(e) => { e.stopPropagation(); mergeBranch(b.name, true); }}
+                          onClick={(e) => { e.stopPropagation(); openMergeDialog(b.name); }}
                         >
                           <Icon name="code-merge" size={12} />
                         </IconButton>
@@ -2334,7 +2351,7 @@ const [signCommits, setSignCommits] = createSignal(false);
               onClose={() => setCompareBranch(null)}
               onMerge={(from, _to) => {
                 setCompareBranch(null);
-                mergeBranch(from, false);
+                openMergeDialog(from);
               }}
             />
           </Suspense>
@@ -2434,6 +2451,21 @@ const [signCommits, setSignCommits] = createSignal(false);
             />
           </Suspense>
         </div>
+      </Show>
+
+      {/* Merge Branch Dialog */}
+      <Show when={activeRepo()}>
+        <Suspense>
+          <LazyMergeBranchDialog
+            open={showMergeDialog()}
+            currentBranch={branch() || ""}
+            sourceBranch={mergeSourceBranch()}
+            onMerge={handleMergeConfirm}
+            onCancel={() => { setShowMergeDialog(false); setMergeError(null); }}
+            loading={mergeLoading()}
+            error={mergeError()}
+          />
+        </Suspense>
       </Show>
 
       {/* Keyframes for spinner animation */}
