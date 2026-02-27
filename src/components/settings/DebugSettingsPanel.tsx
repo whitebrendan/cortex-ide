@@ -5,6 +5,7 @@ import { Icon } from "../ui/Icon";
 
 interface DebugSettingsPanelProps {
   scope?: SettingsScope;
+  folderPath?: string;
 }
 
 /** Row with workspace override indicator and modified from default indicator */
@@ -79,26 +80,42 @@ export function DebugSettingsPanel(props: DebugSettingsPanelProps) {
   const scope = () => props.scope || "user";
   
   // Use effective settings for display, but update based on scope
-  const debug = () => settings.effectiveSettings().debug;
+  const debug = () => {
+    if (scope() === "folder" && props.folderPath) {
+      return settings.getEffectiveSettingsForPath(props.folderPath).debug;
+    }
+    return settings.effectiveSettings().debug;
+  };
   
   // Helper to update setting based on current scope
   const updateSetting = <K extends keyof DebugSettings>(key: K, value: DebugSettings[K]) => {
-    if (scope() === "workspace" && settings.hasWorkspace()) {
+    if (scope() === "folder" && props.folderPath) {
+      settings.setFolderSetting(props.folderPath, "debug", key, value);
+    } else if (scope() === "workspace" && settings.hasWorkspace()) {
       settings.setWorkspaceSetting("debug", key, value);
     } else {
       settings.updateDebugSetting(key, value);
     }
   };
 
-  // Check if setting has workspace override
-  const hasOverride = (key: keyof DebugSettings) => settings.hasWorkspaceOverride("debug", key);
+  // Check if setting has workspace or folder override
+  const hasOverride = (key: keyof DebugSettings) => {
+    if (scope() === "folder" && props.folderPath) {
+      return settings.hasFolderOverride(props.folderPath, "debug", key);
+    }
+    return settings.hasWorkspaceOverride("debug", key);
+  };
   
   // Check if setting is modified from default
   const isModified = (key: keyof DebugSettings) => settings.isSettingModified("debug", key);
   
-  // Reset workspace override
+  // Reset workspace or folder override
   const resetOverride = (key: keyof DebugSettings) => {
-    settings.resetWorkspaceSetting("debug", key);
+    if (scope() === "folder" && props.folderPath) {
+      settings.resetFolderSetting(props.folderPath, "debug", key);
+    } else {
+      settings.resetWorkspaceSetting("debug", key);
+    }
   };
   
   // Reset setting to default value
@@ -128,6 +145,11 @@ export function DebugSettingsPanel(props: DebugSettingsPanelProps) {
       <Show when={scope() === "workspace"}>
         <div class="text-xs text-purple-400 bg-purple-500/10 rounded-lg px-3 py-2 mb-4">
           Editing workspace-specific debug settings. Changes apply only to this workspace.
+        </div>
+      </Show>
+      <Show when={scope() === "folder" && props.folderPath}>
+        <div class="text-xs text-green-400 bg-green-500/10 rounded-lg px-3 py-2 mb-4">
+          Editing folder-specific debug settings. Changes apply only to this folder.
         </div>
       </Show>
 
@@ -298,7 +320,7 @@ export function DebugSettingsPanel(props: DebugSettingsPanelProps) {
                 });
               }}
             >
-              Reset All Workspace Debug Overrides
+              {scope() === "folder" ? "Reset All Folder Debug Overrides" : "Reset All Workspace Debug Overrides"}
             </Button>
           }
         >

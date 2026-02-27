@@ -5,6 +5,7 @@ import { Icon } from "../ui/Icon";
 
 interface WorkbenchSettingsPanelProps {
   scope?: SettingsScope;
+  folderPath?: string;
 }
 
 // ============================================================================
@@ -222,26 +223,42 @@ export function WorkbenchSettingsPanel(props: WorkbenchSettingsPanelProps) {
   const scope = () => props.scope || "user";
   
   // Use effective settings for display, but update based on scope
-  const theme = () => settings.effectiveSettings().theme;
+  const theme = () => {
+    if (scope() === "folder" && props.folderPath) {
+      return settings.getEffectiveSettingsForPath(props.folderPath).theme;
+    }
+    return settings.effectiveSettings().theme;
+  };
   
   // Helper to update setting based on current scope
   const updateSetting = <K extends keyof ThemeSettings>(key: K, value: ThemeSettings[K]) => {
-    if (scope() === "workspace" && settings.hasWorkspace()) {
+    if (scope() === "folder" && props.folderPath) {
+      settings.setFolderSetting(props.folderPath, "theme", key, value);
+    } else if (scope() === "workspace" && settings.hasWorkspace()) {
       settings.setWorkspaceSetting("theme", key, value);
     } else {
       settings.updateThemeSetting(key, value);
     }
   };
 
-  // Check if setting has workspace override
-  const hasOverride = (key: keyof ThemeSettings) => settings.hasWorkspaceOverride("theme", key);
+  // Check if setting has workspace or folder override
+  const hasOverride = (key: keyof ThemeSettings) => {
+    if (scope() === "folder" && props.folderPath) {
+      return settings.hasFolderOverride(props.folderPath, "theme", key);
+    }
+    return settings.hasWorkspaceOverride("theme", key);
+  };
   
   // Check if setting is modified from default
   const isModified = (key: keyof ThemeSettings) => settings.isSettingModified("theme", key);
   
-  // Reset workspace override
+  // Reset workspace or folder override
   const resetOverride = (key: keyof ThemeSettings) => {
-    settings.resetWorkspaceSetting("theme", key);
+    if (scope() === "folder" && props.folderPath) {
+      settings.resetFolderSetting(props.folderPath, "theme", key);
+    } else {
+      settings.resetWorkspaceSetting("theme", key);
+    }
   };
   
   // Reset setting to default value
@@ -285,6 +302,11 @@ export function WorkbenchSettingsPanel(props: WorkbenchSettingsPanelProps) {
       <Show when={scope() === "workspace"}>
         <div class="text-xs text-purple-400 bg-purple-500/10 rounded-lg px-3 py-2 mb-4">
           Editing workspace-specific workbench settings. Changes apply only to this workspace.
+        </div>
+      </Show>
+      <Show when={scope() === "folder" && props.folderPath}>
+        <div class="text-xs text-green-400 bg-green-500/10 rounded-lg px-3 py-2 mb-4">
+          Editing folder-specific workbench settings. Changes apply only to this folder.
         </div>
       </Show>
 

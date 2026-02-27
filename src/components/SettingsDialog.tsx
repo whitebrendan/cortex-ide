@@ -1050,7 +1050,7 @@ export function SettingsDialog(props: SettingsDialogProps) {
                 <div style={{ display: "flex", "flex-direction": "column", gap: "24px" }}>
                   <SectionHeader 
                     title="General" 
-                    description={settingsScope() === "workspace" ? "Override theme for this workspace" : "General application settings"}
+                    description={settingsScope() === "workspace" ? "Override theme for this workspace" : settingsScope() === "folder" ? "Override theme for this folder" : "General application settings"}
                     icon={<Icon name="desktop" class="h-4 w-4" />}
                   />
                   <div>
@@ -1058,14 +1058,21 @@ export function SettingsDialog(props: SettingsDialogProps) {
                     <div style={{ display: "flex", gap: "8px" }}>
                       <For each={themes}>
                         {(t) => {
-                          const hasOverride = () => settings.hasWorkspaceOverride("theme", "theme");
+                          const hasOverride = () => {
+                            if (settingsScope() === "folder" && selectedFolder()) {
+                              return settings.hasFolderOverride(selectedFolder()!, "theme", "theme");
+                            }
+                            return settings.hasWorkspaceOverride("theme", "theme");
+                          };
                           const isSelected = () => safeThemeSettings(settings.effectiveSettings()).theme === t.value;
                           
                           return (
                             <div style={{ position: "relative" }}>
                               <UIButton
                                 onClick={() => {
-                                  if (settingsScope() === "workspace") {
+                                  if (settingsScope() === "folder" && selectedFolder()) {
+                                    settings.setFolderSetting(selectedFolder()!, "theme", "theme", t.value);
+                                  } else if (settingsScope() === "workspace") {
                                     settings.setWorkspaceSetting("theme", "theme", t.value);
                                   } else {
                                     setTheme(t.value);
@@ -1095,7 +1102,7 @@ export function SettingsDialog(props: SettingsDialogProps) {
                     </div>
                   </div>
                   
-                  {/* Reset workspace theme override */}
+                  {/* Reset workspace/folder theme override */}
                   <Show when={settingsScope() === "workspace" && settings.hasWorkspaceOverride("theme", "theme")}>
                     <UIButton
                       onClick={() => settings.resetWorkspaceSetting("theme", "theme")}
@@ -1105,6 +1112,17 @@ export function SettingsDialog(props: SettingsDialogProps) {
                       style={{ color: "var(--cortex-info)" }}
                     >
                       Reset to user theme
+                    </UIButton>
+                  </Show>
+                  <Show when={settingsScope() === "folder" && selectedFolder() && settings.hasFolderOverride(selectedFolder()!, "theme", "theme")}>
+                    <UIButton
+                      onClick={() => settings.resetFolderSetting(selectedFolder()!, "theme", "theme")}
+                      variant="ghost"
+                      size="sm"
+                      icon={<Icon name="rotate-left" style={{ width: "12px", height: "12px" }} />}
+                      style={{ color: "var(--cortex-success)" }}
+                    >
+                      Reset to workspace/user theme
                     </UIButton>
                   </Show>
 
@@ -1119,7 +1137,9 @@ export function SettingsDialog(props: SettingsDialogProps) {
                         selected={safeThemeSettings(settings.effectiveSettings()).wrapTabs}
                         onSelect={async () => {
                           const currentValue = safeThemeSettings(settings.effectiveSettings()).wrapTabs;
-                          if (settingsScope() === "workspace") {
+                          if (settingsScope() === "folder" && selectedFolder()) {
+                            await settings.setFolderSetting(selectedFolder()!, "theme", "wrapTabs", !currentValue);
+                          } else if (settingsScope() === "workspace") {
                             await settings.setWorkspaceSetting("theme", "wrapTabs", !currentValue);
                           } else {
                             await settings.updateThemeSetting("wrapTabs", !currentValue);
@@ -1128,7 +1148,10 @@ export function SettingsDialog(props: SettingsDialogProps) {
                         title="Wrap Tabs"
                         description="When enabled, tabs wrap to multiple lines instead of showing scroll buttons"
                       />
-                      <Show when={settings.hasWorkspaceOverride("theme", "wrapTabs")}>
+                      <Show when={
+                        (settingsScope() === "folder" && selectedFolder() && settings.hasFolderOverride(selectedFolder()!, "theme", "wrapTabs")) ||
+                        (settingsScope() !== "folder" && settings.hasWorkspaceOverride("theme", "wrapTabs"))
+                      }>
                         <span style={{
                           position: "absolute",
                           top: "8px",
@@ -1136,13 +1159,13 @@ export function SettingsDialog(props: SettingsDialogProps) {
                           width: "8px",
                           height: "8px",
                           "border-radius": "var(--cortex-radius-full)",
-                          background: "var(--cortex-info)",
+                          background: settingsScope() === "folder" ? "var(--cortex-success)" : "var(--cortex-info)",
                         }} />
                       </Show>
                     </div>
                   </div>
                   
-                  {/* Reset workspace wrapTabs override */}
+                  {/* Reset workspace/folder wrapTabs override */}
                   <Show when={settingsScope() === "workspace" && settings.hasWorkspaceOverride("theme", "wrapTabs")}>
                     <UIButton
                       onClick={() => settings.resetWorkspaceSetting("theme", "wrapTabs")}
@@ -1152,6 +1175,17 @@ export function SettingsDialog(props: SettingsDialogProps) {
                       style={{ color: "var(--cortex-info)" }}
                     >
                       Reset to user setting
+                    </UIButton>
+                  </Show>
+                  <Show when={settingsScope() === "folder" && selectedFolder() && settings.hasFolderOverride(selectedFolder()!, "theme", "wrapTabs")}>
+                    <UIButton
+                      onClick={() => settings.resetFolderSetting(selectedFolder()!, "theme", "wrapTabs")}
+                      variant="ghost"
+                      size="sm"
+                      icon={<Icon name="rotate-left" style={{ width: "12px", height: "12px" }} />}
+                      style={{ color: "var(--cortex-success)" }}
+                    >
+                      Reset to workspace/user setting
                     </UIButton>
                   </Show>
 
@@ -1202,7 +1236,9 @@ export function SettingsDialog(props: SettingsDialogProps) {
                       <Select
                         value={safeExplorerSettings(settings.effectiveSettings()).sortOrder}
                         onChange={async (value) => {
-                          if (settingsScope() === "workspace") {
+                          if (settingsScope() === "folder" && selectedFolder()) {
+                            await settings.setFolderSetting(selectedFolder()!, "explorer", "sortOrder", value as ExplorerSortOrder);
+                          } else if (settingsScope() === "workspace") {
                             await settings.setWorkspaceSetting("explorer", "sortOrder", value as ExplorerSortOrder);
                           } else {
                             await settings.updateExplorerSetting("sortOrder", value as ExplorerSortOrder);
@@ -1219,7 +1255,7 @@ export function SettingsDialog(props: SettingsDialogProps) {
                       />
                     </FormGroup>
                     
-                    {/* Reset workspace sort order override */}
+                    {/* Reset workspace/folder sort order override */}
                     <Show when={settingsScope() === "workspace" && settings.hasWorkspaceOverride("explorer", "sortOrder")}>
                       <UIButton
                         onClick={() => settings.resetWorkspaceSetting("explorer", "sortOrder")}
@@ -1229,6 +1265,17 @@ export function SettingsDialog(props: SettingsDialogProps) {
                       style={{ color: "var(--cortex-info)", "margin-top": "8px" }}
                     >
                       Reset to user setting
+                    </UIButton>
+                  </Show>
+                  <Show when={settingsScope() === "folder" && selectedFolder() && settings.hasFolderOverride(selectedFolder()!, "explorer", "sortOrder")}>
+                      <UIButton
+                        onClick={() => settings.resetFolderSetting(selectedFolder()!, "explorer", "sortOrder")}
+                        variant="ghost"
+                        size="sm"
+                      icon={<Icon name="rotate-left" style={{ width: "12px", height: "12px" }} />}
+                      style={{ color: "var(--cortex-success)", "margin-top": "8px" }}
+                    >
+                      Reset to workspace/user setting
                     </UIButton>
                   </Show>
                 </div>
@@ -1244,7 +1291,7 @@ export function SettingsDialog(props: SettingsDialogProps) {
                     description="File associations, auto save, and formatting settings"
                     icon={<Icon name="file-lines" class="h-4 w-4" />}
                   />
-                  <FilesSettingsPanel scope={settingsScope()} />
+                  <FilesSettingsPanel scope={settingsScope()} folderPath={settingsScope() === "folder" ? selectedFolder() || undefined : undefined} />
                 </div>
               </div>
 
@@ -1358,7 +1405,7 @@ export function SettingsDialog(props: SettingsDialogProps) {
                   icon={<Icon name="globe" class="h-4 w-4" />}
                 />
                 <div style={{ "margin-top": "16px" }}>
-                  <NetworkSettingsPanel scope={settingsScope()} />
+                  <NetworkSettingsPanel scope={settingsScope()} folderPath={settingsScope() === "folder" ? selectedFolder() || undefined : undefined} />
                 </div>
               </div>
 
@@ -1422,7 +1469,7 @@ export function SettingsDialog(props: SettingsDialogProps) {
                   <div class="border-t border-border my-6" />
 
                   {/* Full Editor Settings Panel */}
-                  <EditorSettingsPanel scope={settingsScope()} />
+                  <EditorSettingsPanel scope={settingsScope()} folderPath={settingsScope() === "folder" ? selectedFolder() || undefined : undefined} />
                 </div>
               </div>
 
@@ -1631,7 +1678,7 @@ export function SettingsDialog(props: SettingsDialogProps) {
                   icon={<Icon name="terminal" class="h-4 w-4" />}
                 />
                 <div style={{ "margin-top": "16px" }}>
-                  <TerminalSettingsPanel scope={settingsScope()} />
+                  <TerminalSettingsPanel scope={settingsScope()} folderPath={settingsScope() === "folder" ? selectedFolder() || undefined : undefined} />
                 </div>
               </div>
 
@@ -1643,7 +1690,7 @@ export function SettingsDialog(props: SettingsDialogProps) {
                   icon={<Icon name="code-branch" class="h-4 w-4" />}
                 />
                 <div style={{ "margin-top": "16px" }}>
-                  <GitSettingsPanel scope={settingsScope()} />
+                  <GitSettingsPanel scope={settingsScope()} folderPath={settingsScope() === "folder" ? selectedFolder() || undefined : undefined} />
                 </div>
               </div>
 
@@ -1655,7 +1702,7 @@ export function SettingsDialog(props: SettingsDialogProps) {
                   icon={<Icon name="bug" class="h-4 w-4" />}
                 />
                 <div style={{ "margin-top": "16px" }}>
-                  <DebugSettingsPanel scope={settingsScope()} />
+                  <DebugSettingsPanel scope={settingsScope()} folderPath={settingsScope() === "folder" ? selectedFolder() || undefined : undefined} />
                 </div>
               </div>
 

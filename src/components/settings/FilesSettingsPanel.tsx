@@ -5,6 +5,7 @@ import { Icon } from "../ui/Icon";
 
 interface FilesSettingsPanelProps {
   scope?: SettingsScope;
+  folderPath?: string;
 }
 
 // Monaco language options - commonly used languages sorted alphabetically
@@ -386,20 +387,36 @@ export function FilesSettingsPanel(props: FilesSettingsPanelProps) {
   const settings = useSettings();
   const scope = () => props.scope || "user";
   
-  const files = () => settings.effectiveSettings().files;
+  const files = () => {
+    if (scope() === "folder" && props.folderPath) {
+      return settings.getEffectiveSettingsForPath(props.folderPath).files;
+    }
+    return settings.effectiveSettings().files;
+  };
   
   const updateSetting = <K extends keyof FilesSettings>(key: K, value: FilesSettings[K]) => {
-    if (scope() === "workspace" && settings.hasWorkspace()) {
+    if (scope() === "folder" && props.folderPath) {
+      settings.setFolderSetting(props.folderPath, "files", key, value);
+    } else if (scope() === "workspace" && settings.hasWorkspace()) {
       settings.setWorkspaceSetting("files", key, value);
     } else {
       settings.updateFilesSetting(key, value);
     }
   };
 
-  const hasOverride = (key: keyof FilesSettings) => settings.hasWorkspaceOverride("files", key);
+  const hasOverride = (key: keyof FilesSettings) => {
+    if (scope() === "folder" && props.folderPath) {
+      return settings.hasFolderOverride(props.folderPath, "files", key);
+    }
+    return settings.hasWorkspaceOverride("files", key);
+  };
   const isModified = (key: keyof FilesSettings) => settings.isSettingModified("files", key);
   const resetOverride = (key: keyof FilesSettings) => {
-    settings.resetWorkspaceSetting("files", key);
+    if (scope() === "folder" && props.folderPath) {
+      settings.resetFolderSetting(props.folderPath, "files", key);
+    } else {
+      settings.resetWorkspaceSetting("files", key);
+    }
   };
   const resetToDefault = (key: keyof FilesSettings) => {
     settings.resetSettingToDefault("files", key);
@@ -422,14 +439,21 @@ export function FilesSettingsPanel(props: FilesSettingsPanelProps) {
   };
 
   // Search exclude patterns
-  const search = () => settings.effectiveSettings().search;
+  const search = () => {
+    if (scope() === "folder" && props.folderPath) {
+      return settings.getEffectiveSettingsForPath(props.folderPath).search;
+    }
+    return settings.effectiveSettings().search;
+  };
   const searchExcludePatterns = createMemo(() => {
     const exclude = search().exclude || {};
     return Object.entries(exclude).sort((a, b) => a[0].localeCompare(b[0]));
   });
 
   const updateSearchSetting = <K extends keyof SearchSettings>(key: K, value: SearchSettings[K]) => {
-    if (scope() === "workspace" && settings.hasWorkspace()) {
+    if (scope() === "folder" && props.folderPath) {
+      settings.setFolderSetting(props.folderPath, "search", key, value);
+    } else if (scope() === "workspace" && settings.hasWorkspace()) {
       settings.setWorkspaceSetting("search", key, value);
     } else {
       settings.updateSearchSetting(key, value);
@@ -482,6 +506,11 @@ export function FilesSettingsPanel(props: FilesSettingsPanelProps) {
       <Show when={scope() === "workspace"}>
         <div class="text-xs text-purple-400 bg-purple-500/10 rounded-lg px-3 py-2 mb-4">
           Editing workspace-specific file settings. Changes apply only to this workspace.
+        </div>
+      </Show>
+      <Show when={scope() === "folder" && props.folderPath}>
+        <div class="text-xs text-green-400 bg-green-500/10 rounded-lg px-3 py-2 mb-4">
+          Editing folder-specific file settings. Changes apply only to files in this folder.
         </div>
       </Show>
 
@@ -823,7 +852,7 @@ export function FilesSettingsPanel(props: FilesSettingsPanelProps) {
                 });
               }}
             >
-              Reset All Workspace File Overrides
+              {scope() === "folder" ? "Reset All Folder File Overrides" : "Reset All Workspace File Overrides"}
             </Button>
           }
         >

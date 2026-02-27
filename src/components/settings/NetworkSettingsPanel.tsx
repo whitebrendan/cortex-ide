@@ -5,6 +5,7 @@ import { Icon } from "../ui/Icon";
 
 interface NetworkSettingsPanelProps {
   scope?: SettingsScope;
+  folderPath?: string;
 }
 
 /** Row with workspace override indicator */
@@ -86,23 +87,39 @@ export function NetworkSettingsPanel(props: NetworkSettingsPanelProps) {
   const scope = () => props.scope || "user";
   
   // Use effective settings for display
-  const http = () => settings.effectiveSettings().http;
+  const http = () => {
+    if (scope() === "folder" && props.folderPath) {
+      return settings.getEffectiveSettingsForPath(props.folderPath).http;
+    }
+    return settings.effectiveSettings().http;
+  };
 
   // Helper to update setting based on current scope
   const updateSetting = <K extends keyof HttpSettings>(key: K, value: HttpSettings[K]) => {
-    if (scope() === "workspace" && settings.hasWorkspace()) {
+    if (scope() === "folder" && props.folderPath) {
+      settings.setFolderSetting(props.folderPath, "http", key, value);
+    } else if (scope() === "workspace" && settings.hasWorkspace()) {
       settings.setWorkspaceSetting("http", key, value);
     } else {
       settings.updateHttpSetting(key, value);
     }
   };
 
-  // Check if setting has workspace override
-  const hasOverride = (key: keyof HttpSettings) => settings.hasWorkspaceOverride("http", key);
+  // Check if setting has workspace or folder override
+  const hasOverride = (key: keyof HttpSettings) => {
+    if (scope() === "folder" && props.folderPath) {
+      return settings.hasFolderOverride(props.folderPath, "http", key);
+    }
+    return settings.hasWorkspaceOverride("http", key);
+  };
   
-  // Reset workspace override
+  // Reset workspace or folder override
   const resetOverride = (key: keyof HttpSettings) => {
-    settings.resetWorkspaceSetting("http", key);
+    if (scope() === "folder" && props.folderPath) {
+      settings.resetFolderSetting(props.folderPath, "http", key);
+    } else {
+      settings.resetWorkspaceSetting("http", key);
+    }
   };
 
   const proxySupportOptions = [
@@ -117,6 +134,11 @@ export function NetworkSettingsPanel(props: NetworkSettingsPanelProps) {
       <Show when={scope() === "workspace"}>
         <div class="text-xs text-purple-400 bg-purple-500/10 rounded-lg px-3 py-2 mb-4">
           Editing workspace-specific network settings. Changes apply only to this workspace.
+        </div>
+      </Show>
+      <Show when={scope() === "folder" && props.folderPath}>
+        <div class="text-xs text-green-400 bg-green-500/10 rounded-lg px-3 py-2 mb-4">
+          Editing folder-specific network settings. Changes apply only to this folder.
         </div>
       </Show>
 
@@ -232,7 +254,7 @@ export function NetworkSettingsPanel(props: NetworkSettingsPanelProps) {
                 });
               }}
             >
-              Reset All Workspace Network Overrides
+              {scope() === "folder" ? "Reset All Folder Network Overrides" : "Reset All Workspace Network Overrides"}
             </Button>
           }
         >

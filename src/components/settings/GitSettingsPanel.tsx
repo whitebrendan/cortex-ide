@@ -6,6 +6,7 @@ import { Icon } from "../ui/Icon";
 
 interface GitSettingsPanelProps {
   scope?: SettingsScope;
+  folderPath?: string;
 }
 
 /** Row with workspace override indicator */
@@ -174,26 +175,42 @@ export function GitSettingsPanel(props: GitSettingsPanelProps) {
   const scope = () => props.scope || "user";
   
   // Use effective settings for display
-  const git = () => settings.effectiveSettings().git;
+  const git = () => {
+    if (scope() === "folder" && props.folderPath) {
+      return settings.getEffectiveSettingsForPath(props.folderPath).git;
+    }
+    return settings.effectiveSettings().git;
+  };
 
   // Helper to update setting based on current scope
   const updateSetting = <K extends keyof GitSettings>(key: K, value: GitSettings[K]) => {
-    if (scope() === "workspace" && settings.hasWorkspace()) {
+    if (scope() === "folder" && props.folderPath) {
+      settings.setFolderSetting(props.folderPath, "git", key, value);
+    } else if (scope() === "workspace" && settings.hasWorkspace()) {
       settings.setWorkspaceSetting("git", key, value);
     } else {
       settings.updateSettings("git", { ...settings.userSettings().git, [key]: value });
     }
   };
 
-  // Check if setting has workspace override
-  const hasOverride = (key: keyof GitSettings) => settings.hasWorkspaceOverride("git", key);
+  // Check if setting has workspace or folder override
+  const hasOverride = (key: keyof GitSettings) => {
+    if (scope() === "folder" && props.folderPath) {
+      return settings.hasFolderOverride(props.folderPath, "git", key);
+    }
+    return settings.hasWorkspaceOverride("git", key);
+  };
   
   // Check if setting is modified from default
   const isModified = (key: keyof GitSettings) => settings.isSettingModified("git", key);
   
-  // Reset workspace override
+  // Reset workspace or folder override
   const resetOverride = (key: keyof GitSettings) => {
-    settings.resetWorkspaceSetting("git", key);
+    if (scope() === "folder" && props.folderPath) {
+      settings.resetFolderSetting(props.folderPath, "git", key);
+    } else {
+      settings.resetWorkspaceSetting("git", key);
+    }
   };
   
   // Reset to default value
@@ -218,6 +235,11 @@ export function GitSettingsPanel(props: GitSettingsPanelProps) {
       <Show when={scope() === "workspace"}>
         <div class="text-xs text-purple-400 bg-purple-500/10 rounded-lg px-3 py-2 mb-4">
           Editing workspace-specific Git settings. Changes apply only to this workspace.
+        </div>
+      </Show>
+      <Show when={scope() === "folder" && props.folderPath}>
+        <div class="text-xs text-green-400 bg-green-500/10 rounded-lg px-3 py-2 mb-4">
+          Editing folder-specific Git settings. Changes apply only to this folder.
         </div>
       </Show>
 
@@ -487,7 +509,7 @@ export function GitSettingsPanel(props: GitSettingsPanelProps) {
                 });
               }}
             >
-              Reset All Workspace Git Overrides
+              {scope() === "folder" ? "Reset All Folder Git Overrides" : "Reset All Workspace Git Overrides"}
             </Button>
           }
         >

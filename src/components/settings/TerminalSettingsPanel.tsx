@@ -7,6 +7,7 @@ import { TERMINAL_THEMES, getTerminalThemeDefinition } from "@/lib/terminalTheme
 
 interface TerminalSettingsPanelProps {
   scope?: SettingsScope;
+  folderPath?: string;
 }
 
 /** Row with workspace override indicator */
@@ -88,7 +89,12 @@ export function TerminalSettingsPanel(props: TerminalSettingsPanelProps) {
   const scope = () => props.scope || "user";
   
   // Use effective settings for display
-  const terminal = () => settings.effectiveSettings().terminal;
+  const terminal = () => {
+    if (scope() === "folder" && props.folderPath) {
+      return settings.getEffectiveSettingsForPath(props.folderPath).terminal;
+    }
+    return settings.effectiveSettings().terminal;
+  };
   const [defaultShell, setDefaultShell] = createSignal("");
 
   onMount(async () => {
@@ -102,19 +108,30 @@ export function TerminalSettingsPanel(props: TerminalSettingsPanelProps) {
 
   // Helper to update setting based on current scope
   const updateSetting = <K extends keyof TerminalSettings>(key: K, value: TerminalSettings[K]) => {
-    if (scope() === "workspace" && settings.hasWorkspace()) {
+    if (scope() === "folder" && props.folderPath) {
+      settings.setFolderSetting(props.folderPath, "terminal", key, value);
+    } else if (scope() === "workspace" && settings.hasWorkspace()) {
       settings.setWorkspaceSetting("terminal", key, value);
     } else {
       settings.updateTerminalSetting(key, value);
     }
   };
 
-  // Check if setting has workspace override
-  const hasOverride = (key: keyof TerminalSettings) => settings.hasWorkspaceOverride("terminal", key);
+  // Check if setting has workspace or folder override
+  const hasOverride = (key: keyof TerminalSettings) => {
+    if (scope() === "folder" && props.folderPath) {
+      return settings.hasFolderOverride(props.folderPath, "terminal", key);
+    }
+    return settings.hasWorkspaceOverride("terminal", key);
+  };
   
-  // Reset workspace override
+  // Reset workspace or folder override
   const resetOverride = (key: keyof TerminalSettings) => {
-    settings.resetWorkspaceSetting("terminal", key);
+    if (scope() === "folder" && props.folderPath) {
+      settings.resetFolderSetting(props.folderPath, "terminal", key);
+    } else {
+      settings.resetWorkspaceSetting("terminal", key);
+    }
   };
 
   const fontFamilyOptions = [
@@ -172,6 +189,11 @@ export function TerminalSettingsPanel(props: TerminalSettingsPanelProps) {
       <Show when={scope() === "workspace"}>
         <div class="text-xs text-purple-400 bg-purple-500/10 rounded-lg px-3 py-2 mb-4">
           Editing workspace-specific terminal settings. Changes apply only to this workspace.
+        </div>
+      </Show>
+      <Show when={scope() === "folder" && props.folderPath}>
+        <div class="text-xs text-green-400 bg-green-500/10 rounded-lg px-3 py-2 mb-4">
+          Editing folder-specific terminal settings. Changes apply only to this folder.
         </div>
       </Show>
 
@@ -513,7 +535,7 @@ export function TerminalSettingsPanel(props: TerminalSettingsPanelProps) {
                 });
               }}
             >
-              Reset All Workspace Terminal Overrides
+              {scope() === "folder" ? "Reset All Folder Terminal Overrides" : "Reset All Workspace Terminal Overrides"}
             </Button>
           }
         >

@@ -10,6 +10,7 @@ import { tokens } from '@/design-system/tokens';
 
 interface EditorSettingsPanelProps {
   scope?: SettingsScope;
+  folderPath?: string;
 }
 
 /** Row with workspace override indicator and modified from default indicator */
@@ -136,26 +137,42 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
   const scope = () => props.scope || "user";
   
   // Use effective settings for display, but update based on scope
-  const editor = () => settings.effectiveSettings().editor;
+  const editor = () => {
+    if (scope() === "folder" && props.folderPath) {
+      return settings.getEffectiveSettingsForPath(props.folderPath).editor;
+    }
+    return settings.effectiveSettings().editor;
+  };
   
   // Helper to update setting based on current scope
   const updateSetting = <K extends keyof EditorSettings>(key: K, value: EditorSettings[K]) => {
-    if (scope() === "workspace" && settings.hasWorkspace()) {
+    if (scope() === "folder" && props.folderPath) {
+      settings.setFolderSetting(props.folderPath, "editor", key, value);
+    } else if (scope() === "workspace" && settings.hasWorkspace()) {
       settings.setWorkspaceSetting("editor", key, value);
     } else {
       settings.updateEditorSetting(key, value);
     }
   };
 
-  // Check if setting has workspace override
-  const hasOverride = (key: keyof EditorSettings) => settings.hasWorkspaceOverride("editor", key);
+  // Check if setting has workspace or folder override
+  const hasOverride = (key: keyof EditorSettings) => {
+    if (scope() === "folder" && props.folderPath) {
+      return settings.hasFolderOverride(props.folderPath, "editor", key);
+    }
+    return settings.hasWorkspaceOverride("editor", key);
+  };
   
   // Check if setting is modified from default
   const isModified = (key: keyof EditorSettings) => settings.isSettingModified("editor", key);
   
-  // Reset workspace override
+  // Reset workspace or folder override
   const resetOverride = (key: keyof EditorSettings) => {
-    settings.resetWorkspaceSetting("editor", key);
+    if (scope() === "folder" && props.folderPath) {
+      settings.resetFolderSetting(props.folderPath, "editor", key);
+    } else {
+      settings.resetWorkspaceSetting("editor", key);
+    }
   };
   
   // Reset setting to default value
@@ -296,6 +313,19 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
           "margin-bottom": "16px",
         }}>
           Editing workspace-specific editor settings. Changes apply only to this workspace.
+        </Badge>
+      </Show>
+      <Show when={scope() === "folder" && props.folderPath}>
+        <Badge variant="accent" style={{ 
+          padding: `${tokens.spacing.md} ${tokens.spacing.lg}`, 
+          "font-size": "var(--jb-text-muted-size)",
+          "border-radius": "var(--jb-radius-lg)",
+          "margin-bottom": "16px",
+          background: "rgba(16, 185, 129, 0.1)",
+          color: "rgb(16, 185, 129)",
+          border: "1px solid rgba(16, 185, 129, 0.3)",
+        }}>
+          Editing folder-specific editor settings. Changes apply only to files in this folder.
         </Badge>
       </Show>
 
@@ -1159,7 +1189,7 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
                 });
               }}
             >
-              Reset All Workspace Editor Overrides
+              {scope() === "folder" ? "Reset All Folder Editor Overrides" : "Reset All Workspace Editor Overrides"}
             </Button>
           }
         >
