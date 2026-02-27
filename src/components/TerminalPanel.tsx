@@ -1,4 +1,4 @@
-import { Show, createSignal, createEffect, onMount, onCleanup, createMemo } from "solid-js";
+import { Show, createSignal, createEffect, onMount, onCleanup, createMemo, type JSX } from "solid-js";
 import { createStore } from "solid-js/store";
 import { useTerminals, TerminalInfo } from "@/context/TerminalsContext";
 import { useEditor } from "@/context/EditorContext";
@@ -35,6 +35,8 @@ import {
 } from "./terminal/TerminalDecorations";
 import { TerminalRenameDialog } from "./terminal/TerminalRenameDialog";
 import { TerminalColorPicker } from "./terminal/TerminalColorPicker";
+import { useTerminalSplits } from "./terminal/useTerminalSplits";
+import { TerminalSplitView, SplitButton } from "./terminal/TerminalSplitView";
 
 /**
  * Command marker for tracking command execution status in the terminal gutter
@@ -536,6 +538,9 @@ export function TerminalPanel() {
     setTerminalColor,
     getTerminalName,
     getTerminalColor,
+    createTerminal,
+    setActiveTerminal,
+    closeTerminal,
   } = useTerminals();
   
   // Editor context for opening files from terminal links
@@ -547,7 +552,79 @@ export function TerminalPanel() {
   
   // Accessibility context for screen reader announcements
   const accessibility = useAccessibility();
-  
+
+  // Terminal split state management
+  const splits = useTerminalSplits({
+    terminals: () => state.terminals,
+    activeTerminalId: () => state.activeTerminalId,
+    onActiveChange: (id) => { if (id) setActiveTerminal(id); },
+    enableKeyboardShortcuts: false,
+  });
+
+  // Whether the active terminal is part of a split group with multiple panes
+  const activeSplitGroup = createMemo(() => {
+    const activeId = state.activeTerminalId;
+    if (!activeId) return null;
+    const group = splits.getGroupForTerminal(activeId);
+    if (!group || group.terminalIds.length <= 1) return null;
+    return group;
+  });
+
+  const hasSplits = () => activeSplitGroup() !== null;
+
+  // Split action handlers
+  const handleSplitHorizontal = async () => {
+    const activeId = state.activeTerminalId;
+    if (!activeId) return;
+    const newTerm = await createTerminal();
+    splits.splitTerminal(activeId, "horizontal", newTerm.id);
+    setActiveTerminal(newTerm.id);
+  };
+
+  const handleSplitVertical = async () => {
+    const activeId = state.activeTerminalId;
+    if (!activeId) return;
+    const newTerm = await createTerminal();
+    splits.splitTerminal(activeId, "vertical", newTerm.id);
+    setActiveTerminal(newTerm.id);
+  };
+
+  const handleCloseSplitTerminal = async (terminalId: string) => {
+    splits.closeSplitPane(terminalId);
+    await closeTerminal(terminalId);
+  };
+
+  const handleSplitRatioChange = (groupId: string, index: number, ratio: number) => {
+    splits.updateSplitRatio(groupId, index, ratio);
+  };
+
+  // Render a terminal pane inside the split view
+  const renderSplitTerminalPane = (terminal: TerminalInfo, _isActive: boolean): JSX.Element => {
+    return (
+      <div
+        data-terminal-split-pane={terminal.id}
+        style={{ width: "100%", height: "100%" }}
+        ref={(el) => {
+          if (!el) return;
+          requestAnimationFrame(() => {
+            const instance = terminalInstances.get(terminal.id);
+            if (instance) {
+              instance.terminal.open(el);
+              requestAnimationFrame(() => {
+                instance.fitAddon.fit();
+                if (state.activeTerminalId === terminal.id) {
+                  instance.terminal.focus();
+                }
+              });
+            } else {
+              initializeTerminalInContainer(terminal, el);
+            }
+          });
+        }}
+      />
+    );
+  };
+
   // ARIA live region reference for terminal announcements
   let ariaLiveRegion: HTMLDivElement | undefined;
   
@@ -891,6 +968,21 @@ export function TerminalPanel() {
     // If no active terminal but terminals exist, use the first one
     const effectiveActive = active || (terminals.length > 0 ? terminals[0] : null);
     if (!effectiveActive) return;
+
+    // When splits are active, TerminalSplitView manages display via renderTerminal;
+    // skip individual container show/hide logic but still ensure instances exist
+    if (hasSplits()) {
+      const group = activeSplitGroup();
+      if (group) {
+        for (const tid of group.terminalIds) {
+          const tInfo = state.terminals.find(t => t.id === tid);
+          if (tInfo && !terminalInstances.has(tid)) {
+            initializeTerminal(tInfo);
+          }
+        }
+      }
+      return;
+    }
     
     // If in embedded mode, ensure we have the container
     if (isEmbedded() && !terminalContainerRef) {
@@ -1737,6 +1829,17 @@ export function TerminalPanel() {
     });
   };
 
+  /**
+   * Initialize a terminal directly into a provided container element.
+   * Used by split view panes where the container is managed by TerminalSplitView.
+   */
+  const initializeTerminalInContainer = async (terminalInfo: TerminalInfo, container: HTMLElement) => {
+    const savedRef = terminalContainerRef;
+    terminalContainerRef = container.parentElement as HTMLDivElement || container as HTMLDivElement;
+    await initializeTerminal(terminalInfo);
+    terminalContainerRef = savedRef;
+  };
+
   // Navigate to next command marker in terminal
   const goToNextCommand = (terminalId: string) => {
     const instance = terminalInstances.get(terminalId);
@@ -2279,6 +2382,64 @@ export function TerminalPanel() {
           setDialogTerminalId(null);
         }}
       />
+
+      {/* Split Terminal Toolbar */}
+      <Show when={activeTerminal()}>
+        <div
+          data-terminal-split-toolbar
+          style={{
+            position: "absolute",
+            top: "0",
+            right: "0",
+            "z-index": "50",
+            display: "flex",
+            "align-items": "center",
+            gap: tokens.spacing.xs,
+            padding: `0 ${tokens.spacing.sm}`,
+            height: "28px",
+            "pointer-events": "auto",
+          }}
+        >
+          <SplitButton
+            onSplitHorizontal={handleSplitHorizontal}
+            onSplitVertical={handleSplitVertical}
+          />
+        </div>
+      </Show>
+
+      {/* Split View - Rendered when active terminal is in a multi-pane split group */}
+      <Show when={hasSplits() && activeSplitGroup()}>
+        {(group) => (
+          <div
+            data-terminal-split-container
+            style={{
+              position: "absolute",
+              top: "0",
+              left: "0",
+              right: "0",
+              bottom: "0",
+              "z-index": "40",
+            }}
+          >
+            <TerminalSplitView
+              group={{
+                id: group().id,
+                terminalIds: group().terminalIds,
+                direction: group().direction,
+                ratios: group().ratios,
+              }}
+              terminals={state.terminals}
+              activeTerminalId={state.activeTerminalId}
+              onSelectTerminal={setActiveTerminal}
+              onCloseTerminal={handleCloseSplitTerminal}
+              onSplitRatioChange={handleSplitRatioChange}
+              minPaneSize={100}
+              showHeaders={true}
+              renderTerminal={renderSplitTerminalPane}
+            />
+          </div>
+        )}
+      </Show>
     </>
   );
 }
