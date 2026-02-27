@@ -725,23 +725,6 @@ const cortex_SETTINGS_SCHEMA = {
           "[markdown]": { "wordWrap": "on" }
         }
       ]
-    },
-    workbench: {
-      type: "object",
-      description: "Workbench settings (tabs, layout, etc.)",
-      properties: {
-        editor: {
-          type: "object",
-          description: "Workbench editor tab settings",
-          properties: {
-            wrapTabs: {
-              type: "boolean",
-              description: "Whether to wrap tabs to multiple rows",
-              default: false
-            }
-          }
-        }
-      }
     }
   },
   patternProperties: {
