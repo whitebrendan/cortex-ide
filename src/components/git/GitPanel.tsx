@@ -1,4 +1,4 @@
-import { createSignal, For, Show, onMount, onCleanup, createMemo, createEffect, on, batch } from "solid-js";
+import { createSignal, For, Show, onMount, onCleanup, createMemo, createEffect, on, batch, lazy, Suspense } from "solid-js";
 import { Icon } from "../ui/Icon";
 import { VirtualList } from "../ui/VirtualList";
 import { CommitGraph, type Commit } from "./CommitGraph";
@@ -8,8 +8,10 @@ import { TagManager } from "./TagManager";
 import { IncomingOutgoingSection, IncomingOutgoingView } from "./IncomingOutgoingView";
 import { GitLFSManager } from "./GitLFSManager";
 import { WorktreeManager } from "./WorktreeManager";
+import { ConflictResolver, type ResolvedConflict } from "./ConflictResolver";
 import { useMultiRepo, type GitFile } from "@/context/MultiRepoContext";
 import { useSettings } from "@/context/SettingsContext";
+import { useGitMerge } from "@/context/GitMergeContext";
 import { gitLog, gitDiff, gitSubmoduleList, gitSubmoduleInit, gitSubmoduleUpdate, gitIsGpgConfigured, gitInit, gitTagList, type SubmoduleInfo } from "../../utils/tauri-api";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import {
@@ -22,6 +24,8 @@ import {
   ListItem,
 } from "@/components/ui";
 import { tokens } from '@/design-system/tokens';
+
+const LazyMergeEditor = lazy(() => import("./MergeEditor").then(m => ({ default: m.MergeEditor })));
 // Note: Box, Flex, VStack, HStack from '@/design-system/primitives/Flex' prepared for layout refactoring
 
 // Threshold for virtualizing lists (render all if below this)
@@ -55,6 +59,7 @@ export function GitPanel() {
   const multiRepo = useMultiRepo();
   const settings = useSettings();
   const workspace = useWorkspace();
+  const gitMerge = useGitMerge();
 
   // Git settings from SettingsContext
   const gitSettings = () => settings.effectiveSettings().git;
@@ -81,6 +86,9 @@ export function GitPanel() {
 const [signCommits, setSignCommits] = createSignal(false);
   const [gpgConfigured, setGpgConfigured] = createSignal(false);
   const [tagCount, setTagCount] = createSignal(0);
+  const [resolvingFile, setResolvingFile] = createSignal<string | null>(null);
+  const [showMergeEditor, setShowMergeEditor] = createSignal(false);
+  const [mergeEditorContent, setMergeEditorContent] = createSignal<string | null>(null);
 
   // Commit message validation settings (defaults as per conventional commit guidelines)
   const INPUT_VALIDATION_SUBJECT_LENGTH = 50;
@@ -705,12 +713,70 @@ const [signCommits, setSignCommits] = createSignal(false);
       const result = await multiRepo.mergeBranch(repo.id, branchName);
       if (result.hasConflicts) {
         showError("Merge completed with conflicts - resolve them before committing", "warning");
+        gitMerge.loadConflicts();
       }
     } catch (err) {
       showError("Failed to merge branch");
       console.error("Failed to merge branch:", err);
     } finally {
       setOperationLoading(null);
+    }
+  };
+
+  const openConflictResolver = async (filePath: string) => {
+    try {
+      await gitMerge.selectFile(filePath);
+      setResolvingFile(filePath);
+    } catch (err) {
+      showError("Failed to load conflict data");
+      console.error("Failed to load conflict data:", err);
+    }
+  };
+
+  const handleConflictResolved = async (filePath: string, resolution: ResolvedConflict) => {
+    try {
+      const resolvedLines: string[] = [];
+      for (const hunk of resolution.hunks) {
+        resolvedLines.push(...hunk.content);
+      }
+      const resolvedContent = resolvedLines.join("\n");
+      await gitMerge.resolveConflict(filePath, resolvedContent);
+      setResolvingFile(null);
+    } catch (err) {
+      showError("Failed to apply resolution");
+      console.error("Failed to apply resolution:", err);
+    }
+  };
+
+  const handleAbortMerge = async () => {
+    try {
+      await gitMerge.abortMerge();
+      setResolvingFile(null);
+      setShowMergeEditor(false);
+      setMergeEditorContent(null);
+    } catch (err) {
+      showError("Failed to abort merge");
+      console.error("Failed to abort merge:", err);
+    }
+  };
+
+  const openMergeEditor = async (filePath: string) => {
+    const diff = gitMerge.state.threeWayDiff;
+    if (diff && diff.filePath === filePath) {
+      setMergeEditorContent(diff.rawContent);
+      setShowMergeEditor(true);
+    } else {
+      try {
+        await gitMerge.selectFile(filePath);
+        const newDiff = gitMerge.state.threeWayDiff;
+        if (newDiff) {
+          setMergeEditorContent(newDiff.rawContent);
+          setShowMergeEditor(true);
+        }
+      } catch (err) {
+        showError("Failed to load file for merge editor");
+        console.error("Failed to load file for merge editor:", err);
+      }
     }
   };
 
@@ -1682,6 +1748,33 @@ const [signCommits, setSignCommits] = createSignal(false);
         </Show>
 
         <Show when={!loading() && activeView() === "changes" && activeRepo()}>
+          {/* Merge conflict banner */}
+          <Show when={conflictFiles().length > 0 || gitMerge.state.isMerging}>
+            <div
+              style={{
+                display: "flex",
+                "align-items": "center",
+                gap: tokens.spacing.md,
+                padding: `${tokens.spacing.md} ${tokens.spacing.lg}`,
+                background: `color-mix(in srgb, ${tokens.colors.semantic.warning} 10%, transparent)`,
+                "border-bottom": `1px solid ${tokens.colors.border.divider}`,
+              }}
+            >
+              <Icon name="triangle-exclamation" size={14} style={{ "flex-shrink": "0", color: tokens.colors.semantic.warning }} />
+              <Text as="span" style={{ flex: "1", "font-size": "12px", color: tokens.colors.semantic.warning }}>
+                Merge in progress — {conflictFiles().length} conflict{conflictFiles().length !== 1 ? "s" : ""} to resolve
+              </Text>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleAbortMerge}
+                style={{ "font-size": "10px", color: tokens.colors.semantic.error }}
+              >
+                Abort Merge
+              </Button>
+            </div>
+          </Show>
+
           {/* Conflicts section */}
           <Show when={conflictFiles().length > 0}>
             <div style={{ "border-bottom": `1px solid ${tokens.colors.border.divider}` }}>
@@ -1693,27 +1786,37 @@ const [signCommits, setSignCommits] = createSignal(false);
               />
               <Show when={conflictsExpanded()}>
                 <div style={{ "padding-bottom": "4px" }}>
-                  <Show 
-                    when={conflictFiles().length >= VIRTUALIZE_THRESHOLD}
-                    fallback={
-                      <For each={conflictFiles()}>
-                        {(file) => (
-                          <FileItem file={file} />
-                        )}
-                      </For>
-                    }
-                  >
-                    <VirtualList
-                      items={conflictFiles()}
-                      itemHeight={FILE_ITEM_HEIGHT}
-                      height={Math.min(conflictFiles().length * FILE_ITEM_HEIGHT, 200)}
-                      overscan={5}
-                    >
-                      {(file) => (
-                        <FileItem file={file} />
-                      )}
-                    </VirtualList>
-                  </Show>
+                  <For each={conflictFiles()}>
+                    {(file) => (
+                      <ListItem
+                        icon={<Icon name="file" size={14} />}
+                        label={getFileName(file.path)}
+                        description={getFileDir(file.path) || undefined}
+                        onClick={() => handleFileSelect(file)}
+                        iconRight={
+                          <div style={{ display: "flex", "align-items": "center", gap: "4px" }}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => { e.stopPropagation(); openConflictResolver(file.path); }}
+                              style={{ "font-size": "10px", height: "20px", padding: "0 6px", color: tokens.colors.semantic.warning }}
+                            >
+                              Resolve
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => { e.stopPropagation(); openMergeEditor(file.path); }}
+                              style={{ "font-size": "10px", height: "20px", padding: "0 6px" }}
+                            >
+                              Editor
+                            </Button>
+                            <Badge variant="error" size="sm">!</Badge>
+                          </div>
+                        }
+                      />
+                    )}
+                  </For>
                 </div>
               </Show>
             </div>
@@ -2141,6 +2244,85 @@ const [signCommits, setSignCommits] = createSignal(false);
             setShowBranchSelector(false);
           }}
         />
+      </Show>
+
+      {/* ConflictResolver overlay */}
+      <Show when={resolvingFile() && gitMerge.state.threeWayDiff}>
+        {(_) => {
+          const diff = gitMerge.state.threeWayDiff!;
+          const conflictFile = () => ({
+            path: diff.filePath,
+            oursLabel: diff.conflicts[0]?.oursLabel || "HEAD",
+            theirsLabel: diff.conflicts[0]?.theirsLabel || "incoming",
+            hunks: diff.conflicts.map(c => ({
+              id: c.id,
+              startLine: c.startLine,
+              endLine: c.endLine,
+              oursContent: c.oursContent,
+              theirsContent: c.theirsContent,
+              oursLabel: c.oursLabel,
+              theirsLabel: c.theirsLabel,
+              resolved: false,
+            })),
+          });
+
+          return (
+            <div
+              style={{
+                position: "fixed",
+                inset: "0",
+                "z-index": "50",
+                background: tokens.colors.surface.canvas,
+              }}
+            >
+              <ConflictResolver
+                file={conflictFile()}
+                onResolve={handleConflictResolved}
+                onCancel={() => setResolvingFile(null)}
+              />
+            </div>
+          );
+        }}
+      </Show>
+
+      {/* Lazy-loaded MergeEditor overlay */}
+      <Show when={showMergeEditor() && mergeEditorContent()}>
+        <div
+          style={{
+            position: "fixed",
+            inset: "0",
+            "z-index": "50",
+            background: tokens.colors.surface.canvas,
+          }}
+        >
+          <Suspense fallback={
+            <div style={{ display: "flex", "align-items": "center", "justify-content": "center", height: "100%" }}>
+              <Icon name="spinner" size={24} style={{ animation: "spin 1s linear infinite", color: tokens.colors.icon.default }} />
+            </div>
+          }>
+            <LazyMergeEditor
+              filePath={resolvingFile() || gitMerge.state.currentFile || ""}
+              conflictedContent={mergeEditorContent()!}
+              onSave={async (mergedContent: string) => {
+                const filePath = resolvingFile() || gitMerge.state.currentFile;
+                if (filePath) {
+                  try {
+                    await gitMerge.resolveConflict(filePath, mergedContent);
+                  } catch (err) {
+                    showError("Failed to save merged content");
+                    console.error("Failed to save merged content:", err);
+                  }
+                }
+                setShowMergeEditor(false);
+                setMergeEditorContent(null);
+              }}
+              onCancel={() => {
+                setShowMergeEditor(false);
+                setMergeEditorContent(null);
+              }}
+            />
+          </Suspense>
+        </div>
       </Show>
 
       {/* Keyframes for spinner animation */}

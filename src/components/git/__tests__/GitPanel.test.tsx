@@ -144,10 +144,49 @@ vi.mock("@/context/SettingsContext", () => ({
   }),
 }));
 
+vi.mock("@/context/GitMergeContext", () => ({
+  useGitMerge: () => ({
+    state: {
+      isMerging: false,
+      conflictFiles: [],
+      currentFile: null,
+      threeWayDiff: null,
+      resolvedFiles: new Set(),
+      isLoading: false,
+      error: null,
+    },
+    loadConflicts: vi.fn().mockResolvedValue(undefined),
+    selectFile: vi.fn().mockResolvedValue(undefined),
+    resolveConflict: vi.fn().mockResolvedValue(undefined),
+    abortMerge: vi.fn().mockResolvedValue(undefined),
+    refreshState: vi.fn().mockResolvedValue(undefined),
+    isFileResolved: vi.fn().mockReturnValue(false),
+    resolvedCount: vi.fn().mockReturnValue(0),
+    totalConflicts: vi.fn().mockReturnValue(0),
+    allResolved: vi.fn().mockReturnValue(false),
+  }),
+}));
+
 vi.mock("@/context/WorkspaceContext", () => ({
   useWorkspace: () => ({
     folders: () => [{ path: "/test/project" }],
   }),
+}));
+
+vi.mock("../ConflictResolver", () => ({
+  ConflictResolver: () => {
+    const el = document.createElement("div");
+    el.setAttribute("data-testid", "conflict-resolver");
+    return el;
+  },
+}));
+
+vi.mock("../MergeEditor", () => ({
+  MergeEditor: () => {
+    const el = document.createElement("div");
+    el.setAttribute("data-testid", "merge-editor");
+    return el;
+  },
 }));
 
 vi.mock("../CommitGraph", () => ({
