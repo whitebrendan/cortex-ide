@@ -142,7 +142,7 @@ export function CortexSettingsPanel(props: CortexSettingsPanelProps) {
         >
           <Show
             when={!showJsonView()}
-            fallback={<JsonSettingsEditor initialScope={props.scope ?? "user"} />}
+            fallback={<JsonSettingsEditor initialScope={props.scope ?? "user"} initialShowDefaults={props.initialShowDefaults} />}
           >
             <SettingsEditor initialScope={props.scope} />
           </Show>

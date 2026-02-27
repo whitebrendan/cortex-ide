@@ -56,6 +56,7 @@ const TREE_ID_TO_SECTION: Record<string, keyof CortexSettings | null> = {
   "formatting": "editor",
   "keybindings": null,
   "terminal": "terminal",
+  "git": "git",
   "ai": null,
   "models": "ai",
   "ai_completion": "ai",
