@@ -9,7 +9,7 @@ import { useFormatter, type FormatterType } from "@/context/FormatterContext";
 import { useSettings, type SettingsScope, type SettingSource, type CortexSettings, type ExplorerSortOrder, DEFAULT_SETTINGS } from "@/context/SettingsContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { useMultiRepo } from "@/context/MultiRepoContext";
-import { KeymapEditor, Toggle, Select, SectionHeader, OptionCard, FormGroup, InfoBox, Button, Kbd, EditorSettingsPanel, TerminalSettingsPanel, FilesSettingsPanel, NetworkSettingsPanel, JsonSettingsEditor, GitSettingsPanel } from "@/components/settings";
+import { KeymapEditor, Toggle, Select, SectionHeader, OptionCard, FormGroup, InfoBox, Button, Kbd, EditorSettingsPanel, TerminalSettingsPanel, FilesSettingsPanel, NetworkSettingsPanel, JsonSettingsEditor, GitSettingsPanel, DebugSettingsPanel } from "@/components/settings";
 import { KeymapProvider } from "@/context/KeymapContext";
 import { loadStylesheet } from "@/utils/lazyStyles";
 loadStylesheet("settings");
@@ -57,10 +57,10 @@ const TREE_ID_TO_SECTION: Record<string, keyof CortexSettings | null> = {
   "keybindings": null,
   "terminal": "terminal",
   "git": "git",
+  "debug": "debug",
   "ai": null,
   "models": "ai",
   "ai_completion": "ai",
-  "git": "git",
   "extensions": "extensions",
 };
 
@@ -103,6 +103,11 @@ const SETTINGS_TREE: TreeItem[] = [
     id: "git",
     label: "Git",
     icon: () => <Icon name="code-branch" />,
+  },
+  {
+    id: "debug",
+    label: "Debug",
+    icon: () => <Icon name="bug" />,
   },
   {
     id: "ai",
@@ -1639,6 +1644,18 @@ export function SettingsDialog(props: SettingsDialogProps) {
                 />
                 <div style={{ "margin-top": "16px" }}>
                   <GitSettingsPanel scope={settingsScope()} />
+                </div>
+              </div>
+
+              {/* Debug Section */}
+              <div id="settings-section-debug" style={{ "margin-bottom": "48px", "scroll-margin-top": "24px" }}>
+                <SectionHeader
+                  title="Debug"
+                  description="Configure debugger settings and behavior"
+                  icon={<Icon name="bug" class="h-4 w-4" />}
+                />
+                <div style={{ "margin-top": "16px" }}>
+                  <DebugSettingsPanel scope={settingsScope()} />
                 </div>
               </div>
 

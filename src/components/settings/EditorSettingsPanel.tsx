@@ -1,5 +1,5 @@
 import { Show, For, JSX } from "solid-js";
-import { useSettings, type SettingsScope, type EditorSettings } from "@/context/SettingsContext";
+import { useSettings, type SettingsScope, type EditorSettings, type InlayHintsSettings } from "@/context/SettingsContext";
 import { Toggle, SectionHeader } from "./FormComponents";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -926,6 +926,144 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
             onChange={(checked) => updateSetting("stickyScrollEnabled", checked)}
           />
         </SettingRowWithOverride>
+      </Card>
+
+      {/* Inlay Hints */}
+      <Card variant="outlined" padding="none">
+        <SectionHeader title="Inlay Hints" />
+        <SettingRowWithOverride 
+          label="Enable Inlay Hints" 
+          settingKey={"inlayHints" as keyof EditorSettings}
+          hasOverride={hasOverride("inlayHints")}
+          isModified={isModified("inlayHints")}
+          onReset={() => resetOverride("inlayHints")}
+          onResetToDefault={() => resetToDefault("inlayHints")}
+        >
+          <Toggle
+            checked={editor().inlayHints?.enabled ?? true}
+            onChange={(checked) => {
+              const current = editor().inlayHints ?? {} as InlayHintsSettings;
+              updateSetting("inlayHints", { ...current, enabled: checked } as EditorSettings["inlayHints"]);
+            }}
+          />
+        </SettingRowWithOverride>
+        <Show when={editor().inlayHints?.enabled !== false}>
+          <SettingRowWithOverride 
+            label="Font Size" 
+            settingKey={"inlayHints" as keyof EditorSettings}
+            hasOverride={hasOverride("inlayHints")}
+            onReset={() => resetOverride("inlayHints")}
+          >
+            <input
+              type="number"
+              min="0"
+              max="32"
+              value={editor().inlayHints?.fontSize ?? 0}
+              onChange={(e) => {
+                const current = editor().inlayHints ?? {} as InlayHintsSettings;
+                updateSetting("inlayHints", { ...current, fontSize: parseInt(e.currentTarget.value) || 0 } as EditorSettings["inlayHints"]);
+              }}
+              style={{ ...getInputStyle(hasOverride("inlayHints")), width: "80px" }}
+              onFocus={(e) => e.currentTarget.style.borderColor = "var(--jb-border-focus)"}
+              onBlur={(e) => e.currentTarget.style.borderColor = hasOverride("inlayHints") ? "var(--jb-border-focus)" : "var(--jb-border-default)"}
+            />
+          </SettingRowWithOverride>
+          <SettingRowWithOverride 
+            label="Font Family" 
+            settingKey={"inlayHints" as keyof EditorSettings}
+            hasOverride={hasOverride("inlayHints")}
+            onReset={() => resetOverride("inlayHints")}
+          >
+            <input
+              type="text"
+              value={editor().inlayHints?.fontFamily ?? ""}
+              placeholder="Inherit from editor"
+              onChange={(e) => {
+                const current = editor().inlayHints ?? {} as InlayHintsSettings;
+                updateSetting("inlayHints", { ...current, fontFamily: e.currentTarget.value } as EditorSettings["inlayHints"]);
+              }}
+              style={{ ...getInputStyle(hasOverride("inlayHints")), width: "240px" }}
+              onFocus={(e) => e.currentTarget.style.borderColor = "var(--jb-border-focus)"}
+              onBlur={(e) => e.currentTarget.style.borderColor = hasOverride("inlayHints") ? "var(--jb-border-focus)" : "var(--jb-border-default)"}
+            />
+          </SettingRowWithOverride>
+          <SettingRowWithOverride 
+            label="Show Types" 
+            settingKey={"inlayHints" as keyof EditorSettings}
+            hasOverride={hasOverride("inlayHints")}
+            onReset={() => resetOverride("inlayHints")}
+          >
+            <Toggle
+              checked={editor().inlayHints?.showTypes ?? true}
+              onChange={(checked) => {
+                const current = editor().inlayHints ?? {} as InlayHintsSettings;
+                updateSetting("inlayHints", { ...current, showTypes: checked } as EditorSettings["inlayHints"]);
+              }}
+            />
+          </SettingRowWithOverride>
+          <SettingRowWithOverride 
+            label="Show Parameter Names" 
+            settingKey={"inlayHints" as keyof EditorSettings}
+            hasOverride={hasOverride("inlayHints")}
+            onReset={() => resetOverride("inlayHints")}
+          >
+            <Toggle
+              checked={editor().inlayHints?.showParameterNames ?? true}
+              onChange={(checked) => {
+                const current = editor().inlayHints ?? {} as InlayHintsSettings;
+                updateSetting("inlayHints", { ...current, showParameterNames: checked } as EditorSettings["inlayHints"]);
+              }}
+            />
+          </SettingRowWithOverride>
+          <SettingRowWithOverride 
+            label="Show Return Types" 
+            settingKey={"inlayHints" as keyof EditorSettings}
+            hasOverride={hasOverride("inlayHints")}
+            onReset={() => resetOverride("inlayHints")}
+          >
+            <Toggle
+              checked={editor().inlayHints?.showReturnTypes ?? true}
+              onChange={(checked) => {
+                const current = editor().inlayHints ?? {} as InlayHintsSettings;
+                updateSetting("inlayHints", { ...current, showReturnTypes: checked } as EditorSettings["inlayHints"]);
+              }}
+            />
+          </SettingRowWithOverride>
+          <SettingRowWithOverride 
+            label="Max Length" 
+            settingKey={"inlayHints" as keyof EditorSettings}
+            hasOverride={hasOverride("inlayHints")}
+            onReset={() => resetOverride("inlayHints")}
+          >
+            <input
+              type="number"
+              min="1"
+              max="120"
+              value={editor().inlayHints?.maxLength ?? 25}
+              onChange={(e) => {
+                const current = editor().inlayHints ?? {} as InlayHintsSettings;
+                updateSetting("inlayHints", { ...current, maxLength: parseInt(e.currentTarget.value) || 25 } as EditorSettings["inlayHints"]);
+              }}
+              style={{ ...getInputStyle(hasOverride("inlayHints")), width: "80px" }}
+              onFocus={(e) => e.currentTarget.style.borderColor = "var(--jb-border-focus)"}
+              onBlur={(e) => e.currentTarget.style.borderColor = hasOverride("inlayHints") ? "var(--jb-border-focus)" : "var(--jb-border-default)"}
+            />
+          </SettingRowWithOverride>
+          <SettingRowWithOverride 
+            label="Padding" 
+            settingKey={"inlayHints" as keyof EditorSettings}
+            hasOverride={hasOverride("inlayHints")}
+            onReset={() => resetOverride("inlayHints")}
+          >
+            <Toggle
+              checked={editor().inlayHints?.padding ?? true}
+              onChange={(checked) => {
+                const current = editor().inlayHints ?? {} as InlayHintsSettings;
+                updateSetting("inlayHints", { ...current, padding: checked } as EditorSettings["inlayHints"]);
+              }}
+            />
+          </SettingRowWithOverride>
+        </Show>
       </Card>
 
       {/* Performance */}

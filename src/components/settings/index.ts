@@ -4,6 +4,7 @@ export { TerminalSettingsPanel } from "./TerminalSettingsPanel";
 export { FilesSettingsPanel } from "./FilesSettingsPanel";
 export { NetworkSettingsPanel } from "./NetworkSettingsPanel";
 export { GitSettingsPanel } from "./GitSettingsPanel";
+export { DebugSettingsPanel } from "./DebugSettingsPanel";
 export { SettingsSyncPanel } from "./SettingsSyncPanel";
 export { ThemeCustomizer } from "./ThemeCustomizer";
 export { ThemePreview } from "./ThemePreview";

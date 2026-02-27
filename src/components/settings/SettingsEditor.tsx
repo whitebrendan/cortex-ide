@@ -192,6 +192,16 @@ const SETTINGS_REGISTRY: SettingDefinition[] = [
   { id: "editor.guidesBracketPairs", key: "guidesBracketPairs", section: "editor", label: "Bracket Pair Guides", description: "Controls whether bracket pair guides are enabled.", type: "boolean", defaultValue: DEFAULT_SETTINGS.editor.guidesBracketPairs },
   { id: "editor.verticalTabs", key: "verticalTabs", section: "editor", label: "Vertical Tabs", description: "Enable vertical tabs layout.", type: "boolean", defaultValue: DEFAULT_SETTINGS.editor.verticalTabs, tags: ["experimental"] },
 
+  // Editor Inlay Hints Settings
+  { id: "editor.inlayHints.enabled", key: "enabled", section: "editor", subSection: "inlayHints", label: "Inlay Hints: Enabled", description: "Enables the inlay hints in the editor.", type: "boolean", defaultValue: DEFAULT_SETTINGS.editor.inlayHints.enabled },
+  { id: "editor.inlayHints.fontSize", key: "fontSize", section: "editor", subSection: "inlayHints", label: "Inlay Hints: Font Size", description: "Controls the font size of inlay hints in the editor. Set to 0 to use the editor font size.", type: "number", defaultValue: DEFAULT_SETTINGS.editor.inlayHints.fontSize, min: 0, max: 32 },
+  { id: "editor.inlayHints.fontFamily", key: "fontFamily", section: "editor", subSection: "inlayHints", label: "Inlay Hints: Font Family", description: "Controls the font family of inlay hints in the editor. Empty string inherits from editor.", type: "string", defaultValue: DEFAULT_SETTINGS.editor.inlayHints.fontFamily, placeholder: "Inherit from editor" },
+  { id: "editor.inlayHints.showTypes", key: "showTypes", section: "editor", subSection: "inlayHints", label: "Inlay Hints: Show Types", description: "Show type hints for variables and expressions.", type: "boolean", defaultValue: DEFAULT_SETTINGS.editor.inlayHints.showTypes },
+  { id: "editor.inlayHints.showParameterNames", key: "showParameterNames", section: "editor", subSection: "inlayHints", label: "Inlay Hints: Show Parameter Names", description: "Show parameter name hints in function calls.", type: "boolean", defaultValue: DEFAULT_SETTINGS.editor.inlayHints.showParameterNames },
+  { id: "editor.inlayHints.showReturnTypes", key: "showReturnTypes", section: "editor", subSection: "inlayHints", label: "Inlay Hints: Show Return Types", description: "Show return type hints for functions.", type: "boolean", defaultValue: DEFAULT_SETTINGS.editor.inlayHints.showReturnTypes },
+  { id: "editor.inlayHints.maxLength", key: "maxLength", section: "editor", subSection: "inlayHints", label: "Inlay Hints: Max Length", description: "Maximum length of inlay hint text before truncation.", type: "number", defaultValue: DEFAULT_SETTINGS.editor.inlayHints.maxLength, min: 1, max: 120 },
+  { id: "editor.inlayHints.padding", key: "padding", section: "editor", subSection: "inlayHints", label: "Inlay Hints: Padding", description: "Adds padding around inlay hints.", type: "boolean", defaultValue: DEFAULT_SETTINGS.editor.inlayHints.padding },
+
   // Theme Settings
   { id: "theme.theme", key: "theme", section: "theme", label: "Color Theme", description: "Specifies the color theme used in the workbench.", type: "enum", defaultValue: DEFAULT_SETTINGS.theme.theme, enumValues: [
     { value: "dark", label: "Dark" },
@@ -228,6 +238,13 @@ const SETTINGS_REGISTRY: SettingDefinition[] = [
     { value: "left", label: "Left" },
     { value: "right", label: "Right" },
   ]},
+  { id: "theme.panelAlignment", key: "panelAlignment", section: "theme", label: "Panel Alignment", description: "Controls the alignment of the panel (e.g., output, terminal). When set to center, the panel is centered within the editor area.", type: "enum", defaultValue: DEFAULT_SETTINGS.theme.panelAlignment, enumValues: [
+    { value: "left", label: "Left" },
+    { value: "center", label: "Center" },
+    { value: "right", label: "Right" },
+    { value: "justify", label: "Justify" },
+  ]},
+  { id: "theme.breadcrumbs.icons", key: "breadcrumbs", section: "theme", subSection: "breadcrumbs", label: "Breadcrumbs: Icons", description: "Controls whether breadcrumbs show file type and symbol icons.", type: "boolean", defaultValue: DEFAULT_SETTINGS.theme.breadcrumbs.icons },
 
   // Terminal Settings
   { id: "terminal.shellPath", key: "shellPath", section: "terminal", label: "Shell Path", description: "The path of the shell that the terminal uses.", type: "string", defaultValue: DEFAULT_SETTINGS.terminal.shellPath, placeholder: "Leave empty for default shell" },
@@ -248,6 +265,7 @@ const SETTINGS_REGISTRY: SettingDefinition[] = [
     { value: "audible", label: "Audible" },
     { value: "visual", label: "Visual" },
   ]},
+  { id: "terminal.wordSeparators", key: "wordSeparators", section: "terminal", label: "Word Separators", description: "A string of characters that are considered word separators by the double-click-to-select-word feature in the terminal.", type: "string", defaultValue: DEFAULT_SETTINGS.terminal.wordSeparators },
 
   // Files Settings
   { id: "files.autoSave", key: "autoSave", section: "files", label: "Auto Save", description: "Controls auto save of editors.", type: "enum", defaultValue: DEFAULT_SETTINGS.files.autoSave, enumValues: [
