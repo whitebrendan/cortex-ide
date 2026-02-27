@@ -84,7 +84,7 @@ export const ExtensionMarketplace: Component<ExtensionMarketplaceProps> = (props
 
   // Get list of installed extension names for comparison
   const installedNames = createMemo(() =>
-    new Set(extensions().map((ext) => ext.manifest.name))
+    new Set((extensions() || []).map((ext) => ext.manifest.name))
   );
 
   // Filter marketplace extensions based on search and category
@@ -114,7 +114,7 @@ export const ExtensionMarketplace: Component<ExtensionMarketplaceProps> = (props
 
   // Filter installed extensions based on search and category
   const filteredInstalled = createMemo(() => {
-    let exts = extensions();
+    let exts = extensions() || [];
     const query = searchQuery().toLowerCase();
 
     // Apply text search
@@ -418,7 +418,7 @@ export const ExtensionMarketplace: Component<ExtensionMarketplaceProps> = (props
               "border-radius": "var(--cortex-radius-full)",
             }}
           >
-            {extensions().length}
+            {(extensions() || []).length}
           </span>
         </button>
       </div>

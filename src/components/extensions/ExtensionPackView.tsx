@@ -115,7 +115,7 @@ export const ExtensionPackView: Component<ExtensionPackViewProps> = (props) => {
     const currentPack = pack();
     if (!currentPack) return [];
 
-    const installedExtensions = extensions();
+    const installedExtensions = extensions() || [];
 
     return currentPack.extensionIds.map((id) => {
       const ext = installedExtensions.find((e) => e.manifest.name === id);

@@ -162,7 +162,7 @@ export const PluginManager: Component<PluginManagerProps> = (props) => {
   };
 
   const metricsInfo = () => {
-    const exts = extensions();
+    const exts = extensions() || [];
     const withTime = exts.filter((e) => e.activationTime != null);
     if (withTime.length === 0) return null;
     const avg = withTime.reduce((s, e) => s + e.activationTime!, 0) / withTime.length;
@@ -227,13 +227,13 @@ export const PluginManager: Component<PluginManagerProps> = (props) => {
         </div>
       </Show>
 
-      <Show when={!loading() && !error() && extensions().length === 0}>
+      <Show when={!loading() && !error() && (extensions() || []).length === 0}>
         <EmptyState icon="puzzle-piece" title="No extensions installed" description="Install extensions from the marketplace to get started." />
       </Show>
 
-      <Show when={!loading() && !error() && extensions().length > 0}>
+      <Show when={!loading() && !error() && (extensions() || []).length > 0}>
         <div class="flex-1 overflow-y-auto">
-          <For each={extensions()}>
+          <For each={extensions() || []}>
             {(ext) => {
               const busy = () => busyIds().has(ext.id);
               return (

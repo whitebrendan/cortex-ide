@@ -86,7 +86,7 @@ export const RuntimeStatusBadge: Component<RuntimeStatusBadgeProps> = (props) =>
 
   // Get runtime state for this extension
   const runtimeState = createMemo(() => {
-    return runtime.extensions().find((s) => s.id === props.extensionId);
+    return (runtime.extensions() || []).find((s) => s.id === props.extensionId);
   });
 
   // Determine display status
@@ -266,7 +266,7 @@ export const RuntimeStatusSummary: Component = () => {
   const runtime = useExtensionRuntime();
 
   const stats = createMemo(() => {
-    const states = runtime.extensions();
+    const states = runtime.extensions() || [];
     const active = states.filter(
       (s) => s.status === ExtensionStatus.Active
     ).length;
