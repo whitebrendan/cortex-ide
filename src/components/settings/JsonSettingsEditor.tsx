@@ -264,7 +264,7 @@ const cortex_SETTINGS_SCHEMA = {
         theme: {
           type: "string",
           description: "Color theme",
-          enum: ["dark", "light", "system"],
+          enum: ["dark", "light", "system", "high-contrast", "high-contrast-light"],
           default: "dark"
         },
         iconTheme: {
@@ -308,6 +308,12 @@ const cortex_SETTINGS_SCHEMA = {
           description: "Show activity bar",
           default: true
         },
+        activityBarPosition: {
+          type: "string",
+          description: "Activity bar position",
+          enum: ["side", "top", "hidden"],
+          default: "top"
+        },
         statusBarVisible: {
           type: "boolean",
           description: "Show status bar",
@@ -322,6 +328,22 @@ const cortex_SETTINGS_SCHEMA = {
           type: "boolean",
           description: "Show breadcrumbs",
           default: true
+        },
+        titleBarStyle: {
+          type: "string",
+          description: "Title bar style: native uses OS decorations, custom renders a VS Code-style title bar",
+          enum: ["native", "custom"],
+          default: "custom"
+        },
+        auxiliaryBarVisible: {
+          type: "boolean",
+          description: "Auxiliary bar (secondary sidebar) visibility",
+          default: false
+        },
+        wrapTabs: {
+          type: "boolean",
+          description: "Wrap editor tabs to multiple rows",
+          default: false
         }
       }
     },
@@ -382,6 +404,11 @@ const cortex_SETTINGS_SCHEMA = {
           type: "boolean",
           description: "Use GPU acceleration",
           default: true
+        },
+        wordSeparators: {
+          type: "string",
+          description: "Characters treated as word separators in terminal selection",
+          default: " ()[]{}',\"`─"
         }
       }
     },
@@ -698,6 +725,23 @@ const cortex_SETTINGS_SCHEMA = {
           "[markdown]": { "wordWrap": "on" }
         }
       ]
+    },
+    workbench: {
+      type: "object",
+      description: "Workbench settings (tabs, layout, etc.)",
+      properties: {
+        editor: {
+          type: "object",
+          description: "Workbench editor tab settings",
+          properties: {
+            wrapTabs: {
+              type: "boolean",
+              description: "Whether to wrap tabs to multiple rows",
+              default: false
+            }
+          }
+        }
+      }
     }
   },
   patternProperties: {
