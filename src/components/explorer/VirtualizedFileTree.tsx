@@ -4,6 +4,7 @@ import { ContextMenu, ContextMenuPresets } from "../ui/ContextMenu";
 import { VirtualItem, SkeletonLoader } from "./VirtualItem";
 import { DragConfirmDialog } from "./DragConfirmDialog";
 import { LargeFileWarningDialog } from "./LargeFileWarningDialog";
+import { FileOperationDialog } from "./FileOperationDialog";
 import { useFileTree } from "./useFileTree";
 import type { VirtualizedFileTreeProps } from "./types";
 
@@ -160,6 +161,13 @@ export function VirtualizedFileTree(props: VirtualizedFileTreeProps) {
         maxSizeMB={props.maxMemoryForLargeFilesMB}
         onConfirm={tree.handleLargeFileConfirm}
         onCancel={tree.handleLargeFileCancel}
+      />
+
+      <FileOperationDialog
+        state={tree.fileOperationDialog()}
+        onClose={() => tree.setFileOperationDialog(null)}
+        onConfirmDelete={tree.handleConfirmDelete}
+        onCreateItem={tree.handleCreateItem}
       />
     </div>
   );

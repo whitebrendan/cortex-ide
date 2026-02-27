@@ -168,6 +168,24 @@ import type { WorkspaceFolder } from "@/context/WorkspaceContext";
 
 export type { FileNestingSettings, FileNestingPatterns, ExplorerSortOrder, WorkspaceFolder };
 
+export type FileOperationDialogMode = "confirm-delete" | "new-file" | "new-folder";
+
+export interface FileOperationDialogState {
+  mode: FileOperationDialogMode;
+  targetName: string;
+  targetPaths: string[];
+  itemCount: number;
+  existingNames: string[];
+  parentPath: string;
+}
+
+export interface FileOperationDialogProps {
+  state: FileOperationDialogState | null;
+  onClose: () => void;
+  onConfirmDelete: () => void;
+  onCreateItem: (name: string) => void;
+}
+
 // Constants
 export const ITEM_HEIGHT = 18;
 export const OVERSCAN = 10;

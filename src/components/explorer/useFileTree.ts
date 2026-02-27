@@ -42,10 +42,13 @@ import type {
   ClipboardState,
   GitDecoration,
   VirtualizedFileTreeProps,
+  FileOperationDialogState,
 } from "./types";
+import { useToast } from "@/context/ToastContext";
 
 export function useFileTree(props: VirtualizedFileTreeProps) {
   const fileOps = useFileOperations();
+  const toast = useToast();
   
   const [directoryCache, setDirectoryCache] = createSignal<Map<string, FileEntry[]>>(new Map());
   const [loadingDirs, setLoadingDirs] = createSignal<Set<string>>(new Set());
@@ -82,6 +85,8 @@ export function useFileTree(props: VirtualizedFileTreeProps) {
     fileSizeMB: number;
     isPreview: boolean;
   } | null>(null);
+  
+  const [fileOperationDialog, setFileOperationDialog] = createSignal<FileOperationDialogState | null>(null);
   
   const [recentlyExpandedPaths, setRecentlyExpandedPaths] = createSignal<Set<string>>(new Set());
   
@@ -569,39 +574,32 @@ export function useFileTree(props: VirtualizedFileTreeProps) {
 
   onMount(() => {
     const handleToggleSearchEvent = () => {};
-    const handleNewFileEvent = async () => {
+    const handleNewFileEvent = () => {
       const rootPath = props.rootPath;
       if (rootPath) {
-        const name = prompt("New file name:");
-        if (name) {
-          const newPath = `${rootPath}/${name}`.replace(/\\/g, "/");
-          try {
-            await fileOps.createFileWithUndo(newPath);
-            await loadRootDirectory();
-            props.onSelectPaths([newPath]);
-          } catch (e) {
-            console.error("Failed to create file:", e);
-            alert(`Failed to create file: ${formatFileError(e)}`);
-          }
-        }
+        const siblings = directoryCache().get(rootPath) ?? [];
+        setFileOperationDialog({
+          mode: "new-file",
+          targetName: "",
+          targetPaths: [],
+          itemCount: 0,
+          existingNames: siblings.map(s => s.name),
+          parentPath: rootPath,
+        });
       }
     };
-    const handleNewFolderEvent = async () => {
+    const handleNewFolderEvent = () => {
       const rootPath = props.rootPath;
       if (rootPath) {
-        const name = prompt("New folder name:");
-        if (name) {
-          const newPath = `${rootPath}/${name}`.replace(/\\/g, "/");
-          try {
-            await fileOps.createDirectoryWithUndo(newPath);
-            await loadRootDirectory();
-            setExpandedPaths((prev) => new Set([...prev, newPath]));
-            props.onSelectPaths([newPath]);
-          } catch (e) {
-            console.error("Failed to create folder:", e);
-            alert(`Failed to create folder: ${formatFileError(e)}`);
-          }
-        }
+        const siblings = directoryCache().get(rootPath) ?? [];
+        setFileOperationDialog({
+          mode: "new-folder",
+          targetName: "",
+          targetPaths: [],
+          itemCount: 0,
+          existingNames: siblings.map(s => s.name),
+          parentPath: rootPath,
+        });
       }
     };
     const handleRefreshEvent = () => {
@@ -850,7 +848,7 @@ export function useFileTree(props: VirtualizedFileTreeProps) {
       debouncedRefresh.call();
     } catch (e) {
       console.error("Failed to paste:", e);
-      alert(`Failed to paste: ${formatFileError(e)}`);
+      toast.error(`Failed to paste: ${formatFileError(e)}`);
     }
   };
 
@@ -884,76 +882,46 @@ export function useFileTree(props: VirtualizedFileTreeProps) {
             ? props.selectedPaths
             : [entry.path];
           
-          let shouldProceed = true;
           if (props.confirmDelete) {
-            const confirmMsg = pathsToDelete.length > 1
-              ? `Delete ${pathsToDelete.length} selected items?`
-              : `Delete "${entry.name}"?`;
-            shouldProceed = confirm(confirmMsg);
-          }
-          
-          if (shouldProceed) {
-            try {
-              for (const pathToDelete of pathsToDelete) {
-                const items = flattenedItems();
-                const itemToDelete = items.find(i => i.entry.path === pathToDelete);
-                if (itemToDelete) {
-                  const isDir = itemToDelete.entry.isDir;
-                  
-                  if (props.enableTrash) {
-                    await fileOps.deleteWithUndo(pathToDelete, isDir);
-                  } else {
-                    if (isDir) {
-                      await fsDeleteDirectory(pathToDelete, true);
-                    } else {
-                      await fsDeleteFile(pathToDelete);
-                    }
-                  }
-                }
-              }
-              props.onSelectPaths([]);
-              debouncedRefresh.call();
-            } catch (e) {
-              console.error("Failed to delete:", e);
-              alert(`Failed to delete: ${formatFileError(e)}`);
-            }
+            setFileOperationDialog({
+              mode: "confirm-delete",
+              targetName: entry.name,
+              targetPaths: [...pathsToDelete],
+              itemCount: pathsToDelete.length,
+              existingNames: [],
+              parentPath: "",
+            });
+          } else {
+            await executeDelete(pathsToDelete);
           }
         }
         break;
 
       case "newFile":
         {
-          const name = prompt("New file name:");
-          if (name) {
-            const newPath = `${entry.path}/${name}`.replace(/\\/g, "/");
-            try {
-              await fileOps.createFileWithUndo(newPath);
-              await loadDirectoryChildren(entry.path);
-              setExpandedPaths((prev) => new Set([...prev, entry.path]));
-              props.onSelectPaths([newPath]);
-            } catch (e) {
-              console.error("Failed to create file:", e);
-              alert(`Failed to create file: ${formatFileError(e)}`);
-            }
-          }
+          const siblings = directoryCache().get(entry.path) ?? [];
+          setFileOperationDialog({
+            mode: "new-file",
+            targetName: "",
+            targetPaths: [],
+            itemCount: 0,
+            existingNames: siblings.map(s => s.name),
+            parentPath: entry.path,
+          });
         }
         break;
 
       case "newFolder":
         {
-          const name = prompt("New folder name:");
-          if (name) {
-            const newPath = `${entry.path}/${name}`.replace(/\\/g, "/");
-            try {
-              await fileOps.createDirectoryWithUndo(newPath);
-              await loadDirectoryChildren(entry.path);
-              setExpandedPaths((prev) => new Set([...prev, entry.path]));
-              props.onSelectPaths([newPath]);
-            } catch (e) {
-              console.error("Failed to create folder:", e);
-              alert(`Failed to create folder: ${formatFileError(e)}`);
-            }
-          }
+          const siblings = directoryCache().get(entry.path) ?? [];
+          setFileOperationDialog({
+            mode: "new-folder",
+            targetName: "",
+            targetPaths: [],
+            itemCount: 0,
+            existingNames: siblings.map(s => s.name),
+            parentPath: entry.path,
+          });
         }
         break;
 
@@ -1018,10 +986,70 @@ export function useFileTree(props: VirtualizedFileTreeProps) {
             debouncedRefresh.call();
           } catch (e) {
             console.error("Failed to duplicate:", e);
-            alert(`Failed to duplicate: ${formatFileError(e)}`);
+            toast.error(`Failed to duplicate: ${formatFileError(e)}`);
           }
         }
         break;
+    }
+  };
+
+  const executeDelete = async (pathsToDelete: string[]) => {
+    try {
+      for (const pathToDelete of pathsToDelete) {
+        const items = flattenedItems();
+        const itemToDelete = items.find(i => i.entry.path === pathToDelete);
+        if (itemToDelete) {
+          const isDir = itemToDelete.entry.isDir;
+          
+          if (props.enableTrash) {
+            await fileOps.deleteWithUndo(pathToDelete, isDir);
+          } else {
+            if (isDir) {
+              await fsDeleteDirectory(pathToDelete, true);
+            } else {
+              await fsDeleteFile(pathToDelete);
+            }
+          }
+        }
+      }
+      props.onSelectPaths([]);
+      debouncedRefresh.call();
+    } catch (e) {
+      console.error("Failed to delete:", e);
+      toast.error(`Failed to delete: ${formatFileError(e)}`);
+    }
+  };
+
+  const handleConfirmDelete = () => {
+    const state = fileOperationDialog();
+    if (state && state.mode === "confirm-delete") {
+      const paths = [...state.targetPaths];
+      setFileOperationDialog(null);
+      executeDelete(paths);
+    }
+  };
+
+  const handleCreateItem = async (name: string) => {
+    const state = fileOperationDialog();
+    if (!state) return;
+    const parentPath = state.parentPath;
+    const mode = state.mode;
+    setFileOperationDialog(null);
+
+    const newPath = `${parentPath}/${name}`.replace(/\\/g, "/");
+    try {
+      if (mode === "new-file") {
+        await fileOps.createFileWithUndo(newPath);
+      } else {
+        await fileOps.createDirectoryWithUndo(newPath);
+      }
+      await loadDirectoryChildren(parentPath);
+      setExpandedPaths((prev) => new Set([...prev, parentPath]));
+      props.onSelectPaths([newPath]);
+    } catch (e) {
+      const itemType = mode === "new-file" ? "file" : "folder";
+      console.error(`Failed to create ${itemType}:`, e);
+      toast.error(`Failed to create ${itemType}: ${formatFileError(e)}`);
     }
   };
   
@@ -1098,7 +1126,7 @@ export function useFileTree(props: VirtualizedFileTreeProps) {
       props.onSelectPaths([newPath]);
     } catch (e) {
       console.error("Failed to rename:", e);
-      alert(`Failed to rename: ${formatFileError(e)}`);
+      toast.error(`Failed to rename: ${formatFileError(e)}`);
     }
   };
   
@@ -1283,9 +1311,9 @@ export function useFileTree(props: VirtualizedFileTreeProps) {
     if (failures.length > 0) {
       const action = isCopy ? "copy" : "move";
       if (succeeded.length > 0) {
-        alert(`Some files could not be ${action}d:\n${failures.join("\n")}`);
+        toast.error(`Some files could not be ${action}d: ${failures.join(", ")}`);
       } else {
-        alert(`Failed to ${action} files: ${failures.join("\n")}`);
+        toast.error(`Failed to ${action} files: ${failures.join(", ")}`);
       }
     }
   };
@@ -1411,7 +1439,7 @@ export function useFileTree(props: VirtualizedFileTreeProps) {
         })
         .catch((err) => {
           console.error("Failed to duplicate:", err);
-          alert(`Failed to duplicate: ${formatFileError(err)}`);
+          toast.error(`Failed to duplicate: ${formatFileError(err)}`);
         });
       return;
     }
@@ -1539,5 +1567,9 @@ export function useFileTree(props: VirtualizedFileTreeProps) {
     isCutFile,
     setFocusedPath,
     setDragOverPath,
+    fileOperationDialog,
+    setFileOperationDialog,
+    handleConfirmDelete,
+    handleCreateItem,
   };
 }
