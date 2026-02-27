@@ -106,6 +106,57 @@ export {
   type UseTerminalLinkProviderReturn,
 } from "./TerminalLinkProvider";
 
+// Terminal panel types and utilities
+export {
+  DEFAULT_PANEL_HEIGHT,
+  SCROLLBACK_LINES,
+  WINDOW_RESIZE_DEBOUNCE_MS,
+  OUTPUT_CHUNK_SIZE,
+  OUTPUT_FLUSH_DEBOUNCE_MS,
+  ACK_BATCH_SIZE,
+  formatCommandDuration,
+  createDebouncedResize,
+  type CommandMarker,
+  type CommandMarkerState,
+  type TerminalInstance,
+  type ContextMenuState,
+  type ShellType,
+  type ShellProfile,
+} from "./TerminalPanelTypes";
+
+// Output stream processor
+export { OutputStreamProcessor } from "./OutputStreamProcessor";
+
+// File path link provider
+export { FilePathLinkProvider } from "./FilePathLinkProvider";
+
+// Terminal instance manager
+export {
+  TerminalInstanceManager,
+  loadWebglAddon as loadWebglAddonFromManager,
+  type TerminalManagerConfig,
+} from "./TerminalInstanceManager";
+
+// Terminal suggestion handler
+export { handleSuggestionSelect } from "./TerminalSuggestionHandler";
+
+// Terminal panel overlays
+export {
+  TerminalPanelOverlays,
+  type TerminalPanelOverlaysProps,
+} from "./TerminalPanelOverlays";
+
+// Terminal styles
+export { TERMINAL_STYLES } from "./TerminalStyles";
+
+// Terminal event handlers
+export {
+  createKeydownHandler,
+  createPaneResizeHandler,
+  createTerminalEventHandlers,
+  type TerminalEventDeps,
+} from "./TerminalEventHandlers";
+
 // Terminal quick fix (inline error suggestions)
 export {
   TerminalQuickFixContainer,
