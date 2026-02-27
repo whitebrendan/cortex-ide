@@ -606,7 +606,7 @@ export const ExtensionHostProvider: Component<ExtensionHostProviderProps> = (pro
 
 export function useExtension(extensionId: string): Accessor<ExtensionRuntimeState | undefined> {
   const { extensions } = useExtensionHost();
-  return createMemo(() => extensions().find((e) => e.id === extensionId));
+  return createMemo(() => (extensions() || []).find((e) => e.id === extensionId));
 }
 
 export function useExtensionActive(extensionId: string): Accessor<boolean> {
