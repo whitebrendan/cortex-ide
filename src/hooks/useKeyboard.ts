@@ -1,4 +1,5 @@
 import { onMount, onCleanup } from "solid-js";
+import { useModalActiveOptional } from "@/context/ModalActiveContext";
 
 type KeyboardHandler = (event: KeyboardEvent) => void;
 
@@ -11,7 +12,11 @@ interface KeyboardOptions {
 }
 
 export function useKeyboard(options: KeyboardOptions) {
+  const { isModalActive } = useModalActiveOptional();
+
   const handleKeyDown = (event: KeyboardEvent) => {
+    if (isModalActive() && event.key !== "Escape") return;
+
     const { key, ctrlKey, metaKey } = event;
     const mod = ctrlKey || metaKey;
 
@@ -63,7 +68,11 @@ export function createKeyboardShortcut(
   callback: KeyboardHandler,
   options: { ctrl?: boolean; meta?: boolean; shift?: boolean; alt?: boolean } = {}
 ) {
+  const { isModalActive } = useModalActiveOptional();
+
   const handleKeyDown = (event: KeyboardEvent) => {
+    if (isModalActive() && event.key !== "Escape") return;
+
     const ctrlMatch = options.ctrl ? event.ctrlKey : !event.ctrlKey;
     const metaMatch = options.meta ? event.metaKey : !event.metaKey;
     const shiftMatch = options.shift ? event.shiftKey : !event.shiftKey;

@@ -15,6 +15,7 @@ import {
 import { Portal } from "solid-js/web";
 import { CortexIcon } from "./CortexIcon";
 import { CortexButton } from "./CortexButton";
+import { useModalActiveOptional } from "@/context/ModalActiveContext";
 
 export type CortexModalSize = "sm" | "md" | "lg" | "xl" | "full";
 
@@ -75,10 +76,12 @@ export const CortexModal: Component<CortexModalProps> = (props) => {
     "footer",
   ]);
 
+  const { registerModal, unregisterModal } = useModalActiveOptional();
   const [isAnimating, setIsAnimating] = createSignal(false);
   const [isVisible, setIsVisible] = createSignal(false);
   let modalRef: HTMLDivElement | undefined;
   let previousActiveElement: HTMLElement | null = null;
+  let isRegistered = false;
 
   const size = () => local.size ?? "md";
   const closable = () => local.closable ?? true;
@@ -150,6 +153,10 @@ export const CortexModal: Component<CortexModalProps> = (props) => {
         modalRef?.focus();
       });
       document.body.style.overflow = "hidden";
+      if (!isRegistered) {
+        registerModal();
+        isRegistered = true;
+      }
     } else {
       setIsVisible(false);
       setTimeout(() => {
@@ -157,11 +164,19 @@ export const CortexModal: Component<CortexModalProps> = (props) => {
         document.body.style.overflow = "";
         previousActiveElement?.focus();
       }, 200);
+      if (isRegistered) {
+        unregisterModal();
+        isRegistered = false;
+      }
     }
   });
 
   onCleanup(() => {
     document.body.style.overflow = "";
+    if (isRegistered) {
+      unregisterModal();
+      isRegistered = false;
+    }
   });
 
   const overlayStyle = (): JSX.CSSProperties => ({

@@ -1,4 +1,5 @@
 export { ThemeProvider, useTheme, type Theme } from "./ThemeContext";
+export { ModalActiveProvider, useModalActive, useModalActiveOptional } from "./ModalActiveContext";
 export {
   AIProvider,
   useAI,

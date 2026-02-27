@@ -58,6 +58,7 @@ import { NotificationsProvider } from "@/context/NotificationsContext";
 import { SearchProvider } from "@/context/SearchContext";
 import { WorkspaceProvider } from "@/context/WorkspaceContext";
 import { EditorFeaturesProvider } from "@/context/editor/EditorFeaturesProvider";
+import { ModalActiveProvider } from "@/context/ModalActiveContext";
 
 // ============================================================================
 // TIER 2: DEFERRED PROVIDERS - Loaded after first paint
@@ -305,6 +306,7 @@ export function OptimizedProviders(props: ParentProps): JSX.Element {
       <ToastProvider>
       <SDKProvider>
       <SettingsProvider>
+      <ModalActiveProvider>
       <CommandProvider>
       <KeymapProvider>
       <WindowsProvider>
@@ -329,6 +331,7 @@ export function OptimizedProviders(props: ParentProps): JSX.Element {
       </WindowsProvider>
       </KeymapProvider>
       </CommandProvider>
+      </ModalActiveProvider>
       </SettingsProvider>
       </SDKProvider>
       </ToastProvider>

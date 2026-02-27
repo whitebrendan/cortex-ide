@@ -1,6 +1,7 @@
 import { createContext, useContext, createSignal, createMemo, JSX, onMount, onCleanup } from "solid-js";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
+import { useModalActiveOptional } from "@/context/ModalActiveContext";
 
 export interface Command {
   id: string;
@@ -42,6 +43,7 @@ interface CommandContextValue {
 const CommandContext = createContext<CommandContextValue>();
 
 export function CommandProvider(props: { children: JSX.Element }) {
+  const { isModalActive } = useModalActiveOptional();
   const [commands, setCommands] = createSignal<Command[]>([]);
   const [showCommandPalette, setShowCommandPalette] = createSignal(false);
   const [showFileFinder, setShowFileFinder] = createSignal(false);
@@ -141,6 +143,8 @@ export function CommandProvider(props: { children: JSX.Element }) {
 
   onMount(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (isModalActive() && e.key !== "Escape") return;
+
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "P") {
         e.preventDefault();
         closeAllModals();
