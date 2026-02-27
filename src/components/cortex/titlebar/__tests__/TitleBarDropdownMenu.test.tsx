@@ -97,7 +97,7 @@ describe("TitleBarDropdownMenu", () => {
       const dropdown = container.firstElementChild as HTMLElement;
       const style = dropdown.getAttribute("style") || "";
       expect(style).toContain("min-width:243px");
-      expect(style).toMatch(/(var\(--cortex-bg-secondary\)|#1C1C1D|rgb\(28,\s*28,\s*29\))/i);
+      expect(style).toContain("var(--cortex-bg-secondary)");
       expect(style).toContain("border-radius:8px");
       expect(style).toContain("z-index:9999");
     });
@@ -186,7 +186,7 @@ describe("TitleBarDropdownMenu", () => {
       expect(button.style.background).toBe("transparent");
 
       await fireEvent.mouseEnter(button);
-      expect(button.style.background).toMatch(/rgb\(37,\s*38,\s*40\)|#252628/i);
+      expect(button.style.background).toContain("var(--cortex-bg-hover)");
 
       await fireEvent.mouseLeave(button);
       expect(button.style.background).toBe("transparent");

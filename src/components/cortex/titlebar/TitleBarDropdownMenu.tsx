@@ -79,14 +79,14 @@ const DropdownMenuItem: Component<{ item: MenuItem; onClick: () => void }> = (pr
     "justify-content": "space-between",
     gap: "8px",
     padding: "4px 8px",
-    background: hovered() ? "#252628" : "transparent",
+    background: hovered() ? "var(--cortex-bg-hover)" : "transparent",
     border: "none",
     cursor: "pointer",
     "font-family": "'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     "font-size": "12px",
     "font-weight": "400",
     "line-height": "1.167em",
-    color: "#FCFCFC",
+    color: "var(--cortex-text-primary)",
     "text-align": "left",
     "border-radius": hovered() ? "4px" : "0",
     "box-sizing": "border-box",
@@ -102,7 +102,7 @@ const DropdownMenuItem: Component<{ item: MenuItem; onClick: () => void }> = (pr
       <span>{props.item.label}</span>
       <Show when={props.item.shortcut}>
         <span style={{
-          color: "#8C8D8F",
+          color: "var(--cortex-text-secondary)",
           "font-family": "'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
           "font-size": "12px",
           "font-weight": "400",

@@ -37,6 +37,7 @@ import { useLayout } from "@/context/LayoutContext";
 import { useSettings } from "@/context/SettingsContext";
 import { useNotifications } from "@/context/NotificationsContext";
 import { useOutput } from "@/context/OutputContext";
+import { useSettings } from "@/context/SettingsContext";
 import { useWindowEvents } from "@/hooks/useWindowEvents";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { initGlobalErrorHandler } from "@/lib/error-handler";
@@ -281,7 +282,7 @@ function AppContent(props: ParentProps) {
   const layout = useLayout();
   const notifications = useNotifications();
   const output = useOutput();
-  const settingsCtx = useSettings();
+  const { settings } = useSettings();
 
   // Window lifecycle events (close-requested with dirty file prompt, focus/blur,
   // beforeunload, visibilitychange, force-close cleanup)
@@ -290,12 +291,21 @@ function AppContent(props: ParentProps) {
   // Auto-save dirty files based on user settings (afterDelay, onFocusChange, onWindowChange)
   useAutoSave();
 
+  // Apply theme settings (font family, font size, zoom) to document root
   createEffect(() => {
-    const theme = settingsCtx.settings().theme;
-    const root = document.documentElement.style;
-    root.setProperty("font-family", theme.uiFontFamily);
-    root.setProperty("font-size", `${theme.uiFontSize}px`);
-    root.setProperty("zoom", String(theme.zoomLevel));
+    const theme = settings().theme;
+    const docStyle = document.documentElement.style;
+    if (theme.uiFontFamily) {
+      docStyle.setProperty("font-family", theme.uiFontFamily);
+    }
+    if (theme.uiFontSize) {
+      docStyle.setProperty("font-size", `${theme.uiFontSize}px`);
+    }
+    if (theme.zoomLevel && theme.zoomLevel !== 1) {
+      docStyle.setProperty("zoom", String(theme.zoomLevel));
+    } else {
+      docStyle.removeProperty("zoom");
+    }
   });
 
   // Global error handler (unhandled rejections, uncaught errors)

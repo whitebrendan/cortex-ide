@@ -173,7 +173,7 @@ const EditorPlaceholder: Component = () => {
     "align-items": "center",
     "justify-content": "center",
     background: "var(--cortex-bg-primary)",
-    color: "#8C8D8F",
+    color: "var(--cortex-text-secondary)",
     gap: "16px",
   });
 

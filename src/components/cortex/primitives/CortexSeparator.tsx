@@ -28,7 +28,7 @@ export const CortexSeparator: Component<CortexSeparatorProps> = (props) => {
   const lineStyle = (): JSX.CSSProperties => ({
     width: "100%",
     height: "0",
-    "border-bottom": "1px solid #2E2F31",
+    "border-bottom": "1px solid var(--cortex-border-default)",
   });
 
   return (

@@ -112,9 +112,9 @@ const ActivityBarButton: Component<{
   };
 
   const color = () => {
-    if (props.isActive) return "#141415";
-    if (hovered()) return "#FCFCFC";
-    return "#8C8D8F";
+    if (props.isActive) return "var(--cortex-icon-active)";
+    if (hovered()) return "var(--cortex-text-primary)";
+    return "var(--cortex-icon-inactive)";
   };
 
   return (

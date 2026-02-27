@@ -134,15 +134,15 @@ const ActivityBarButton: Component<ActivityBarButtonProps> = (props) => {
   const [isHovered, setIsHovered] = createSignal(false);
 
   const bg = () => {
-    if (props.isActive) return "#BFFF00";
+    if (props.isActive) return "var(--cortex-accent-primary)";
     if (isHovered()) return "var(--cortex-sidebar-selected)";
     return "transparent";
   };
 
   const iconColor = () => {
     if (props.isActive) return "var(--cortex-icon-active)";
-    if (isHovered()) return "#FCFCFC";
-    return "#8C8D8F";
+    if (isHovered()) return "var(--cortex-text-primary)";
+    return "var(--cortex-icon-inactive)";
   };
 
   return (
@@ -186,7 +186,7 @@ const ActivityBarButton: Component<ActivityBarButtonProps> = (props) => {
             "align-items": "center",
             "justify-content": "center",
             padding: "0 var(--cortex-space-1)",
-            background: "#BFFF00",
+            background: "var(--cortex-accent-primary)",
             color: "var(--cortex-icon-active)",
             "font-family": "var(--cortex-font-sans)",
             "font-size": "9px",
