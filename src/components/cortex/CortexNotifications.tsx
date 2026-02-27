@@ -200,8 +200,8 @@ export function CortexNotifications() {
               right: "0",
               bottom: "0",
               width: "380px",
-              background: "var(--cortex-bg-primary, #141415)",
-              border: "1px solid var(--cortex-border-default, #2E2F31)",
+              background: "var(--cortex-bg-primary)",
+              border: "1px solid var(--cortex-border-default)",
               "box-shadow": "-4px 0 24px rgba(0,0,0,0.4)",
               display: "flex",
               "flex-direction": "column",
@@ -225,7 +225,7 @@ export function CortexNotifications() {
                 "justify-content": "space-between",
                 padding: "12px 16px",
                 "border-bottom":
-                  "1px solid var(--cortex-border-default, #2E2F31)",
+                  "1px solid var(--cortex-border-default)",
                 "flex-shrink": "0",
               }}
             >
@@ -399,7 +399,7 @@ const ToastCard: Component<{
         gap: "10px",
         padding: "12px 14px",
         background: "var(--cortex-bg-secondary, #1E1E1F)",
-        border: "1px solid var(--cortex-border-default, #2E2F31)",
+        border: "1px solid var(--cortex-border-default)",
         "border-radius": "var(--cortex-radius-lg, 12px)",
         "box-shadow": "0 4px 16px rgba(0,0,0,0.4)",
         "font-family": "var(--cortex-font-sans, Inter, sans-serif)",

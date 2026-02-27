@@ -37,7 +37,7 @@ export const EnhancedStatusBar: Component<EnhancedStatusBarProps> = (props) => {
     height: "28px",
     background: "var(--cortex-bg-primary)",
     padding: "8px 24px",
-    "border-top": "1px solid var(--cortex-border-default, #2E2F31)",
+    "border-top": "1px solid var(--cortex-border-default)",
     "flex-shrink": "0",
     "font-size": "12px",
     "font-family": "'Figtree', var(--cortex-font-sans, Inter, sans-serif)",

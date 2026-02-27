@@ -68,7 +68,7 @@ export const CortexActivityBar: Component<CortexActivityBarProps> = (props) => {
           "margin-bottom": "var(--cortex-space-2)",
           background: "var(--cortex-sidebar-bg)",
           "border-radius": "var(--cortex-sidebar-radius)",
-          border: "1px solid #2E2F31",
+          border: "1px solid var(--cortex-border-default)",
           padding: "var(--cortex-space-1)",
           "flex-shrink": "0",
           ...local.style,
@@ -140,7 +140,7 @@ const ActivityBarButton: Component<ActivityBarButtonProps> = (props) => {
   };
 
   const iconColor = () => {
-    if (props.isActive) return "#141415";
+    if (props.isActive) return "var(--cortex-icon-active)";
     if (isHovered()) return "#FCFCFC";
     return "#8C8D8F";
   };
@@ -187,7 +187,7 @@ const ActivityBarButton: Component<ActivityBarButtonProps> = (props) => {
             "justify-content": "center",
             padding: "0 var(--cortex-space-1)",
             background: "#BFFF00",
-            color: "#141415",
+            color: "var(--cortex-icon-active)",
             "font-family": "var(--cortex-font-sans)",
             "font-size": "9px",
             "font-weight": "var(--cortex-font-semibold)",

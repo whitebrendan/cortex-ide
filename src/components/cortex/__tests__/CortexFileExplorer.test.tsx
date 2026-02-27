@@ -299,11 +299,11 @@ describe("CortexFileExplorer", () => {
       expect(div?.style.borderRadius).toBe("16px");
     });
 
-    it("should have correct background color #141415", () => {
+    it("should have correct background color var(--cortex-bg-primary)", () => {
       const { container } = render(() => <CortexFileExplorer />);
       const div = container.firstChild as HTMLElement;
       const bg = div?.style.background;
-      expect(bg === "#141415" || bg === "rgb(20, 20, 21)").toBe(true);
+      expect(bg === "var(--cortex-bg-primary)" || bg === "#141415" || bg === "rgb(20, 20, 21)").toBe(true);
     });
   });
 });

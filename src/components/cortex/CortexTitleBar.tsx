@@ -294,7 +294,7 @@ export const CortexTitleBar: Component<CortexTitleBarProps> = (props) => {
         <div style={{
           width: "1px",
           height: "20px",
-          background: "#2E2F31",
+          background: "var(--cortex-border-default)",
           "flex-shrink": "0",
         }} />
 

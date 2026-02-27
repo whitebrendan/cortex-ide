@@ -269,7 +269,7 @@ export function CortexDesktopLayout(props: ParentProps) {
   return (
     <div style={{
       display: "flex", "flex-direction": "column", width: "100vw", height: "100vh",
-      background: "#141415", border: "1px solid #2E2F31",
+      background: "var(--cortex-bg-primary)", border: "1px solid var(--cortex-border-default)",
       "border-radius": "24px",
       "box-shadow": "0px 4px 26px 15px rgba(38,36,37,0.38), inset 0px 0px 13.1px 6px rgba(26,24,25,0.2)",
       overflow: "hidden", "font-family": "var(--cortex-font-sans)", color: "var(--cortex-text-primary)",

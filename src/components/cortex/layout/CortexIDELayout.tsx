@@ -53,9 +53,9 @@ export function CortexIDELayout(props: CortexIDELayoutProps) {
     "margin-bottom": "8px",
     "margin-left": "12px",
     "margin-right": "8px",
-    background: "var(--cortex-bg-primary, #141415)",
+    background: "var(--cortex-bg-primary)",
     "border-radius": "var(--cortex-container-radius, 24px)",
-    border: "1px solid var(--cortex-border-default, #2E2F31)",
+    border: "1px solid var(--cortex-border-default)",
     "box-shadow": "var(--cortex-panel-shadow, 0px 4px 26px 15px rgba(38,36,37,0.38), inset 0px 0px 13.1px 6px rgba(26,24,25,0.2))",
     transition: "box-shadow 200ms ease-out",
   });

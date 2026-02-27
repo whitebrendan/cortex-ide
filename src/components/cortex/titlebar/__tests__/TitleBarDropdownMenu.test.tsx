@@ -97,7 +97,7 @@ describe("TitleBarDropdownMenu", () => {
       const dropdown = container.firstElementChild as HTMLElement;
       const style = dropdown.getAttribute("style") || "";
       expect(style).toContain("min-width:243px");
-      expect(style).toMatch(/(#1C1C1D|rgb\(28,\s*28,\s*29\))/i);
+      expect(style).toMatch(/(var\(--cortex-bg-secondary\)|#1C1C1D|rgb\(28,\s*28,\s*29\))/i);
       expect(style).toContain("border-radius:8px");
       expect(style).toContain("z-index:9999");
     });

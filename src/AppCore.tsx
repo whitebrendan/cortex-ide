@@ -34,6 +34,7 @@ import { useEditor } from "@/context/EditorContext";
 import { useExtensions } from "@/context/ExtensionsContext";
 import { useCommands } from "@/context/CommandContext";
 import { useLayout } from "@/context/LayoutContext";
+import { useSettings } from "@/context/SettingsContext";
 import { useNotifications } from "@/context/NotificationsContext";
 import { useOutput } from "@/context/OutputContext";
 import { useWindowEvents } from "@/hooks/useWindowEvents";
@@ -274,6 +275,7 @@ function AppContent(props: ParentProps) {
   const layout = useLayout();
   const notifications = useNotifications();
   const output = useOutput();
+  const settingsCtx = useSettings();
 
   // Window lifecycle events (close-requested with dirty file prompt, focus/blur,
   // beforeunload, visibilitychange, force-close cleanup)
@@ -281,6 +283,14 @@ function AppContent(props: ParentProps) {
 
   // Auto-save dirty files based on user settings (afterDelay, onFocusChange, onWindowChange)
   useAutoSave();
+
+  createEffect(() => {
+    const theme = settingsCtx.settings().theme;
+    const root = document.documentElement.style;
+    root.setProperty("font-family", theme.uiFontFamily);
+    root.setProperty("font-size", `${theme.uiFontSize}px`);
+    root.setProperty("zoom", String(theme.zoomLevel));
+  });
 
   // Global error handler (unhandled rejections, uncaught errors)
   let cleanupErrorHandler: (() => void) | undefined;
@@ -450,6 +460,9 @@ function AppContent(props: ParentProps) {
     window.removeEventListener("dev:inspector", handleDevInspector);
     if (mcpCleanup) mcpCleanup();
     if (cleanupErrorHandler) cleanupErrorHandler();
+    document.documentElement.style.removeProperty("font-family");
+    document.documentElement.style.removeProperty("font-size");
+    document.documentElement.style.removeProperty("zoom");
     invoke("unregister_window", { label: getWindowLabel() }).catch(() => {});
   });
 

@@ -88,8 +88,8 @@ export const CortexCodeEditor: Component<CortexCodeEditorProps> = (props) => {
     "flex-direction": "column",
     width: "100%",
     height: "100%",
-    background: "#1C1C1D",
-    border: "1px solid #2E2F31",
+    background: "var(--cortex-bg-secondary)",
+    border: "1px solid var(--cortex-border-default)",
     "border-radius": "16px",
     overflow: "hidden",
     ...local.style,
@@ -100,7 +100,7 @@ export const CortexCodeEditor: Component<CortexCodeEditorProps> = (props) => {
     display: "flex",
     "flex-direction": "column",
     overflow: "hidden",
-    background: "#141415",
+    background: "var(--cortex-bg-primary)",
   });
 
   return (
@@ -141,7 +141,7 @@ export const CortexCodeEditor: Component<CortexCodeEditorProps> = (props) => {
           border-radius: 0;
         }
         .cortex-code-editor .monaco-editor .monaco-scrollable-element > .scrollbar > .slider {
-          background: #2E2F31 !important;
+          background: var(--cortex-border-default) !important;
           border-radius: 4px;
         }
         .cortex-code-editor .monaco-editor .monaco-scrollable-element > .scrollbar.vertical {
@@ -172,7 +172,7 @@ const EditorPlaceholder: Component = () => {
     "flex-direction": "column",
     "align-items": "center",
     "justify-content": "center",
-    background: "#141415",
+    background: "var(--cortex-bg-primary)",
     color: "#8C8D8F",
     gap: "16px",
   });

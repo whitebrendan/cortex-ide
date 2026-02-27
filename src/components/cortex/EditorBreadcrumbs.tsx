@@ -29,7 +29,7 @@ export const EditorBreadcrumbs: Component<EditorBreadcrumbsProps> = (props) => {
     height: "26px",
     padding: "0px 16px",
     "flex-shrink": "0",
-    background: "#141415",
+    background: "var(--cortex-bg-primary)",
     ...props.style,
   });
 

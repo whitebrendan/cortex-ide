@@ -37,10 +37,10 @@ export const ExplorerHeader: Component<ExplorerHeaderProps> = (props) => {
     padding: "10px 16px",
     flex: "1",
     cursor: "pointer",
-    background: isActive ? "transparent" : "#141415",
+    background: isActive ? "transparent" : "var(--cortex-bg-primary)",
     border: "none",
-    "border-bottom": isActive ? "none" : "1px solid #2E2F31",
-    "border-right": isActive ? "1px solid #2E2F31" : "none",
+    "border-bottom": isActive ? "none" : "1px solid var(--cortex-border-default)",
+    "border-right": isActive ? "1px solid var(--cortex-border-default)" : "none",
     "border-radius": isActive ? "0px 0px 0px 6px" : "0px 0px 0px 6px",
     height: isActive ? "auto" : "36px",
   });

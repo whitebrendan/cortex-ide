@@ -54,8 +54,8 @@ export const EditorTabBar: Component<EditorTabBarProps> = (props) => {
     "align-items": "center",
     "align-self": "stretch",
     height: "36px",
-    background: "#141415",
-    "border-bottom": "1px solid #2E2F31",
+    background: "var(--cortex-bg-primary)",
+    "border-bottom": "1px solid var(--cortex-border-default)",
     overflow: "hidden",
     "flex-shrink": "0",
     position: "relative",
@@ -334,8 +334,8 @@ const TabBarContextMenu: Component<TabBarContextMenuProps> = (props) => {
     left: `${props.x}px`,
     top: `${props.y}px`,
     "z-index": "9999",
-    background: "#1C1C1D",
-    border: "1px solid #2E2F31",
+    background: "var(--cortex-bg-secondary)",
+    border: "1px solid var(--cortex-border-default)",
     "border-radius": "8px",
     padding: "4px 0",
     "min-width": "160px",
@@ -380,7 +380,7 @@ const TabBarContextMenu: Component<TabBarContextMenuProps> = (props) => {
         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
         Close All
       </button>
-      <div style={{ height: "1px", background: "#2E2F31", margin: "4px 0" }} />
+      <div style={{ height: "1px", background: "var(--cortex-border-default)", margin: "4px 0" }} />
       <button style={itemStyle} onClick={handleClick(props.onCopyPath)}
         onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>

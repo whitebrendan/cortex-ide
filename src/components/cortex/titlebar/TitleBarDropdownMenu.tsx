@@ -36,9 +36,9 @@ export const TitleBarDropdownMenu: Component<TitleBarDropdownMenuProps> = (props
         left: "0",
         "min-width": "243px",
         "max-width": "280px",
-        background: "#1C1C1D",
+        background: "var(--cortex-bg-secondary)",
         "border-radius": "8px",
-        border: "1px solid #2E2F31",
+        border: "1px solid var(--cortex-border-default)",
         padding: "4px",
         "box-shadow": "0 8px 16px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.4)",
         "z-index": "9999",
@@ -56,7 +56,7 @@ export const TitleBarDropdownMenu: Component<TitleBarDropdownMenuProps> = (props
                 <div style={{
                   height: "1px",
                   width: "100%",
-                  background: "#2E2F31",
+                  background: "var(--cortex-border-default)",
                 }} />
               </div>
             }
