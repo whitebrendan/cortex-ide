@@ -10,6 +10,7 @@ export interface DeleteConfirmDialogProps {
 export function DeleteConfirmDialog(props: DeleteConfirmDialogProps) {
   let dialogRef: HTMLDivElement | undefined;
 
+  const titleId = "delete-confirm-title";
   const descriptionId = "delete-confirm-description";
 
   const trapFocus = (e: KeyboardEvent) => {
@@ -62,6 +63,7 @@ export function DeleteConfirmDialog(props: DeleteConfirmDialogProps) {
           class="modal"
           role="alertdialog"
           aria-modal="true"
+          aria-labelledby={titleId}
           aria-describedby={descriptionId}
           onClick={(e) => e.stopPropagation()}
           style={{ "min-width": "400px" }}
@@ -90,7 +92,7 @@ export function DeleteConfirmDialog(props: DeleteConfirmDialogProps) {
 
           <div class="modal-message-row">
             <div class="modal-message-container">
-              <div class="modal-title">
+              <div class="modal-title" id={titleId}>
                 Delete {props.itemType === "folder" ? "Folder" : "File"}
               </div>
               <div class="modal-detail" id={descriptionId}>

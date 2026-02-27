@@ -54,6 +54,7 @@ export function DeleteBranchDialog(props: DeleteBranchDialogProps) {
     document.removeEventListener("keydown", handleKeyDown);
   });
 
+  const titleId = "delete-branch-title";
   const descriptionId = "delete-branch-description";
 
   return (
@@ -73,6 +74,8 @@ export function DeleteBranchDialog(props: DeleteBranchDialogProps) {
         <div
           ref={dialogRef}
           role="alertdialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
           aria-describedby={descriptionId}
           style={{
             width: "420px",
@@ -96,7 +99,7 @@ export function DeleteBranchDialog(props: DeleteBranchDialogProps) {
               class="w-5 h-5"
               style={{ color: tokens.colors.semantic.error }}
             />
-            <span class="text-base font-semibold" style={{ color: tokens.colors.text.primary }}>
+            <span id={titleId} class="text-base font-semibold" style={{ color: tokens.colors.text.primary }}>
               Delete Branch
             </span>
           </div>
