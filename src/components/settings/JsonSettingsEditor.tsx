@@ -324,6 +324,11 @@ const cortex_SETTINGS_SCHEMA = {
           description: "Show tab bar",
           default: true
         },
+        wrapTabs: {
+          type: "boolean",
+          description: "Wrap tabs to multiple rows",
+          default: false
+        },
         breadcrumbsEnabled: {
           type: "boolean",
           description: "Show breadcrumbs",
@@ -338,11 +343,6 @@ const cortex_SETTINGS_SCHEMA = {
         auxiliaryBarVisible: {
           type: "boolean",
           description: "Auxiliary bar (secondary sidebar) visibility",
-          default: false
-        },
-        wrapTabs: {
-          type: "boolean",
-          description: "Wrap editor tabs to multiple rows",
           default: false
         }
       }
