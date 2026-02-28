@@ -107,7 +107,7 @@ export const CortexFileExplorer: Component<CortexFileExplorerProps> = (props) =>
     width: "320px",
     height: "100%",
     background: "#1C1C1D",
-    border: "1px solid #2E2F31",
+    border: "1px solid var(--cortex-border-default)",
     "border-radius": "12px",
     gap: "0",
     overflow: "hidden",

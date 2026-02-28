@@ -94,7 +94,7 @@ export const ExplorerTreeView: Component<ExplorerTreeViewProps> = (props) => {
     "font-family": "Figtree, var(--cortex-font-sans, Inter, sans-serif)",
     "font-size": "16px",
     "font-weight": "600",
-    "line-height": "20px",
+    "line-height": "1em",
     color: "#E9E9EA",
   });
 
@@ -110,7 +110,7 @@ export const ExplorerTreeView: Component<ExplorerTreeViewProps> = (props) => {
     "flex-direction": "column",
     "align-self": "stretch",
     gap: "4px",
-    padding: "16px",
+    padding: "0 16px",
     flex: "1",
     "overflow-y": "auto",
     "overflow-x": "hidden",
