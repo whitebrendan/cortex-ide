@@ -16,12 +16,12 @@
   --active-selection: var(--jb-tree-selection-bg);
   --accent-primary: var(--jb-border-focus);
   
-  /* List/Tree spacing tokens — Figma: 20px row, 16px indent, 14px font */
+  /* List/Tree spacing tokens */
   --list-row-height: 20px;
-  --tree-indent: 16px;
-  --twistie-width: 16px;
+  --tree-indent: 26px;
+  --twistie-width: 20px;
   --twistie-padding-right: 0px;
-  --indent-guide-left: 12px;
+  --indent-guide-left: 8px;
   --tree-font-size: 14px;
   --tree-icon-size: 16px;
   
@@ -383,47 +383,51 @@
   gap: 4px;
   width: 100%;
   height: var(--list-row-height);
-  padding: 0 8px;
-  border-radius: 0;
+  padding: 0 8px 0 0;
+  border-radius: 4px;
   text-align: left;
   font-size: var(--tree-font-size, 14px);
   line-height: var(--list-row-height);
   color: var(--text-primary);
-  background: var(--sidebar-bg);
-  transition: background-color 0.15s ease, border-left-color 0.15s ease;
+  background: transparent;
+  transition: background-color 0.15s ease;
   cursor: pointer;
 }
 
 /* Hover state */
 .file-tree-item:hover {
-  background-color: var(--active-selection);
+  background-color: #2E2F31;
+  border-radius: 4px;
 }
 
 /* Focus state with focus visible */
 .file-tree-item:focus-visible {
   outline: none;
-  background-color: var(--active-selection);
+  background-color: #2E2F31;
+  border-radius: 4px;
 }
 
 /* Selected state (inactive - container not focused) */
 .file-tree-item--selected {
-  background-color: var(--active-selection);
+  background-color: #2E2F31;
+  border-radius: 4px;
 }
 
 .file-tree-item--selected:hover {
-  background-color: var(--active-selection);
+  background-color: #2E2F31;
 }
 
 /* Selected state (active - container is focused) */
 .file-explorer:focus-within .file-tree-item--selected,
 .virtualized-file-tree:focus-within .file-tree-item--selected {
-  background-color: var(--active-selection);
+  background-color: #2E2F31;
   color: var(--text-primary);
 }
 
 /* Focused state */
 .file-tree-item--focused {
-  background-color: var(--active-selection);
+  background-color: #2E2F31;
+  border-radius: 4px;
 }
 
 /* Drag over styles */
@@ -519,7 +523,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--tree-font-size, 14px);
+  font-size: 14px;
   line-height: var(--list-row-height);
   color: var(--text-primary);
 }
@@ -532,8 +536,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--twistie-width);
-  height: var(--twistie-width);
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
   color: var(--text-secondary);
   transition: transform 150ms ease, color 150ms ease;
@@ -635,7 +639,7 @@
   background-color: var(--border-weak, var(--tree-inactive-indent-guides-stroke));
   opacity: 0.4;
   transition: opacity 0.1s linear;
-  /* Position is set via inline style: left = (indent-level * 6px + 8px) */
+  /* Position is set via inline style: left = (indent-level * 26px) */
 }
 
 /* Show guides on hover */
@@ -1140,6 +1144,28 @@
   flex: 1;
   position: relative;
   min-height: 0;
+}
+
+.virtual-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.virtual-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.virtual-scroll-container::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.virtual-scroll-container:hover::-webkit-scrollbar-thumb {
+  background: #43454A;
+}
+
+.virtual-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #5A5D63;
 }
 
 .virtual-scroll-spacer {

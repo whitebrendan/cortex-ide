@@ -213,7 +213,7 @@ export function VirtualItem(props: VirtualItemProps) {
             {(level) => (
               <span 
                 class="file-tree-indent-guide"
-                style={{ left: `${level * 16 + 12}px` }}
+                style={{ left: `${level * 26}px` }}
               />
             )}
           </For>
@@ -233,7 +233,7 @@ export function VirtualItem(props: VirtualItemProps) {
             when={!props.item.isLoading}
             fallback={<Icon name="spinner" size={12} class="animate-spin" />}
           >
-            <Icon name="chevron-right" size={12} />
+            <Icon name="chevron-right" size={16} />
           </Show>
         </Show>
       </span>

@@ -315,8 +315,8 @@ export function FileExplorer(props: FileExplorerProps) {
           display: "flex",
           "align-items": "center",
           "justify-content": "space-between",
-          padding: "8px 16px",
-          height: "32px",
+          padding: "0 16px",
+          height: "20px",
           "flex-shrink": "0",
           background: "transparent",
           border: "none",
@@ -325,10 +325,10 @@ export function FileExplorer(props: FileExplorerProps) {
         <div style={{ display: "flex", "align-items": "center", gap: "4px" }}>
           <span
             style={{
-              "font-family": "'DM Sans', sans-serif",
+              "font-family": "'Figtree', var(--cortex-font-sans, 'DM Sans', sans-serif)",
               "font-size": "16px",
-              "font-weight": "500",
-              "line-height": "16px",
+              "font-weight": "600",
+              "line-height": "20px",
               color: "var(--cortex-text-primary)",
             }}
           >
@@ -342,8 +342,8 @@ export function FileExplorer(props: FileExplorerProps) {
             onClick={() => setShowSearch(!showSearch())}
             title="Search (Ctrl+Shift+F)"
             style={{
-              width: "16px",
-              height: "16px",
+              width: "20px",
+              height: "20px",
               display: "flex",
               "align-items": "center",
               "justify-content": "center",
@@ -360,8 +360,8 @@ export function FileExplorer(props: FileExplorerProps) {
             onClick={handleAddFolder}
             title="New File"
             style={{
-              width: "16px",
-              height: "16px",
+              width: "20px",
+              height: "20px",
               display: "flex",
               "align-items": "center",
               "justify-content": "center",
@@ -378,8 +378,8 @@ export function FileExplorer(props: FileExplorerProps) {
             onClick={() => window.dispatchEvent(new CustomEvent("explorer:refresh"))}
             title="Refresh"
             style={{
-              width: "16px",
-              height: "16px",
+              width: "20px",
+              height: "20px",
               display: "flex",
               "align-items": "center",
               "justify-content": "center",
@@ -396,8 +396,8 @@ export function FileExplorer(props: FileExplorerProps) {
             onClick={() => window.dispatchEvent(new CustomEvent("explorer:collapse-all"))}
             title="Collapse All"
             style={{
-              width: "16px",
-              height: "16px",
+              width: "20px",
+              height: "20px",
               display: "flex",
               "align-items": "center",
               "justify-content": "center",

@@ -441,7 +441,7 @@ button.btn-vscode,
 }
 
 .file-explorer-content::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .file-explorer-content::-webkit-scrollbar-track {
@@ -450,16 +450,16 @@ button.btn-vscode,
 
 .file-explorer-content::-webkit-scrollbar-thumb {
   background: transparent;
-  border-radius: 999px;
+  border-radius: 4px;
   transition: background-color 0.2s;
 }
 
 .file-explorer-content:hover::-webkit-scrollbar-thumb {
-  background: var(--cortex-scrollbar-thumb-bg);
+  background: #43454A;
 }
 
 .file-explorer-content::-webkit-scrollbar-thumb:hover {
-  background: var(--cortex-scrollbar-thumb-hover-bg);
+  background: #5A5D63;
 }
 
 .file-explorer-empty,

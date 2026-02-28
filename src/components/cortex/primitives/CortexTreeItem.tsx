@@ -88,6 +88,7 @@ export const CortexTreeItem: Component<CortexTreeItemProps> = (props) => {
   const hasChildren = () => local.item.type === "folder" && local.item.children && local.item.children.length > 0;
 
   const indentPx = () => level() * 26;
+<<<<<<< HEAD
   const isFolder = () => local.item.type === "folder";
 
   const getRowBackground = (): string => {
@@ -96,11 +97,14 @@ export const CortexTreeItem: Component<CortexTreeItemProps> = (props) => {
     if (isHovered()) return "var(--cortex-interactive-hover, rgba(255, 255, 255, 0.03))";
     return "transparent";
   };
+=======
+>>>>>>> cf62f3c (fix: pixel-perfect sidebar container and file tree to match Figma design)
 
   const rowStyle = (): JSX.CSSProperties => ({
     display: "flex",
     "align-items": "center",
     "align-self": "stretch",
+<<<<<<< HEAD
     gap: isFolder() ? "8px" : "4px",
     height: "20px",
     padding: isFolder() ? `0 8px 0 ${indentPx()}px` : `0 8px 0 ${Math.max(0, level() - 1) * 26 + 28}px`,
@@ -110,6 +114,20 @@ export const CortexTreeItem: Component<CortexTreeItemProps> = (props) => {
     transition: "background var(--cortex-transition-fast, 100ms ease)",
     outline: "none",
     "box-sizing": "border-box",
+=======
+    gap: "8px",
+    height: "20px",
+    padding: "0",
+    "padding-left": `${indentPx()}px`,
+    cursor: "pointer",
+    background: local.isSelected
+      ? "#2E2F31"
+      : isHovered()
+      ? "#2E2F31"
+      : "transparent",
+    "border-radius": "4px",
+    transition: "background 100ms ease",
+>>>>>>> cf62f3c (fix: pixel-perfect sidebar container and file tree to match Figma design)
     ...local.style,
   });
 
@@ -143,8 +161,13 @@ export const CortexTreeItem: Component<CortexTreeItemProps> = (props) => {
     "font-family": "Figtree, var(--cortex-font-sans, Inter, sans-serif)",
     "font-size": "14px",
     "font-weight": "400",
+<<<<<<< HEAD
     "line-height": "16px",
     color: "#E9E9EA",
+=======
+    "line-height": "1em",
+    color: local.item.type === "folder" ? "#E9E9EA" : "#E9E9EA",
+>>>>>>> cf62f3c (fix: pixel-perfect sidebar container and file tree to match Figma design)
     "white-space": "nowrap",
     overflow: "hidden",
     "text-overflow": "ellipsis",
