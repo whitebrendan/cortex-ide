@@ -1,8 +1,8 @@
 export type SidebarTab = "files" | "search" | "git" | "debug" | "extensions" | "agents" | "themes" | "plugins" | "account" | "docs" | "dashboard" | "map";
-export type BottomPanelTab = "terminal" | "output" | "problems" | "diff" | "history";
+export type BottomPanelTab = "terminal" | "output" | "problems" | "debug console" | "diff" | "history";
 export type ViewMode = "vibe" | "ide";
 
-export const BOTTOM_PANEL_TABS: BottomPanelTab[] = ["terminal", "output", "problems", "diff", "history"];
+export const BOTTOM_PANEL_TABS: BottomPanelTab[] = ["terminal", "output", "problems", "debug console", "diff", "history"];
 export const BOTTOM_PANEL_DEFAULT_HEIGHT = 200;
 export const BOTTOM_PANEL_MIN_HEIGHT = 100;
 export const BOTTOM_PANEL_MAX_HEIGHT = 500;

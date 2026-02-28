@@ -250,11 +250,11 @@ describe("CortexChatPanel", () => {
       expect(style).toContain("bottom:");
     });
 
-    it("should have border-radius 16px", () => {
+    it("should have border-radius 12px", () => {
       const { container } = render(() => <CortexChatPanel state="minimized" />);
       const panel = container.firstElementChild as HTMLElement;
       const style = panel?.getAttribute("style") || "";
-      expect(style).toContain("border-radius:16px");
+      expect(style).toContain("border-radius:12px");
     });
 
     it("should not render Build/Import buttons in minimized state", () => {

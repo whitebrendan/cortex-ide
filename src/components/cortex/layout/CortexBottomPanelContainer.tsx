@@ -1,11 +1,13 @@
 import { Show, Suspense, For, lazy, onMount, onCleanup } from "solid-js";
 import { BOTTOM_PANEL_TABS, BOTTOM_PANEL_MIN_HEIGHT, BOTTOM_PANEL_MAX_HEIGHT, SidebarSkeleton } from "./types";
 import type { BottomPanelTab } from "./types";
+import { CortexIcon } from "../primitives";
 
 const CortexOutputPanel = lazy(() => import("@/components/cortex/output/OutputPanel").then(m => ({ default: m.OutputPanel })));
 const CortexDiagnosticsPanel = lazy(() => import("@/components/cortex/diagnostics/DiagnosticsPanel").then(m => ({ default: m.DiagnosticsPanel })));
 const CortexDiffViewer = lazy(() => import("@/components/cortex/CortexDiffViewer").then(m => ({ default: m.CortexDiffViewer })));
 const CortexGitHistory = lazy(() => import("@/components/cortex/CortexGitHistory").then(m => ({ default: m.CortexGitHistory })));
+const CortexDebugConsole = lazy(() => import("@/components/debugger/DebugConsole").then(m => ({ default: m.DebugConsole })));
 
 export interface CortexBottomPanelContainerProps {
   bottomPanelTab: BottomPanelTab;
@@ -30,6 +32,7 @@ export function CortexBottomPanelContainer(props: CortexBottomPanelContainerProp
       <div
         style={{
           height: "4px",
+          width: "100%",
           cursor: "row-resize",
           background: "transparent",
           transition: "background 200ms ease-out",
@@ -70,7 +73,7 @@ export function CortexBottomPanelContainer(props: CortexBottomPanelContainerProp
           "align-items": "center",
           gap: "0",
           padding: "0 8px",
-          height: "36px",
+          height: "28px",
           "flex-shrink": "0",
           background: "var(--cortex-bg-secondary)",
           "border-bottom": "1px solid var(--cortex-border-default)",
@@ -78,7 +81,7 @@ export function CortexBottomPanelContainer(props: CortexBottomPanelContainerProp
           <For each={BOTTOM_PANEL_TABS}>{(tab) => (
             <button
               style={{
-                padding: "4px 12px",
+                padding: "2px 10px",
                 background: "transparent",
                 border: "none",
                 "border-bottom": props.bottomPanelTab === tab ? "2px solid var(--cortex-accent-primary)" : "2px solid transparent",
@@ -95,6 +98,59 @@ export function CortexBottomPanelContainer(props: CortexBottomPanelContainerProp
             </button>
           )}</For>
           <div style={{ flex: "1" }} />
+          <Show when={props.bottomPanelTab === "terminal"}>
+            <button
+              style={{
+                width: "24px",
+                height: "24px",
+                display: "flex",
+                "align-items": "center",
+                "justify-content": "center",
+                background: "transparent",
+                border: "none",
+                color: "var(--cortex-text-muted)",
+                cursor: "pointer",
+              }}
+              aria-label="New terminal"
+              title="New Terminal"
+            >
+              <CortexIcon name="plus" size="sm" />
+            </button>
+            <button
+              style={{
+                width: "24px",
+                height: "24px",
+                display: "flex",
+                "align-items": "center",
+                "justify-content": "center",
+                background: "transparent",
+                border: "none",
+                color: "var(--cortex-text-muted)",
+                cursor: "pointer",
+              }}
+              aria-label="Split terminal"
+              title="Split Terminal"
+            >
+              <CortexIcon name="columns" size="sm" />
+            </button>
+            <button
+              style={{
+                width: "24px",
+                height: "24px",
+                display: "flex",
+                "align-items": "center",
+                "justify-content": "center",
+                background: "transparent",
+                border: "none",
+                color: "var(--cortex-text-muted)",
+                cursor: "pointer",
+              }}
+              aria-label="Kill terminal"
+              title="Kill Terminal"
+            >
+              <CortexIcon name="trash" size="sm" />
+            </button>
+          </Show>
           <button
             style={{
               width: "24px",
@@ -110,7 +166,7 @@ export function CortexBottomPanelContainer(props: CortexBottomPanelContainerProp
             onClick={() => props.onCollapse()}
             aria-label="Close panel"
           >
-            ✕
+            <CortexIcon name="close" size="sm" />
           </button>
         </div>
         <div style={{ flex: "1", overflow: "hidden" }}>
@@ -132,8 +188,14 @@ export function CortexBottomPanelContainer(props: CortexBottomPanelContainerProp
                 height: "100%",
                 display: "flex",
                 overflow: "hidden",
+                background: "var(--cortex-bg-secondary)",
               }}
             />
+          </Show>
+          <Show when={props.bottomPanelTab === "debug console"}>
+            <Suspense fallback={<SidebarSkeleton />}>
+              <CortexDebugConsole />
+            </Suspense>
           </Show>
           <Show when={props.bottomPanelTab === "diff"}>
             <Suspense fallback={<SidebarSkeleton />}>
