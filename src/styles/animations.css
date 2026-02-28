@@ -906,11 +906,11 @@
 }
 
 .grid-sash:hover {
-  background-color: var(--accent, #007acc);
+  background-color: var(--accent, #B2FF22);
 }
 
 .grid-sash[data-dragging="true"] {
-  background-color: var(--accent, #007acc);
+  background-color: var(--accent, #B2FF22);
 }
 
 /* Grid cell entering animation */
