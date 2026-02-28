@@ -92,6 +92,7 @@ const REGISTRY_ENTRIES = {
   "sidebar/pie-chart-01": "/icons/cortex/sidebar/pie-chart-01.svg",
   "sidebar/data": "/icons/cortex/sidebar/data.svg",
   "sidebar/shield-02": "/icons/cortex/sidebar/shield-02.svg",
+  "sidebar/magic-wand": "/icons/cortex/sidebar/magic-wand.svg",
 
   "chat/code": "/icons/cortex/chat/code.svg",
   "chat/palette": "/icons/cortex/chat/palette.svg",
@@ -102,6 +103,10 @@ const REGISTRY_ENTRIES = {
   "file-types/react-ts": "/icons/cortex/file-types/react-ts.svg",
   "file-types/rust": "/icons/cortex/file-types/rust.svg",
   "file-types/toml": "/icons/cortex/file-types/toml.svg",
+  "file-types/lock": "/icons/cortex/file-types/lock.svg",
+  "file-types/markdown": "/icons/cortex/file-types/markdown.svg",
+  "file-types/mermaid": "/icons/cortex/file-types/mermaid.svg",
+  "file-types/webhint": "/icons/cortex/file-types/webhint.svg",
 } as const;
 
 export type CortexIconName = keyof typeof REGISTRY_ENTRIES;

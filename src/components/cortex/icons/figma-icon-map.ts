@@ -103,9 +103,13 @@ export const FIGMA_ICON_MAP: FigmaIconEntry[] = [
   { figmaNodeId: "84:2786", name: "react-ts", category: "file-types", path: "/icons/cortex/file-types/react-ts.svg" },
   { figmaNodeId: "84:2787", name: "rust", category: "file-types", path: "/icons/cortex/file-types/rust.svg" },
   { figmaNodeId: "84:2788", name: "toml", category: "file-types", path: "/icons/cortex/file-types/toml.svg" },
+  { figmaNodeId: "1027:22513", name: "lock", category: "file-types", path: "/icons/cortex/file-types/lock.svg" },
+  { figmaNodeId: "1027:22516", name: "markdown", category: "file-types", path: "/icons/cortex/file-types/markdown.svg" },
+  { figmaNodeId: "1027:22517", name: "mermaid", category: "file-types", path: "/icons/cortex/file-types/mermaid.svg" },
+  { figmaNodeId: "1027:22518", name: "webhint", category: "file-types", path: "/icons/cortex/file-types/webhint.svg" },
 ];
 
-export const FIGMA_FILE_KEY = "liJL2JeEwYuOJNw7pGhrRM";
+export const FIGMA_FILE_KEY = "4hKtI49khKHjribAGpFUkW";
 
 export const FIGMA_SECTIONS = {
   components: "20:2638",
