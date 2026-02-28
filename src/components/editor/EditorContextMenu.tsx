@@ -39,9 +39,9 @@ const CONTEXT_MENU_COLORS: IContextMenuStyles = {
   selectionBorderColor: "transparent",
   separatorColor: "var(--cortex-bg-active)",
   scrollbarShadow: "rgba(0, 0, 0, 0.3)",
-  scrollbarSliderBackground: "rgba(121, 121, 121, 0.4)",
-  scrollbarSliderHoverBackground: "rgba(100, 100, 100, 0.7)",
-  scrollbarSliderActiveBackground: "rgba(191, 191, 191, 0.4)",
+  scrollbarSliderBackground: "rgba(252, 252, 252, 0.12)",
+  scrollbarSliderHoverBackground: "rgba(252, 252, 252, 0.24)",
+  scrollbarSliderActiveBackground: "rgba(252, 252, 252, 0.24)",
 };
 
 // VS Code menu timing constants

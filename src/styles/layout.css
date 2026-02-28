@@ -1124,12 +1124,12 @@ html:fullscreen .window-resizer {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--jb-scrollbar-thumb, #43454A);
-  border-radius: 4px;
+  background: var(--cortex-scrollbar-thumb-bg);
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--jb-scrollbar-thumb-hover, #5A5D63);
+  background: var(--cortex-scrollbar-thumb-hover-bg);
 }
 
 /* =============================================================================

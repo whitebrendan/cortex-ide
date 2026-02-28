@@ -493,8 +493,8 @@
      COMPONENT TOKENS: SCROLLBAR
      =========================================================================== */
   --cortex-scrollbar-track: transparent;
-  --cortex-scrollbar-thumb: var(--cortex-palette-gray-400);
-  --cortex-scrollbar-thumb-hover: var(--cortex-palette-gray-350);
+  --cortex-scrollbar-thumb: rgba(252, 252, 252, 0.12);
+  --cortex-scrollbar-thumb-hover: rgba(252, 252, 252, 0.24);
   --cortex-scrollbar-width: 8px;
   --cortex-scrollbar-radius: var(--cortex-radius-full);
   

@@ -84,11 +84,11 @@
   --vscode-button-background: var(--jb-primary);
   --vscode-editorGutter-addedBackground: var(--jb-success);
   
-  /* Scrollbar Colors - using JetBrains tokens */
+  /* Scrollbar Colors - Figma Scroll Bar component */
   --vscode-scrollbar-shadow: var(--jb-shadow);
-  --vscode-scrollbarSlider-background: var(--jb-scrollbar-thumb);
-  --vscode-scrollbarSlider-hoverBackground: var(--jb-scrollbar-thumb-hover);
-  --vscode-scrollbarSlider-activeBackground: var(--jb-scrollbar-thumb-active);
+  --vscode-scrollbarSlider-background: var(--cortex-scrollbar-thumb-bg);
+  --vscode-scrollbarSlider-hoverBackground: var(--cortex-scrollbar-thumb-hover-bg);
+  --vscode-scrollbarSlider-activeBackground: var(--cortex-scrollbar-thumb-active-bg);
   
   /* High Contrast - using JetBrains tokens */
   --vscode-contrastActiveBorder: var(--jb-primary);
@@ -1229,16 +1229,16 @@
 }
 
 .terminal .xterm-viewport::-webkit-scrollbar-track {
-  background: var(--jb-panel);
+  background: transparent;
 }
 
 .terminal .xterm-viewport::-webkit-scrollbar-thumb {
-  background: var(--jb-scrollbar-thumb);
-  border-radius: 4px;
+  background: var(--cortex-scrollbar-thumb-bg);
+  border-radius: 999px;
 }
 
 .terminal .xterm-viewport::-webkit-scrollbar-thumb:hover {
-  background: var(--jb-scrollbar-thumb-hover);
+  background: var(--cortex-scrollbar-thumb-hover-bg);
 }
 
 /* ============================================

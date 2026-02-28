@@ -24,11 +24,11 @@
   /* Separator - VS Code exact specs */
   --cortex-menu-separator-color: var(--jb-border-default);
   
-  /* Scrollbar (4 properties) */
+  /* Scrollbar (4 properties) - Figma Scroll Bar component */
   --cortex-menu-scrollbar-shadow: rgba(0, 0, 0, 0.3);
-  --cortex-menu-scrollbar-slider-background: var(--cortex-scrollbar-thumb);
-  --cortex-menu-scrollbar-slider-hover-background: var(--cortex-scrollbar-thumb-hover);
-  --cortex-menu-scrollbar-slider-active-background: var(--cortex-text-muted);
+  --cortex-menu-scrollbar-slider-background: var(--cortex-scrollbar-thumb-bg);
+  --cortex-menu-scrollbar-slider-hover-background: var(--cortex-scrollbar-thumb-hover-bg);
+  --cortex-menu-scrollbar-slider-active-background: var(--cortex-scrollbar-thumb-hover-bg);
   
   /* VS Code menu sizing tokens - exact specs */
   --cortex-menu-min-width: 160px;
@@ -513,7 +513,7 @@
 
 .cortex-menu-scrollable::-webkit-scrollbar-thumb {
   background: var(--cortex-menu-scrollbar-slider-background);
-  border-radius: var(--cortex-menu-border-radius);
+  border-radius: 999px;
 }
 
 .cortex-menu-scrollable::-webkit-scrollbar-thumb:hover {

@@ -702,12 +702,12 @@ export function ParameterHintsWidget(props: ParameterHintsWidgetProps) {
           }
 
           .param-hints-docs::-webkit-scrollbar-thumb {
-            background: var(--vscode-scrollbarSlider-background, rgba(121, 121, 121, 0.4));
-            border-radius: var(--cortex-radius-sm);
+            background: var(--vscode-scrollbarSlider-background, var(--cortex-scrollbar-thumb-bg));
+            border-radius: 999px;
           }
 
           .param-hints-docs::-webkit-scrollbar-thumb:hover {
-            background: var(--vscode-scrollbarSlider-hoverBackground, rgba(100, 100, 100, 0.7));
+            background: var(--vscode-scrollbarSlider-hoverBackground, var(--cortex-scrollbar-thumb-hover-bg));
           }
 
           .param-hints-signature::-webkit-scrollbar {
@@ -719,8 +719,8 @@ export function ParameterHintsWidget(props: ParameterHintsWidgetProps) {
           }
 
           .param-hints-signature::-webkit-scrollbar-thumb {
-            background: var(--vscode-scrollbarSlider-background, rgba(121, 121, 121, 0.4));
-            border-radius: var(--cortex-radius-sm);
+            background: var(--vscode-scrollbarSlider-background, var(--cortex-scrollbar-thumb-bg));
+            border-radius: 999px;
           }
         `}</style>
       </div>

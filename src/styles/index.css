@@ -410,16 +410,16 @@ button.btn-vscode,
 
 .file-explorer-content::-webkit-scrollbar-thumb {
   background: transparent;
-  border-radius: var(--cortex-radius-sm);
+  border-radius: 999px;
   transition: background-color 0.2s;
 }
 
 .file-explorer-content:hover::-webkit-scrollbar-thumb {
-  background: var(--cortex-border-base);
+  background: var(--cortex-scrollbar-thumb-bg);
 }
 
 .file-explorer-content::-webkit-scrollbar-thumb:hover {
-  background: var(--cortex-text-disabled);
+  background: var(--cortex-scrollbar-thumb-hover-bg);
 }
 
 .file-explorer-empty,
