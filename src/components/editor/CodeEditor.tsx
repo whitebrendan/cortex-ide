@@ -560,12 +560,12 @@ export function CodeEditor(props: CodeEditorProps) {
   });
   const editorFontSize = createMemo(() => {
     const langSettings = getEffectiveEditorSettings(currentLanguage());
-    return langSettings.fontSize ?? 13;
+    return langSettings.fontSize ?? 14;
   });
   const editorLineHeight = createMemo(() => {
     const langSettings = getEffectiveEditorSettings(currentLanguage());
-    const fontSize = langSettings.fontSize ?? 13;
-    const lineHeightMultiplier = langSettings.lineHeight ?? 1.5;
+    const fontSize = langSettings.fontSize ?? 14;
+    const lineHeightMultiplier = langSettings.lineHeight ?? 1.15;
     return Math.round(fontSize * lineHeightMultiplier);
   });
 

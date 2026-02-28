@@ -65,7 +65,11 @@ export const CortexActivityBar: Component<CortexActivityBarProps> = (props) => {
           display: "flex",
           "flex-direction": "column",
           width: "var(--cortex-space-10)",
+<<<<<<< HEAD
           height: "100%",
+=======
+          "align-self": "flex-start",
+>>>>>>> 99dade2 (fix: pixel-perfect IDE editor layout to match Figma design)
           background: "var(--cortex-sidebar-bg)",
           "border-radius": "var(--cortex-sidebar-radius)",
           border: "1px solid var(--cortex-border-default)",

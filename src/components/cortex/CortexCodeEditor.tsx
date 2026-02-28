@@ -90,7 +90,7 @@ export const CortexCodeEditor: Component<CortexCodeEditorProps> = (props) => {
     height: "100%",
     background: "var(--cortex-bg-secondary)",
     border: "1px solid var(--cortex-border-default)",
-    "border-radius": "16px",
+    "border-radius": "12px",
     overflow: "hidden",
     ...local.style,
   });

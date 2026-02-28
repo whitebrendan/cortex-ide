@@ -289,9 +289,14 @@ export function CortexDesktopLayout(props: ParentProps) {
   return (
     <div style={{
       display: "flex", "flex-direction": "column", width: "100vw", height: "100vh",
+<<<<<<< HEAD
       background: "var(--cortex-bg-primary)", border: "1px solid var(--cortex-border-default)",
       "border-radius": "var(--cortex-panel-radius, 16px)",
       "box-shadow": "0px 4px 26px 15px rgba(38,36,37,0.38), inset 0px 0px 13.1px 6px rgba(26,24,25,0.2)",
+=======
+      background: "var(--cortex-bg-primary)",
+      "border-radius": "16px",
+>>>>>>> 99dade2 (fix: pixel-perfect IDE editor layout to match Figma design)
       overflow: "hidden", "font-family": "var(--cortex-font-sans)", color: "var(--cortex-text-primary)",
     }}>
       <FileEditHandlers />
@@ -311,7 +316,11 @@ export function CortexDesktopLayout(props: ParentProps) {
         onProjectDropdownClick={() => window.dispatchEvent(new CustomEvent("folder:open"))}
       />
 
+<<<<<<< HEAD
       <main style={{ display: "flex", flex: "1", overflow: "hidden", position: "relative", padding: "0 8px" }}>
+=======
+      <main style={{ display: "flex", flex: "1", overflow: "hidden", position: "relative", padding: "0 8px", gap: "8px" }}>
+>>>>>>> 99dade2 (fix: pixel-perfect IDE editor layout to match Figma design)
         <CortexModeCarousel
           mode={mode()}
           vibeContent={() =>

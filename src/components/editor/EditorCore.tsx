@@ -447,10 +447,10 @@ export function buildEditorOptions(
       scale: 1,
       size: "proportional",
     },
-    fontSize: langEditorSettings.fontSize ?? 13,
+    fontSize: langEditorSettings.fontSize ?? 14,
     lineHeight:
-      (langEditorSettings.lineHeight ?? 1.5) *
-      (langEditorSettings.fontSize ?? 13),
+      (langEditorSettings.lineHeight ?? 1.15) *
+      (langEditorSettings.fontSize ?? 14),
     fontFamily:
       langEditorSettings.fontFamily ??
       "'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, Monaco, 'Courier New', monospace",
