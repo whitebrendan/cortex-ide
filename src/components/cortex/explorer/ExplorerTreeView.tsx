@@ -94,11 +94,7 @@ export const ExplorerTreeView: Component<ExplorerTreeViewProps> = (props) => {
     "font-family": "Figtree, var(--cortex-font-sans, Inter, sans-serif)",
     "font-size": "16px",
     "font-weight": "600",
-<<<<<<< HEAD
     "line-height": "20px",
-=======
-    "line-height": "1em",
->>>>>>> cf62f3c (fix: pixel-perfect sidebar container and file tree to match Figma design)
     color: "#E9E9EA",
   });
 
@@ -114,11 +110,7 @@ export const ExplorerTreeView: Component<ExplorerTreeViewProps> = (props) => {
     "flex-direction": "column",
     "align-self": "stretch",
     gap: "4px",
-<<<<<<< HEAD
     padding: "16px",
-=======
-    padding: "0 16px",
->>>>>>> cf62f3c (fix: pixel-perfect sidebar container and file tree to match Figma design)
     flex: "1",
     "overflow-y": "auto",
     "overflow-x": "hidden",

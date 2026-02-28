@@ -191,10 +191,5 @@ export const ITEM_HEIGHT = 20;
 export const OVERSCAN = 10;
 export const DEBOUNCE_DELAY = 100;
 export const LAZY_LOAD_DEPTH = 1;
-<<<<<<< HEAD
-export const TREE_INDENT_SIZE = 16;
-export const TREE_BASE_PADDING = 16;
-=======
 export const TREE_INDENT_SIZE = 26;
 export const TREE_BASE_PADDING = 0;
->>>>>>> cf62f3c (fix: pixel-perfect sidebar container and file tree to match Figma design)

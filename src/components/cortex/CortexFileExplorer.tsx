@@ -107,14 +107,9 @@ export const CortexFileExplorer: Component<CortexFileExplorerProps> = (props) =>
     width: "320px",
     height: "100%",
     background: "#1C1C1D",
-<<<<<<< HEAD
-    border: "1px solid #2E2E31",
-    "border-radius": "12px",
-=======
     border: "1px solid #2E2F31",
     "border-radius": "12px",
     gap: "0",
->>>>>>> cf62f3c (fix: pixel-perfect sidebar container and file tree to match Figma design)
     overflow: "hidden",
     "flex-shrink": "0",
     ...local.style,
