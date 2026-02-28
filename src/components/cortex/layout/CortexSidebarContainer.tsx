@@ -165,7 +165,7 @@ export function CortexSidebarContainer(props: CortexSidebarContainerProps) {
 
       <div
         style={{
-          width: "6px",
+          width: "4px",
           cursor: "col-resize",
           background: "transparent",
           transition: "background 150ms",
@@ -193,7 +193,7 @@ export function CortexSidebarContainer(props: CortexSidebarContainerProps) {
         }}
         onMouseEnter={(e) => {
           const el = e.currentTarget as HTMLElement;
-          el.style.background = "linear-gradient(to right, transparent 2px, var(--cortex-accent-primary) 2px, var(--cortex-accent-primary) 4px, transparent 4px)";
+          el.style.background = "var(--cortex-accent-primary)";
         }}
         onMouseLeave={(e) => {
           (e.currentTarget as HTMLElement).style.background = "transparent";

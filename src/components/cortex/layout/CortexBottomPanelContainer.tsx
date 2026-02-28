@@ -32,7 +32,10 @@ export function CortexBottomPanelContainer(props: CortexBottomPanelContainerProp
       <div
         style={{
           height: "4px",
+<<<<<<< HEAD
           width: "100%",
+=======
+>>>>>>> 99dade2 (fix: pixel-perfect IDE editor layout to match Figma design)
           cursor: "row-resize",
           background: "transparent",
           transition: "background 200ms ease-out",

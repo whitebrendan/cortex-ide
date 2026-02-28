@@ -48,7 +48,11 @@ export function CortexIDELayout(props: CortexIDELayoutProps) {
     "flex-direction": "column",
     overflow: "hidden",
     "min-width": "0",
+<<<<<<< HEAD
     background: "var(--cortex-bg-secondary, #1C1C1D)",
+=======
+    background: "var(--cortex-bg-secondary)",
+>>>>>>> 99dade2 (fix: pixel-perfect IDE editor layout to match Figma design)
     "border-radius": "12px",
     border: "1px solid var(--cortex-border-default)",
   });
@@ -62,7 +66,11 @@ export function CortexIDELayout(props: CortexIDELayoutProps) {
       />
 
       <div style={{ display: "flex", flex: "1", overflow: "hidden", "flex-direction": "column" }}>
+<<<<<<< HEAD
         <div style={{ display: "flex", flex: "1", overflow: "hidden", gap: "8px", padding: "0 8px" }}>
+=======
+        <div style={{ display: "flex", flex: "1", overflow: "hidden", gap: "8px" }}>
+>>>>>>> 99dade2 (fix: pixel-perfect IDE editor layout to match Figma design)
           <CortexSidebarContainer
             sidebarTab={props.sidebarTab}
             sidebarCollapsed={props.sidebarCollapsed}
