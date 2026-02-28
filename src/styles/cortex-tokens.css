@@ -498,12 +498,12 @@
   --cortex-tab-indicator: var(--cortex-accent-primary);
   
   /* ===========================================================================
-     COMPONENT TOKENS: SCROLLBAR
+     COMPONENT TOKENS: SCROLLBAR (Figma: 6px width, #2E2F31 track, #8C8D8F thumb on hover)
      =========================================================================== */
   --cortex-scrollbar-track: transparent;
-  --cortex-scrollbar-thumb: #3C3D40;
-  --cortex-scrollbar-thumb-hover: #4C4C4D;
-  --cortex-scrollbar-width: 8px;
+  --cortex-scrollbar-thumb: #2E2F31;
+  --cortex-scrollbar-thumb-hover: #8C8D8F;
+  --cortex-scrollbar-width: 6px;
   --cortex-scrollbar-radius: var(--cortex-radius-full);
   
   /* ===========================================================================

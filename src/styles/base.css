@@ -144,7 +144,7 @@ body,
    ============================================================================= */
 
 :focus-visible {
-  outline: 2px solid var(--border-focus);
+  outline: 2px solid var(--cortex-accent-primary, #B2FF22);
   outline-offset: 2px;
 }
 
@@ -153,8 +153,8 @@ body,
    ============================================================================= */
 
 ::selection {
-  background: var(--surface-hover);
-  color: var(--text-title);
+  background: rgba(178, 255, 34, 0.3);
+  color: var(--cortex-text-primary, #FCFCFC);
 }
 
 ::placeholder {
@@ -164,7 +164,7 @@ body,
 /* Text selection in inputs */
 input::selection,
 textarea::selection {
-  background: var(--surface-hover);
+  background: rgba(178, 255, 34, 0.3);
 }
 
 /* Links */
@@ -224,18 +224,18 @@ code, pre {
    ============================================================================= */
 
 :root {
-  /* Scrollbar Design Tokens */
-  --cortex-scrollbar-width: 8px;
-  --cortex-scrollbar-height: 8px;
+  /* Scrollbar Design Tokens - Figma: 6px width, #2E2F31 track, #8C8D8F thumb on hover */
+  --cortex-scrollbar-width: 6px;
+  --cortex-scrollbar-height: 6px;
   --cortex-scrollbar-width-thin: 6px;
   --cortex-scrollbar-slider-min-size: 20px;
   
-  /* Scrollbar Colors - Figma design system */
+  /* Scrollbar Colors - Figma-aligned */
   --cortex-scrollbar-shadow: rgba(0, 0, 0, 0.35);
   --cortex-scrollbar-track-bg: transparent;
-  --cortex-scrollbar-thumb-bg: #3C3D40;
-  --cortex-scrollbar-thumb-hover-bg: #4C4C4D;
-  --cortex-scrollbar-thumb-active-bg: #4C4C4D;
+  --cortex-scrollbar-thumb-bg: var(--cortex-scrollbar-thumb, #2E2F31);
+  --cortex-scrollbar-thumb-hover-bg: var(--cortex-scrollbar-thumb-hover, #8C8D8F);
+  --cortex-scrollbar-thumb-active-bg: var(--cortex-scrollbar-thumb-hover, #8C8D8F);
   
   /* Scrollbar Timing */
   --cortex-scrollbar-hide-timeout: 500ms;
@@ -256,10 +256,10 @@ code, pre {
    10. BASE SCROLLBAR STYLES
    ============================================================================= */
 
-/* Default scrollbar styling (Figma custom scrollbar) */
+/* Default scrollbar styling - Figma: 6px width, #2E2F31 track, #8C8D8F thumb on hover */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -267,12 +267,12 @@ code, pre {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--cortex-scrollbar-thumb-bg, #3C3D40);
+  background: var(--cortex-scrollbar-thumb, #2E2F31);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--cortex-scrollbar-thumb-hover-bg, #4C4C4D);
+  background: var(--cortex-scrollbar-thumb-hover, #8C8D8F);
 }
 
 ::-webkit-scrollbar-corner {
