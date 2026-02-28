@@ -176,25 +176,23 @@ export const CortexInput: Component<CortexInputProps> = (props) => {
 /**
  * CortexPromptInput - Specialized chat prompt input matching Figma design
  *
- * Figma: layout_1J2410 (Home) → padding 16px, gap 32px, width 802px
- *        layout_AFMUU2 (Minimized) → padding 12px, gap 8px
+ * Figma: I1289:26136 - max-width 680px, border-radius 16px
  *
  * Structure:
  * ┌──────────────────────────────────────────────────────┐
- * │  [Placeholder text ...]                    [Send ●]  │  ← Input row
+ * │  [Placeholder text ...]                              │  ← Type area (48px)
  * │                                                      │
- * │  [+] [📎]                   [Build ▾] [claude ▾]     │  ← Action bar
+ * │  [📎]                        [claude ▾] [Send ●]     │  ← Action bar
  * └──────────────────────────────────────────────────────┘
  *
- * Send button: 32×32px, bg var(--cortex-accent-primary), border-radius 16px
- * Model selector: height 32px, padding 8px 8px 8px 12px, border-radius 8px
+ * Send button: 28×28px, bg accent/border-strong, border-radius 999px
+ * Model selector: height 28px, gap 4px, border-radius 8px
  */
 export interface CortexPromptInputProps {
   value?: string;
   placeholder?: string;
   onChange?: (value: string) => void;
   onSubmit?: (value: string) => void;
-  onPlusClick?: () => void;
   onUploadClick?: () => void;
   onModelClick?: () => void;
   modelName?: string;
@@ -207,7 +205,7 @@ export interface CortexPromptInputProps {
 
 export const CortexPromptInput: Component<CortexPromptInputProps> = (props) => {
   const [local, others] = splitProps(props, [
-    "value", "placeholder", "onChange", "onSubmit", "onPlusClick", "onUploadClick",
+    "value", "placeholder", "onChange", "onSubmit", "onUploadClick",
     "onModelClick", "modelName", "modelIcon", "isProcessing", "onStop", "class", "style",
   ]);
 

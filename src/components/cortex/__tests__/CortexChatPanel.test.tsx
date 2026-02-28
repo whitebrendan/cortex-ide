@@ -14,11 +14,6 @@ vi.mock("../primitives", () => ({
   CortexIcon: (props: { name: string; size?: number; color?: string }) => (
     <span data-testid={`icon-${props.name}`} data-size={props.size} />
   ),
-  CortexButton: (props: { children?: any; onClick?: () => void; variant?: string; size?: string; [key: string]: any }) => (
-    <button data-testid="cortex-button" data-variant={props.variant} data-size={props.size} onClick={props.onClick}>
-      {props.children}
-    </button>
-  ),
   CortexPromptInput: (props: {
     value?: string;
     placeholder?: string;
@@ -28,7 +23,6 @@ vi.mock("../primitives", () => ({
     isProcessing?: boolean;
     modelName?: string;
     onModelClick?: () => void;
-    onPlusClick?: () => void;
     onUploadClick?: () => void;
   }) => (
     <div data-testid="prompt-input">
@@ -49,9 +43,6 @@ vi.mock("../primitives", () => ({
       <span data-testid="model-name">{props.modelName}</span>
       <button data-testid="model-button" onClick={props.onModelClick}>
         Model
-      </button>
-      <button data-testid="plus-button" onClick={props.onPlusClick}>
-        Plus
       </button>
       <button data-testid="upload-button" onClick={props.onUploadClick}>
         Upload
@@ -147,11 +138,7 @@ describe("CortexChatPanel", () => {
         modelName: "Claude 3.5",
         modelIcon: "brain",
         onModelClick: vi.fn(),
-        onPlusClick: vi.fn(),
         onUploadClick: vi.fn(),
-        onBuildClick: vi.fn(),
-        onImportCodeClick: vi.fn(),
-        onImportDesignClick: vi.fn(),
         class: "custom-class",
         style: { width: "400px" },
       };
@@ -560,18 +547,6 @@ describe("CortexChatPanel", () => {
   });
 
   describe("Action Buttons", () => {
-    it("should call onPlusClick when plus button is clicked", async () => {
-      const onPlusClick = vi.fn();
-
-      const { getByTestId } = render(() => (
-        <CortexChatPanel state="home" onPlusClick={onPlusClick} />
-      ));
-
-      await fireEvent.click(getByTestId("plus-button"));
-
-      expect(onPlusClick).toHaveBeenCalled();
-    });
-
     it("should call onUploadClick when upload button is clicked", async () => {
       const onUploadClick = vi.fn();
 

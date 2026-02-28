@@ -2,11 +2,11 @@
  * CortexChatPanel - Pixel-perfect chat panel matching Figma design
  *
  * 3 States:
- * 1. Home (Full Screen) - Centered logo + title + prompt input + import buttons
+ * 1. Home (Full Screen) - Centered title + prompt input (Figma 1239:21705)
  * 2. Minimized (Overlay) - 369×297px positioned bottom-left
  * 3. Expanded (Agent Working) - Full conversation with progress indicators
  *
- * Figma refs: 166:2183 (Main Screen / Home), 166:2184 (AI terminal flow / Expanded)
+ * Figma refs: 1239:21705 (Main Screen / Home), 166:2184 (AI terminal flow / Expanded)
  */
 
 import { Component, JSX, splitProps, Show, For } from "solid-js";
@@ -59,18 +59,14 @@ export interface CortexChatPanelProps {
   modelName?: string;
   modelIcon?: string;
   onModelClick?: () => void;
-  onPlusClick?: () => void;
   onUploadClick?: () => void;
-  onBuildClick?: () => void;
-  onImportCodeClick?: () => void;
-  onImportDesignClick?: () => void;
   class?: string;
   style?: JSX.CSSProperties;
 }
 
 type InputProps = Omit<
   CortexChatPanelProps,
-  "state" | "messages" | "onBuildClick" | "onImportCodeClick" | "onImportDesignClick" | "class" | "style"
+  "state" | "messages" | "class" | "style"
 >;
 
 const PromptInputBlock: Component<InputProps & { style?: JSX.CSSProperties }> = (props) => (
@@ -84,7 +80,6 @@ const PromptInputBlock: Component<InputProps & { style?: JSX.CSSProperties }> = 
     modelName={props.modelName}
     modelIcon={props.modelIcon}
     onModelClick={props.onModelClick}
-    onPlusClick={props.onPlusClick}
     onUploadClick={props.onUploadClick}
     style={props.style}
   />
@@ -95,8 +90,8 @@ const FONT = "var(--cortex-font-sans, 'Figtree', sans-serif)";
 export const CortexChatPanel: Component<CortexChatPanelProps> = (props) => {
   const [local] = splitProps(props, [
     "state", "messages", "inputValue", "onInputChange", "onSubmit", "onStop",
-    "isProcessing", "modelName", "modelIcon", "onModelClick", "onPlusClick",
-    "onUploadClick", "onBuildClick", "onImportCodeClick", "onImportDesignClick",
+    "isProcessing", "modelName", "modelIcon", "onModelClick",
+    "onUploadClick",
     "class", "style",
   ]);
   const state = () => local.state || "home";
@@ -117,8 +112,8 @@ export const CortexChatPanel: Component<CortexChatPanelProps> = (props) => {
 
 /* ============================================================================
    HOME STATE - Full screen, centered content
-   Figma: 166:2183 → Main Screen → Frame 2147230361
-   Layout: column, center-aligned, 802px content width
+   Figma: 1239:21705 → Main Screen
+   Layout: column, center-aligned, 922px content width, 28px gap
    ============================================================================ */
 const HomeChat: Component<Omit<CortexChatPanelProps, "state" | "messages">> = (props) => (
   <div class={props.class} style={{
