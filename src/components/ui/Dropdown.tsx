@@ -118,10 +118,10 @@ export function Dropdown(props: DropdownProps) {
     left: local.align === "end" ? "auto" : `${position().left}px`,
     right: local.align === "end" ? `${window.innerWidth - position().left}px` : "auto",
     "min-width": "160px",
-    background: "var(--surface-active)",
-    "border-radius": "var(--cortex-radius-md)",
-    "box-shadow": "0px 8px 24px rgba(0, 0, 0, 0.4)",
-    border: "1px solid var(--border-default)",
+    background: "var(--cortex-dropdown-bg, var(--surface-active))",
+    "border-radius": "var(--cortex-dropdown-radius, var(--cortex-radius-md, 8px))",
+    "box-shadow": "var(--cortex-dropdown-shadow, 0px 8px 24px rgba(0, 0, 0, 0.4))",
+    border: "1px solid var(--cortex-dropdown-border, var(--border-default))",
     padding: "4px",
     "z-index": "var(--cortex-z-highest)",
     ...local.style,
@@ -136,10 +136,10 @@ export function Dropdown(props: DropdownProps) {
     "border-radius": "var(--cortex-radius-sm)",
     "font-size": "13px",
     color: item.disabled ? "var(--text-placeholder)" : "var(--text-primary)",
-    background: idx === focusedIndex() ? "var(--surface-hover)" : "transparent",
+    background: idx === focusedIndex() ? "var(--cortex-dropdown-item-hover, var(--surface-hover))" : "transparent",
     cursor: item.disabled ? "not-allowed" : "pointer",
     opacity: item.disabled ? "0.6" : "1",
-    transition: "background 100ms ease",
+    transition: "background var(--cortex-transition-fast, 100ms ease)",
   });
 
   const separatorStyle: JSX.CSSProperties = {

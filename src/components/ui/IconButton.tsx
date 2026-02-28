@@ -1,4 +1,4 @@
-import { JSX, splitProps } from "solid-js";
+import { JSX, splitProps, createSignal } from "solid-js";
 
 export interface IconButtonProps extends JSX.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: "sm" | "md" | "lg";
@@ -20,6 +20,8 @@ export function IconButton(props: IconButtonProps) {
     "style",
     "disabled",
   ]);
+
+  const [focused, setFocused] = createSignal(false);
 
   const size = () => local.size || "md";
   const variant = () => local.variant || "ghost";
@@ -43,8 +45,9 @@ export function IconButton(props: IconButtonProps) {
     color: local.active ? "var(--text-title)" : "var(--text-primary)",
     cursor: local.disabled ? "not-allowed" : "pointer",
     opacity: local.disabled ? "0.5" : "1",
-    transition: "background var(--cortex-transition-fast), color var(--cortex-transition-fast)",
+    transition: "background var(--cortex-transition-fast), color var(--cortex-transition-fast), box-shadow var(--cortex-transition-fast)",
     "flex-shrink": "0",
+    "box-shadow": focused() ? "var(--cortex-focus-ring)" : "none",
   };
 
   const computedStyle = (): JSX.CSSProperties => ({
@@ -82,6 +85,14 @@ export function IconButton(props: IconButtonProps) {
     }
   };
 
+  const handleFocus = () => {
+    if (!local.disabled) setFocused(true);
+  };
+
+  const handleBlur = () => {
+    setFocused(false);
+  };
+
   return (
     <button
       {...rest}
@@ -92,6 +103,8 @@ export function IconButton(props: IconButtonProps) {
       onMouseLeave={handleMouseLeave}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
     >
       <span style={{ 
         width: sizeMap[size()].iconSize, 

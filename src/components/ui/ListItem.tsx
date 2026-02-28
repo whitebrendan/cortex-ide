@@ -1,4 +1,4 @@
-import { JSX, splitProps, ParentProps, Show } from "solid-js";
+import { JSX, splitProps, ParentProps, Show, createSignal } from "solid-js";
 
 export interface ListItemProps extends ParentProps {
   icon?: JSX.Element;
@@ -26,7 +26,9 @@ export function ListItem(props: ListItemProps) {
     "children",
   ]);
 
-  const baseStyle: JSX.CSSProperties = {
+  const [focused, setFocused] = createSignal(false);
+
+  const baseStyle = (): JSX.CSSProperties => ({
     display: "flex",
     "align-items": "center",
     gap: "8px",
@@ -36,13 +38,15 @@ export function ListItem(props: ListItemProps) {
     color: local.selected ? "var(--text-title)" : "var(--text-primary)",
     cursor: local.disabled ? "not-allowed" : local.onClick ? "pointer" : "default",
     opacity: local.disabled ? "0.5" : "1",
-    transition: "background 100ms ease",
+    transition: "background 100ms ease, box-shadow var(--cortex-transition-fast, 100ms ease)",
     "user-select": "none",
     "font-size": "13px",
-  };
+    "box-shadow": focused() ? "var(--cortex-focus-ring)" : "none",
+    outline: "none",
+  });
 
   const computedStyle = (): JSX.CSSProperties => ({
-    ...baseStyle,
+    ...baseStyle(),
     ...local.style,
   });
 
@@ -100,12 +104,23 @@ export function ListItem(props: ListItemProps) {
     }
   };
 
+  const handleFocus = () => {
+    if (!local.disabled) setFocused(true);
+  };
+
+  const handleBlur = () => {
+    setFocused(false);
+  };
+
   return (
     <div
       style={computedStyle()}
       onClick={local.disabled ? undefined : local.onClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      tabIndex={local.onClick && !local.disabled ? 0 : undefined}
     >
       <Show when={local.icon}>
         <span style={iconStyle}>{local.icon}</span>

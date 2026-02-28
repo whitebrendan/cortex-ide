@@ -76,11 +76,12 @@ export const CortexButton: Component<CortexButtonProps> = (props) => {
     "fullWidth", "class", "style", "onClick", "children", "type", "title",
   ]);
 
+  const [pressed, setPressed] = createSignal(false);
+  const [focused, setFocused] = createSignal(false);
+
   const variant = () => local.variant || "primary";
   const size = () => local.size || "md";
   const iconPos = () => local.iconPosition || "left";
-  const [pressed, setPressed] = createSignal(false);
-  const [focused, setFocused] = createSignal(false);
 
   const baseStyle = (): JSX.CSSProperties => ({
     display: "inline-flex",
@@ -97,7 +98,7 @@ export const CortexButton: Component<CortexButtonProps> = (props) => {
     "user-select": "none",
     width: local.fullWidth ? "100%" : "auto",
     outline: "none",
-    "box-shadow": focused() ? "var(--cortex-focus-ring-offset)" : "none",
+    "box-shadow": focused() ? "var(--cortex-focus-ring)" : "none",
     ...SIZE_STYLES[size()],
     ...local.style,
   });
@@ -201,7 +202,7 @@ export const CortexButton: Component<CortexButtonProps> = (props) => {
   };
 
   const handleFocus = () => {
-    setFocused(true);
+    if (!local.disabled) setFocused(true);
   };
 
   const handleBlur = () => {
