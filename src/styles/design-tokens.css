@@ -19,9 +19,9 @@
      =========================================================================== */
   
   /* @deprecated — Use --cortex-bg-primary (#141415) */
-  --palette-graphite: #26292C;
+  --palette-graphite: #141415;
   /* @deprecated — Use --cortex-bg-secondary (#1C1C1D) */
-  --palette-carbon: #191A1C;
+  --palette-carbon: #1C1C1D;
   /* @deprecated */ --palette-graphite-light: #2f3336;
   /* @deprecated */ --palette-graphite-lighter: #383c40;
   /* @deprecated */ --palette-carbon-light: #1f2124;
@@ -93,7 +93,7 @@
   
   /* ---- BORDURES ---- */
   /* @deprecated — Use --cortex-border-default, --cortex-border-hover, etc. */
-  --border-default: rgba(255, 255, 255, 0.1);
+  --border-default: #2E2F31;
   --border-hover: rgba(255, 255, 255, 0.15);
   --border-focus: var(--palette-blue-500);
   --border-error: var(--palette-error);
@@ -153,7 +153,7 @@
      TYPOGRAPHIE
      @deprecated — Use --cortex-font-sans, --cortex-font-mono, --cortex-text-*
      =========================================================================== */
-  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-ui: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', Consolas, monospace;
   
   --text-xs: 11px;

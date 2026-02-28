@@ -627,19 +627,19 @@
 /* Windows */
 .windows .cortex-menu,
 .windows .cortex-menubar {
-  font-family: var(--jb-font-ui), 'Inter', sans-serif;
+  font-family: var(--jb-font-ui), 'Figtree', sans-serif;
 }
 
 /* macOS */
 .mac .cortex-menu,
 .mac .cortex-menubar {
-  font-family: var(--jb-font-ui), 'Inter', sans-serif;
+  font-family: var(--jb-font-ui), 'Figtree', sans-serif;
 }
 
 /* Linux */
 .linux .cortex-menu,
 .linux .cortex-menubar {
-  font-family: var(--jb-font-ui), 'Inter', sans-serif;
+  font-family: var(--jb-font-ui), 'Figtree', sans-serif;
 }
 
 /* Linux separator specifics */
