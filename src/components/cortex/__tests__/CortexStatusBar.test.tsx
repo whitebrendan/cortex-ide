@@ -355,16 +355,16 @@ describe("CortexStatusBar", () => {
       expect(footer?.style.backgroundColor).toBe("green");
     });
 
-    it("should have correct padding of 0 24px", () => {
+    it("should have correct padding of 8px", () => {
       const { container } = render(() => <CortexStatusBar />);
       const footer = container.querySelector("footer");
-      expect(footer?.style.padding).toBe("0px 24px");
+      expect(footer?.style.padding).toBe("8px");
     });
 
-    it("should have Figma-exact height from design token", () => {
+    it("should have Figma-exact height of 48px", () => {
       const { container } = render(() => <CortexStatusBar />);
       const footer = container.querySelector("footer");
-      expect(footer?.style.height).toBe("var(--cortex-height-statusbar, 24px)");
+      expect(footer?.style.height).toBe("48px");
     });
 
     it("should have gap of 40px", () => {
