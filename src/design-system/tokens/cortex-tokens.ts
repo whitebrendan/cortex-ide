@@ -195,8 +195,8 @@ export const CortexRawValues = {
     input: 10,
     lg: 12,
     xl: 16,
-    '2xl': 24,
-    '3xl': 24,
+    '2xl': 16,
+    '3xl': 16,
     full: 9999,
   },
 
