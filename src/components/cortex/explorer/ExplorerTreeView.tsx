@@ -5,9 +5,9 @@
  * Section title: "EXPLORER" 11px uppercase, weight 600, color #8C8D8F
  * Heading: 320×20, row, padding 0 16px, gap 62 (space-between)
  * Title: Figtree 16px/600, #E9E9EA, chevron 16×16 beside it, gap 2
- * Actions: row, gap 2, four 20×20 icon buttons (16×16 icons)
+ * Actions: row, gap 2, four 20×20 icon buttons (16×16 icons): new file, target, refresh, collapse
  * Tree area: column, gap 4, padding 16px all sides
- * Item height: 20px, item gap: 4px
+ * Item height: 24px, item gap: 4px, indent 16px/level
  */
 
 import { Component, JSX, createSignal, For } from "solid-js";
@@ -141,8 +141,8 @@ export const ExplorerTreeView: Component<ExplorerTreeViewProps> = (props) => {
         </div>
 
         <div style={actionsStyle()}>
-          <ExplorerActionButton icon="search" label="Search (Ctrl+Shift+F)" onClick={props.onSearch} />
           <ExplorerActionButton icon="plus" label="New File" onClick={props.onAdd} />
+          <ExplorerActionButton icon="target-02" label="Search" onClick={props.onSearch} />
           <ExplorerActionButton icon="refresh" label="Refresh" onClick={props.onRefresh} />
           <ExplorerActionButton icon="chevron-up-double" label="Collapse All" onClick={props.onCollapseAll} />
         </div>

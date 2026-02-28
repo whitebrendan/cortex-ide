@@ -156,31 +156,31 @@ describe("CortexTreeItem", () => {
   });
 
   describe("indentation", () => {
-    it("applies no indentation at level 0", () => {
+    it("applies base indentation for file at level 0", () => {
       const item = createFileItem();
       const { container } = render(() => (
         <CortexTreeItem item={item} level={0} />
       ));
       const row = container.firstChild as HTMLElement;
-      expect(row.style.paddingLeft).toBe("0px");
+      expect(row.style.paddingLeft).toBe("20px");
     });
 
-    it("applies 24px indentation per level", () => {
+    it("applies 16px indentation per level for files", () => {
       const item = createFileItem();
       const { container } = render(() => (
         <CortexTreeItem item={item} level={1} />
       ));
       const row = container.firstChild as HTMLElement;
-      expect(row.style.paddingLeft).toBe("24px");
+      expect(row.style.paddingLeft).toBe("36px");
     });
 
-    it("applies correct indentation at level 2", () => {
+    it("applies correct indentation for file at level 2", () => {
       const item = createFileItem();
       const { container } = render(() => (
         <CortexTreeItem item={item} level={2} />
       ));
       const row = container.firstChild as HTMLElement;
-      expect(row.style.paddingLeft).toBe("48px");
+      expect(row.style.paddingLeft).toBe("52px");
     });
   });
 
@@ -191,7 +191,7 @@ describe("CortexTreeItem", () => {
         <CortexTreeItem item={item} isSelected />
       ));
       const row = container.firstChild as HTMLElement;
-      expect(row.style.background).toContain("rgba(255, 255, 255, 0.05)");
+      expect(row.style.background).toContain("rgb(37, 38, 40)");
     });
 
     it("applies transparent background when not selected", () => {
@@ -212,7 +212,7 @@ describe("CortexTreeItem", () => {
 
       await fireEvent.mouseEnter(row);
 
-      expect(row.style.background).toContain("rgba(255, 255, 255, 0.03)");
+      expect(row.style.background).toContain("rgb(37, 38, 40)");
     });
 
     it("removes hover background on mouse leave", async () => {
@@ -476,7 +476,7 @@ describe("IndentGuide", () => {
         <IndentGuide level={1} height={100} />
       ));
       const guide = container.firstChild as HTMLElement;
-      expect(guide.style.left).toBe("34px");
+      expect(guide.style.left).toBe("26px");
     });
 
     it("applies correct height", () => {
@@ -528,7 +528,7 @@ describe("IndentGuide", () => {
         <IndentGuide level={2} height={100} />
       ));
       const guide = container.firstChild as HTMLElement;
-      expect(guide.style.left).toBe("58px");
+      expect(guide.style.left).toBe("42px");
     });
   });
 });

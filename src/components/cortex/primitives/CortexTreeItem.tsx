@@ -2,14 +2,15 @@
  * CortexTreeItem - Tree view item component for FileExplorer
  * Figma: file 4hKtI49khKHjribAGpFUkW, node 1060:33326
  *
- * Folder row: 20px height, gap 8px between chevron and content
+ * Row height: 24px
+ * Folder row: gap 8px between chevron and content
  *   - Chevron: 12×12 icon in 20×20 container
  *   - Folder icon: 16×16
  *   - Text: Figtree 13px 400, #FCFCFC
- * File row: 20px height, gap 4px
+ * File row: gap 4px
  *   - File icon: 16×16
  *   - Text: Figtree 13px 400, #FCFCFC
- * Indent: folders pL = level * 26, files pL = 28 + (level-1) * 26 (level>0) or 28 (level 0)
+ * Indent: 16px per level
  * Hover: bg #252628
  * Selected: bg #252628 + left 2px solid #B2FF22
  */
@@ -95,9 +96,9 @@ export const CortexTreeItem: Component<CortexTreeItemProps> = (props) => {
 
   const indentPx = () => {
     if (isFolder()) {
-      return level() * 26;
+      return level() * 16;
     }
-    return level() > 0 ? 2 + level() * 26 : 28;
+    return 20 + level() * 16;
   };
 
   const rowStyle = (): JSX.CSSProperties => ({
@@ -105,7 +106,7 @@ export const CortexTreeItem: Component<CortexTreeItemProps> = (props) => {
     "align-items": "center",
     "align-self": "stretch",
     gap: isFolder() ? "8px" : "4px",
-    height: "20px",
+    height: "24px",
     padding: isFolder() ? "0" : "2px 0",
     "padding-left": `${indentPx()}px`,
     "padding-right": "8px",
@@ -252,7 +253,7 @@ export interface IndentGuideProps {
 export const IndentGuide: Component<IndentGuideProps> = (props) => {
   const guideStyle = (): JSX.CSSProperties => ({
     position: "absolute",
-    left: `${props.level * 26 + 10}px`,
+    left: `${props.level * 16 + 10}px`,
     width: "1px",
     height: `${props.height}px`,
     background: "rgba(255, 255, 255, 0.1)",

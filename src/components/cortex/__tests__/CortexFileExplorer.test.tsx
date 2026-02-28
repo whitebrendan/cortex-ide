@@ -118,7 +118,7 @@ describe("CortexFileExplorer", () => {
 
     it("should render header action buttons", () => {
       const { container } = render(() => <CortexFileExplorer />);
-      const searchButton = container.querySelector('[aria-label="Search (Ctrl+Shift+F)"]');
+      const searchButton = container.querySelector('[aria-label="Search"]');
       const addButton = container.querySelector('[aria-label="New File"]');
       const refreshButton = container.querySelector('[aria-label="Refresh"]');
 
@@ -224,7 +224,7 @@ describe("CortexFileExplorer", () => {
 
       const { container } = render(() => <CortexFileExplorer onSearch={onSearch} />);
 
-      const searchButton = container.querySelector('[aria-label="Search (Ctrl+Shift+F)"]');
+      const searchButton = container.querySelector('[aria-label="Search"]');
       if (searchButton) {
         await fireEvent.click(searchButton);
       }
@@ -293,17 +293,17 @@ describe("CortexFileExplorer", () => {
       expect(div?.style.width).toBe("320px");
     });
 
-    it("should have correct border-radius of 16px", () => {
+    it("should have correct border-radius of 12px", () => {
       const { container } = render(() => <CortexFileExplorer />);
       const div = container.firstChild as HTMLElement;
-      expect(div?.style.borderRadius).toBe("16px");
+      expect(div?.style.borderRadius).toBe("12px");
     });
 
-    it("should use cortex-bg-primary CSS variable for background", () => {
+    it("should use #1C1C1D for background", () => {
       const { container } = render(() => <CortexFileExplorer />);
       const div = container.firstChild as HTMLElement;
       const bg = div?.style.background;
-      expect(bg).toContain("var(--cortex-bg-primary)");
+      expect(bg).toContain("rgb(28, 28, 29)");
     });
   });
 });

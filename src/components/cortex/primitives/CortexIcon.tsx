@@ -130,6 +130,7 @@ const ICON_NAME_MAP: Record<string, string> = {
 
   "file-plus": "file-circle-plus",
   "file-plus-01": "file-circle-plus",
+  "folder-plus": "folder-plus",
   attach: "paperclip",
   paperclip: "paperclip",
   "hide-panel": "sidebar",
