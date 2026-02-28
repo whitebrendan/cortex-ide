@@ -1,14 +1,12 @@
 import { Component } from "solid-js";
 
 export const CortexLogo: Component<{ size?: number }> = (props) => {
-  const size = () => props.size || 40;
+  const size = () => props.size || 32;
   return (
     <div
       style={{
         width: `${size()}px`,
         height: `${size()}px`,
-        "border-radius": "12px",
-        background: "linear-gradient(137deg, rgba(77,86,255,1) 0%, rgba(105,71,147,1) 95%)",
         display: "flex",
         "align-items": "center",
         "justify-content": "center",

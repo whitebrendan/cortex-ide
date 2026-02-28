@@ -1,12 +1,12 @@
 /**
  * CortexHeaderItem - Pixel-perfect header menu item for Cortex UI Design System
- * Figma "Header item" (20:2695): menu bar items with Default, Hover, Dropdown open states
+ * Figma "Text Buttons" in header menu: menu bar items with Default, Hover, Dropdown open states
  *
  * Figma specs:
- *   Layout: row, justify center, align center, gap 10px, padding 8px 10px
- *   Font: Figtree 16px weight 500, line-height 1em
- *   Default: text #8C8D8F, bg transparent, no border-radius
- *   Hover/Active: text #FCFCFC, bg #1C1C1D, border-radius 8px
+ *   Layout: row, justify center, align center, gap 4px, padding 8px
+ *   Font: Figtree 14px weight 500, line-height 115%
+ *   Default: text #8C8D8F (--cortex-text-secondary), bg transparent, border-radius 8px
+ *   Hover/Active: text #FCFCFC (--cortex-text-primary), bg #1C1C1D (--cortex-bg-secondary), border-radius 8px
  */
 
 import { Component, JSX, splitProps, createSignal } from "solid-js";
@@ -46,16 +46,16 @@ export const CortexHeaderItem: Component<CortexHeaderItemProps> = (props) => {
     display: "inline-flex",
     "align-items": "center",
     "justify-content": "center",
-    padding: "8px 10px",
-    gap: "10px",
+    padding: "8px",
+    gap: "4px",
     border: "none",
     background: getBackground(),
-    "border-radius": isHighlighted() ? "8px" : "0",
+    "border-radius": "8px",
     color: isHighlighted() ? "var(--cortex-text-primary)" : "var(--cortex-text-secondary)",
     "font-family": "'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    "font-size": "16px",
+    "font-size": "14px",
     "font-weight": "500",
-    "line-height": "1em",
+    "line-height": "1.15",
     cursor: "pointer",
     transition: "all var(--cortex-transition-normal, 150ms ease)",
     "white-space": "nowrap",

@@ -28,8 +28,8 @@ export const MacWindowControls: Component<{
       style={{
         display: "flex",
         "align-items": "center",
-        gap: "10px",
-        padding: "16px",
+        gap: "8px",
+        padding: "0 4px",
       }}
       onMouseEnter={() => setHoveredGroup(true)}
       onMouseLeave={() => setHoveredGroup(false)}
