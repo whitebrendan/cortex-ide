@@ -1,9 +1,11 @@
 /**
  * CortexActivityBar - Pixel-perfect activity bar matching Figma sidebar-container
+ * Figma node: I1156:23695;885:19533 (sidebar-container)
  * Width: 40px, border-radius 12px, bg #1C1C1D, border 1px solid #2E2F31
  * Items: 32×32 containers, 16×16 icons, 4px gap, 8px button padding
- * Active state: bg #2E2E31 with white icon (#FCFCFC), border-radius 8px
- * Inactive: #8C8C8F, hover: #FCFCFC
+ * Active state: #2E2F31 bg (border-default color) with white icon (#FCFCFC), border-radius 8px
+ * Inactive: icon #8C8D8F, bg same as container (#1C1C1D)
+ * Hover: icon #FCFCFC
  * Bottom section: settings (settings) + avatar circle (24×24) with green status dot
  */
 
