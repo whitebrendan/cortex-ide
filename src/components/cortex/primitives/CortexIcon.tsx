@@ -49,6 +49,8 @@ const ICON_NAME_MAP: Record<string, string> = {
   book: "book",
   "book-open": "book-open",
   map: "map",
+  dashboard: "gauge",
+  draw: "paintbrush",
   paintbrush: "paintbrush",
   brush: "paintbrush",
   settings: "gear",
