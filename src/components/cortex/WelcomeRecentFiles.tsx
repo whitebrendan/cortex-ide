@@ -1,52 +1,12 @@
 import { Component, For, Show, createSignal } from "solid-js";
 import type { RecentProject } from "@/context/RecentProjectsContext";
 
-const FILE_ICON_MAP: Record<string, string> = {
-  tsx: "/icons/files/react-ts.svg",
-  jsx: "/icons/files/react.svg",
-  ts: "/icons/files/ts.svg",
-  js: "/icons/files/js.svg",
-  rs: "/icons/files/rust.svg",
-  py: "/icons/files/python.svg",
-  go: "/icons/files/go.svg",
-  toml: "/icons/files/gear.svg",
-  json: "/icons/files/json.svg",
-  yaml: "/icons/files/yaml.svg",
-  yml: "/icons/files/yaml.svg",
-  md: "/icons/files/markdown.svg",
-  css: "/icons/files/css.svg",
-  html: "/icons/files/html.svg",
-  svg: "/icons/files/svg.svg",
-  vue: "/icons/files/vue.svg",
-  svelte: "/icons/files/svelte.svg",
-};
-
-const FOLDER_ICON = "/icons/files/document.svg";
-
-function getFileIcon(name: string): string {
-  const ext = name.split(".").pop()?.toLowerCase() || "";
-  return FILE_ICON_MAP[ext] || FOLDER_ICON;
-}
-
 function formatPath(path: string, maxLength: number = 60): string {
   const normalized = path.replace(/\\/g, "/");
   if (normalized.length <= maxLength) return normalized;
   const parts = normalized.split("/").filter(Boolean);
   if (parts.length <= 2) return normalized;
   return "~/" + parts.slice(-2).join("/");
-}
-
-function formatRelativeTime(timestamp: number): string {
-  const diff = Date.now() - timestamp;
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-  const weeks = Math.floor(days / 7);
-  if (weeks > 0) return `${weeks}w ago`;
-  if (days > 0) return `${days}d ago`;
-  if (hours > 0) return `${hours}h ago`;
-  if (minutes > 0) return `${minutes}m ago`;
-  return "Just now";
 }
 
 interface WelcomeRecentFilesProps {
@@ -60,25 +20,20 @@ export const WelcomeRecentFiles: Component<WelcomeRecentFilesProps> = (props) =>
       display: "flex",
       "flex-direction": "column",
       width: "100%",
-      "max-width": "480px",
     }}>
       <div style={{
-        "font-size": "12px",
-        "font-weight": "500",
-        color: "var(--cortex-text-secondary)",
-        "text-transform": "uppercase",
-        "letter-spacing": "0.05em",
+        "font-size": "14px",
+        "font-weight": "600",
+        color: "#8C8D8F",
         "margin-bottom": "8px",
-        padding: "0 4px",
+        "font-family": "'Figtree', var(--cortex-font-sans)",
       }}>
-        Recent Projects
+        Recent
       </div>
       <div style={{
         display: "flex",
         "flex-direction": "column",
-        gap: "2px",
-        "border-radius": "var(--cortex-radius-md)",
-        overflow: "hidden",
+        gap: "1px",
       }}>
         <For each={props.projects.slice(0, 8)}>
           {(project) => (
@@ -109,63 +64,55 @@ const RecentFileItem: Component<RecentFileItemProps> = (props) => {
       style={{
         display: "flex",
         "align-items": "center",
-        gap: "10px",
-        padding: "8px 12px",
-        background: hovered() ? "var(--cortex-bg-hover)" : "transparent",
+        gap: "8px",
+        padding: "4px 0",
+        background: "transparent",
         border: "none",
         cursor: "pointer",
         width: "100%",
         "text-align": "left",
-        "border-radius": "var(--cortex-radius-sm)",
-        transition: "background var(--cortex-transition-fast)",
+        transition: "opacity 0.15s ease",
+        opacity: hovered() ? "0.85" : "1",
       }}
     >
-      <img
-        src={getFileIcon(props.project.name)}
-        alt=""
-        width="18"
-        height="18"
-        style={{ "flex-shrink": "0", opacity: "0.8" }}
-      />
-      <div style={{ flex: "1", "min-width": "0", overflow: "hidden" }}>
-        <div style={{
-          "font-size": "13px",
-          "font-weight": "500",
-          color: "var(--cortex-text-primary)",
+      <div style={{
+        display: "flex",
+        "align-items": "baseline",
+        gap: "8px",
+        "min-width": "0",
+        flex: "1",
+        overflow: "hidden",
+      }}>
+        <span style={{
+          "font-size": "14px",
+          "font-weight": "400",
+          color: "#B2FF22",
           "white-space": "nowrap",
-          overflow: "hidden",
-          "text-overflow": "ellipsis",
+          "flex-shrink": "0",
+          "font-family": "'Figtree', var(--cortex-font-sans)",
         }}>
           {props.project.name}
-        </div>
-        <div style={{
-          "font-size": "11px",
-          color: "var(--cortex-text-secondary)",
+        </span>
+        <span style={{
+          "font-size": "13px",
+          color: "#8C8D8F",
           "white-space": "nowrap",
           overflow: "hidden",
           "text-overflow": "ellipsis",
-          "margin-top": "1px",
+          "font-family": "'Figtree', var(--cortex-font-sans)",
         }}>
           {formatPath(props.project.path)}
-        </div>
+        </span>
       </div>
       <Show when={props.project.pinned}>
         <div style={{
           width: "6px",
           height: "6px",
-          "border-radius": "var(--cortex-radius-full)",
-          background: "var(--cortex-accent-primary)",
+          "border-radius": "50%",
+          background: "#B2FF22",
           "flex-shrink": "0",
         }} />
       </Show>
-      <span style={{
-        "font-size": "11px",
-        color: "var(--cortex-text-tertiary)",
-        "flex-shrink": "0",
-        "white-space": "nowrap",
-      }}>
-        {formatRelativeTime(props.project.lastOpened)}
-      </span>
     </button>
   );
 };

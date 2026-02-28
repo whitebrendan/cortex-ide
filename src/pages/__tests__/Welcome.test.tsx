@@ -87,18 +87,25 @@ describe("Welcome Page", () => {
       expect(getByText("Welcome to Cortex")).toBeTruthy();
     });
 
-    it("should render the tagline", () => {
+    it("should render the Start section title", () => {
       const { getByText } = render(() => <Welcome />);
-      expect(getByText("AI-powered code editor. Start a new project or open a recent one.")).toBeTruthy();
+      expect(getByText("Start")).toBeTruthy();
     });
   });
 
-  describe("Quick Actions", () => {
+  describe("Start Actions", () => {
     it("should render New File button", () => {
       const { container } = render(() => <Welcome />);
       const buttons = container.querySelectorAll("button");
       const newFileBtn = Array.from(buttons).find(b => b.textContent === "New File");
       expect(newFileBtn).toBeTruthy();
+    });
+
+    it("should render Open File button", () => {
+      const { container } = render(() => <Welcome />);
+      const buttons = container.querySelectorAll("button");
+      const openFileBtn = Array.from(buttons).find(b => b.textContent === "Open File");
+      expect(openFileBtn).toBeTruthy();
     });
 
     it("should render Open Folder button", () => {
@@ -108,10 +115,10 @@ describe("Welcome Page", () => {
       expect(openFolderBtn).toBeTruthy();
     });
 
-    it("should render Clone Repository button", () => {
+    it("should render Clone Git Repository button", () => {
       const { container } = render(() => <Welcome />);
       const buttons = container.querySelectorAll("button");
-      const cloneBtn = Array.from(buttons).find(b => b.textContent === "Clone Repository");
+      const cloneBtn = Array.from(buttons).find(b => b.textContent === "Clone Git Repository");
       expect(cloneBtn).toBeTruthy();
     });
 
@@ -126,6 +133,17 @@ describe("Welcome Page", () => {
       dispatchSpy.mockRestore();
     });
 
+    it("should dispatch file:open event when Open File is clicked", () => {
+      const dispatchSpy = vi.spyOn(window, "dispatchEvent");
+      const { container } = render(() => <Welcome />);
+      const buttons = container.querySelectorAll("button");
+      const openFileBtn = Array.from(buttons).find(b => b.textContent === "Open File");
+      expect(openFileBtn).toBeTruthy();
+      fireEvent.click(openFileBtn!);
+      expect(dispatchSpy).toHaveBeenCalledWith(expect.objectContaining({ type: "file:open" }));
+      dispatchSpy.mockRestore();
+    });
+
     it("should dispatch folder:open event when Open Folder is clicked", () => {
       const dispatchSpy = vi.spyOn(window, "dispatchEvent");
       const { container } = render(() => <Welcome />);
@@ -137,70 +155,15 @@ describe("Welcome Page", () => {
       dispatchSpy.mockRestore();
     });
 
-    it("should dispatch git:clone event when Clone Repository is clicked", () => {
+    it("should dispatch git:clone event when Clone Git Repository is clicked", () => {
       const dispatchSpy = vi.spyOn(window, "dispatchEvent");
       const { container } = render(() => <Welcome />);
       const buttons = container.querySelectorAll("button");
-      const cloneBtn = Array.from(buttons).find(b => b.textContent === "Clone Repository");
+      const cloneBtn = Array.from(buttons).find(b => b.textContent === "Clone Git Repository");
       expect(cloneBtn).toBeTruthy();
       fireEvent.click(cloneBtn!);
       expect(dispatchSpy).toHaveBeenCalledWith(expect.objectContaining({ type: "git:clone" }));
       dispatchSpy.mockRestore();
-    });
-  });
-
-  describe("Keyboard Shortcuts", () => {
-    it("should render the Getting Started section", () => {
-      const { getByText } = render(() => <Welcome />);
-      expect(getByText("Getting Started")).toBeTruthy();
-    });
-
-    it("should render Command Palette shortcut", () => {
-      const { getByText } = render(() => <Welcome />);
-      expect(getByText("Command Palette")).toBeTruthy();
-    });
-
-    it("should render Open File shortcut", () => {
-      const { getByText } = render(() => <Welcome />);
-      expect(getByText("Open File")).toBeTruthy();
-    });
-
-    it("should render Toggle Terminal shortcut", () => {
-      const { getByText } = render(() => <Welcome />);
-      expect(getByText("Toggle Terminal")).toBeTruthy();
-    });
-
-    it("should render Save File shortcut", () => {
-      const { getByText } = render(() => <Welcome />);
-      expect(getByText("Save File")).toBeTruthy();
-    });
-  });
-
-  describe("Documentation Links", () => {
-    it("should render the Learn More section", () => {
-      const { getByText } = render(() => <Welcome />);
-      expect(getByText("Learn More")).toBeTruthy();
-    });
-
-    it("should render Documentation link", () => {
-      const { getByText } = render(() => <Welcome />);
-      const link = getByText("Documentation");
-      expect(link).toBeTruthy();
-      expect(link.closest("a")?.getAttribute("href")).toBe("https://docs.cortex.dev");
-    });
-
-    it("should render Getting Started Guide link", () => {
-      const { getByText } = render(() => <Welcome />);
-      const link = getByText("Getting Started Guide");
-      expect(link).toBeTruthy();
-      expect(link.closest("a")?.getAttribute("href")).toBe("https://docs.cortex.dev/getting-started");
-    });
-
-    it("should open links in new tab", () => {
-      const { getByText } = render(() => <Welcome />);
-      const link = getByText("Documentation").closest("a");
-      expect(link?.getAttribute("target")).toBe("_blank");
-      expect(link?.getAttribute("rel")).toBe("noopener noreferrer");
     });
   });
 
