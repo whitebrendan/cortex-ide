@@ -187,9 +187,9 @@ export interface FileOperationDialogProps {
 }
 
 // Constants
-export const ITEM_HEIGHT = 18;
+export const ITEM_HEIGHT = 20;
 export const OVERSCAN = 10;
 export const DEBOUNCE_DELAY = 100;
 export const LAZY_LOAD_DEPTH = 1;
 export const TREE_INDENT_SIZE = 16;
-export const TREE_BASE_PADDING = 12;
+export const TREE_BASE_PADDING = 16;

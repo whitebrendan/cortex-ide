@@ -1,13 +1,12 @@
 /**
  * CortexTreeItem - Tree view item component for FileExplorer
- * Matches Figma Explorer component (590:10817) tree items
+ * Figma: file 4hKtI49khKHjribAGpFUkW, node 1060:33326
  *
- * Row: row, center, stretch, gap 8px
- * Folder icon: 20×20 container
- * File icon: 16×16
- * Text: Figtree 16px 500, #E9E9EA (folders), #8C8D8F (files)
- * Selected: bg rgba(255,255,255,0.05), border-radius 2px
- * Indent: 24px per level
+ * Item row: 288×20, row, center, stretch
+ * Folder: chevron 20×20 + gap 8 + icon 16×16 + name (Figtree 14/400 #E9E9EA)
+ * File: padding-left 28 + icon 16×16 + gap 4 + name (Figtree 14/400 #E9E9EA)
+ * Indent per level: 26px
+ * Item gap: 4px
  */
 
 import { Component, JSX, splitProps, createSignal, Show, For } from "solid-js";
@@ -88,7 +87,8 @@ export const CortexTreeItem: Component<CortexTreeItemProps> = (props) => {
   const level = () => local.level || 0;
   const hasChildren = () => local.item.type === "folder" && local.item.children && local.item.children.length > 0;
 
-  const indentPx = () => level() * 24;
+  const indentPx = () => level() * 26;
+  const isFolder = () => local.item.type === "folder";
 
   const getRowBackground = (): string => {
     if (isPressed()) return "var(--cortex-bg-active, rgba(255, 255, 255, 0.08))";
@@ -101,19 +101,19 @@ export const CortexTreeItem: Component<CortexTreeItemProps> = (props) => {
     display: "flex",
     "align-items": "center",
     "align-self": "stretch",
-    gap: "8px",
-    height: "24px",
-    padding: "0",
-    "padding-left": `${indentPx()}px`,
+    gap: isFolder() ? "8px" : "4px",
+    height: "20px",
+    padding: isFolder() ? `0 8px 0 ${indentPx()}px` : `0 8px 0 ${Math.max(0, level() - 1) * 26 + 28}px`,
     cursor: "pointer",
     background: getRowBackground(),
-    "border-radius": local.isSelected || isPressed() ? "2px" : "0",
+    "border-radius": local.isSelected || isPressed() ? "4px" : "0",
     transition: "background var(--cortex-transition-fast, 100ms ease)",
     outline: "none",
+    "box-sizing": "border-box",
     ...local.style,
   });
 
-  const folderIconContainerStyle = (): JSX.CSSProperties => ({
+  const chevronContainerStyle = (): JSX.CSSProperties => ({
     width: "20px",
     height: "20px",
     display: "flex",
@@ -141,10 +141,10 @@ export const CortexTreeItem: Component<CortexTreeItemProps> = (props) => {
 
   const textStyle = (): JSX.CSSProperties => ({
     "font-family": "Figtree, var(--cortex-font-sans, Inter, sans-serif)",
-    "font-size": "16px",
-    "font-weight": "500",
-    "line-height": "1em",
-    color: local.item.type === "folder" ? "#E9E9EA" : "#E9E9EA",
+    "font-size": "14px",
+    "font-weight": "400",
+    "line-height": "16px",
+    color: "#E9E9EA",
     "white-space": "nowrap",
     overflow: "hidden",
     "text-overflow": "ellipsis",
@@ -187,20 +187,24 @@ export const CortexTreeItem: Component<CortexTreeItemProps> = (props) => {
         }}
         {...others}
       >
-        <div style={folderIconContainerStyle()}>
-          <CortexIcon
-            name={local.isExpanded && local.item.type === "folder" ? "folder-open" : icon()}
-            size={local.item.type === "folder" ? 20 : 16}
-            color={local.item.type === "folder" ? "#8C8D8F" : "#8C8D8F"}
-          />
-        </div>
+        <Show when={isFolder()}>
+          <div style={chevronContainerStyle()}>
+            <CortexIcon
+              name={local.isExpanded ? "chevron-down" : "chevron-right"}
+              size={16}
+              color="#8C8D8F"
+            />
+          </div>
+        </Show>
 
         <div style={textRowStyle()}>
-          <Show when={local.item.type === "file"}>
-            <div style={fileIconStyle()}>
-              <CortexIcon name={icon()} size={16} color="#8C8D8F" />
-            </div>
-          </Show>
+          <div style={fileIconStyle()}>
+            <CortexIcon
+              name={local.isExpanded && isFolder() ? "folder-open" : icon()}
+              size={16}
+              color="#8C8D8F"
+            />
+          </div>
           <span style={textStyle()}>{local.item.name}</span>
         </div>
       </div>
@@ -238,7 +242,7 @@ export interface IndentGuideProps {
 export const IndentGuide: Component<IndentGuideProps> = (props) => {
   const guideStyle = (): JSX.CSSProperties => ({
     position: "absolute",
-    left: `${props.level * 24 + 10}px`,
+    left: `${props.level * 26 + 10}px`,
     width: "1px",
     height: `${props.height}px`,
     background: "rgba(255, 255, 255, 0.1)",

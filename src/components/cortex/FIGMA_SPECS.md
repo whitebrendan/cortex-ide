@@ -771,35 +771,35 @@ File type icon: `16×16` (inside tab)
 
 ## 11. File Tree
 
+> **Updated source:** Figma file `4hKtI49khKHjribAGpFUkW`, node `1060:33326`
+
 ### Tree Item Row
 
-| Property    | Value              |
-|-------------|--------------------|
-| Layout Mode | `row`              |
-| Align Items | `center`           |
-| Align Self  | `stretch`          |
-| Gap         | variable           |
-| Padding     | `4px 8px`          |
-| Sizing H    | `fill`             |
-| Sizing V    | `hug`              |
+| Property    | Value (folder)                | Value (file)                 |
+|-------------|-------------------------------|------------------------------|
+| Layout Mode | `row`                         | `row`                        |
+| Align Items | `center`                      | `center`                     |
+| Height      | `20px`                        | `20px`                       |
+| Gap         | `8px`                         | `4px`                        |
+| Padding     | `0 8px 0 {indent}`            | `2px 8px 2px {indent+28}`   |
+| Sizing H    | `fill`                        | `fill`                       |
 
-### Tree Item Content
+### Indentation
 
-| Property    | Value    |
-|-------------|----------|
-| Layout Mode | `row`    |
-| Align Items | `center` |
-| Gap         | `2px`    |
-| Sizing      | `hug`    |
+| Property            | Value   |
+|---------------------|---------|
+| Indent per level    | `26px`  |
+| File base padding   | `28px`  |
 
-### File Name
+### File/Folder Name
 
 | Property    | Value    |
 |-------------|----------|
 | Font Family | Figtree  |
-| Font Weight | 500      |
+| Font Weight | 400      |
 | Font Size   | `14px`   |
-| Line Height | `1em`    |
+| Line Height | `16px`   |
+| Color       | `#E9E9EA`|
 
 ### File Type Icon
 
@@ -812,8 +812,9 @@ File type icon: `16×16` (inside tab)
 
 | Property | Value  |
 |----------|--------|
-| Width    | `14px` |
-| Height   | `14px` |
+| Width    | `16px` (inside 20×20 container) |
+| Height   | `16px` |
+| Color    | `#8C8D8F` |
 
 ### Indentation Guides
 
@@ -821,6 +822,12 @@ File type icon: `16×16` (inside tab)
 |--------------|----------------------------|
 | Width        | `1px`                      |
 | Color        | `rgba(255,255,255,0.1)`    |
+
+### Item Gap (vertical spacing)
+
+| Property | Value |
+|----------|-------|
+| Gap      | `4px` |
 
 ### Line Number Column
 

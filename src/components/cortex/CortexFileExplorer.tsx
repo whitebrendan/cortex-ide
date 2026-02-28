@@ -1,8 +1,8 @@
 /**
  * CortexFileExplorer - Pixel-perfect file explorer matching Figma design
- * Figma component: Explorer (590:10817)
+ * Figma: file 4hKtI49khKHjribAGpFUkW, node 1060:33326
  *
- * Container: 320px width, #141415 bg, 16px border-radius, 1px solid #2E2F31
+ * Container: 320px width, #1C1C1D bg, 12px border-radius, 1px solid #2E2E31
  * Structure: ExplorerHeader (tabs) + ExplorerTreeView (project + tree)
  */
 
@@ -106,10 +106,9 @@ export const CortexFileExplorer: Component<CortexFileExplorerProps> = (props) =>
     "flex-direction": "column",
     width: "320px",
     height: "100%",
-    background: "var(--cortex-bg-primary)",
-    border: "1px solid var(--cortex-border-default)",
-    "border-radius": "16px",
-    gap: "8px",
+    background: "#1C1C1D",
+    border: "1px solid #2E2E31",
+    "border-radius": "12px",
     overflow: "hidden",
     "flex-shrink": "0",
     ...local.style,

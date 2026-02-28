@@ -501,14 +501,14 @@ button.btn-vscode,
 .file-tree-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   width: 100%;
-  height: 26px;
-  padding: 0 10px 0 0;
+  height: 20px;
+  padding: 0 8px;
   border-radius: 0;
   text-align: left;
-  font-size: 13px;
-  line-height: 26px;
+  font-size: 14px;
+  line-height: 20px;
   color: var(--cortex-text-secondary);
   transition: background-color 0.1s;
   cursor: pointer;
@@ -575,8 +575,8 @@ button.btn-vscode,
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
-  line-height: 1.2;
+  font-size: 14px;
+  line-height: 20px;
 }
 
 .file-tree-rename-input {

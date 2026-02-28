@@ -1,10 +1,12 @@
 /**
  * ExplorerTreeView - Project header + scrollable tree view
- * Matches Figma Explorer component (590:10817) tree section
+ * Figma: file 4hKtI49khKHjribAGpFUkW, node 1060:33326
  *
- * Layout: column, stretch, gap 16px
- * Project header: space-between, center, padding 0 16px
- * Tree items: column, gap 8px, padding 0 16px
+ * Heading: 320×20, row, padding 0 16px, gap 62 (space-between)
+ * Title: Figtree 16px/600, #E9E9EA, chevron 20×20 beside it, gap 2
+ * Actions: row, gap 2, four 20×20 icon buttons
+ * Tree area: column, gap 4, padding 16px top/bottom (sections), 16px left/right
+ * Item height: 20px, item gap: 4px
  */
 
 import { Component, JSX, createSignal, For } from "solid-js";
@@ -65,7 +67,6 @@ export const ExplorerTreeView: Component<ExplorerTreeViewProps> = (props) => {
     display: "flex",
     "flex-direction": "column",
     "align-self": "stretch",
-    gap: "16px",
     flex: "1",
     "min-height": "0",
   });
@@ -76,6 +77,7 @@ export const ExplorerTreeView: Component<ExplorerTreeViewProps> = (props) => {
     "justify-content": "space-between",
     "align-items": "center",
     "align-self": "stretch",
+    height: "20px",
     padding: "0 16px",
     "flex-shrink": "0",
   });
@@ -84,15 +86,15 @@ export const ExplorerTreeView: Component<ExplorerTreeViewProps> = (props) => {
     display: "flex",
     "flex-direction": "row",
     "align-items": "center",
-    gap: "4px",
+    gap: "2px",
     cursor: "pointer",
   });
 
   const projectTextStyle = (): JSX.CSSProperties => ({
     "font-family": "Figtree, var(--cortex-font-sans, Inter, sans-serif)",
     "font-size": "16px",
-    "font-weight": "500",
-    "line-height": "1em",
+    "font-weight": "600",
+    "line-height": "20px",
     color: "#E9E9EA",
   });
 
@@ -100,15 +102,15 @@ export const ExplorerTreeView: Component<ExplorerTreeViewProps> = (props) => {
     display: "flex",
     "flex-direction": "row",
     "align-items": "center",
-    gap: "8px",
+    gap: "2px",
   });
 
   const treeContainerStyle = (): JSX.CSSProperties => ({
     display: "flex",
     "flex-direction": "column",
     "align-self": "stretch",
-    gap: "8px",
-    padding: "0 16px",
+    gap: "4px",
+    padding: "16px",
     flex: "1",
     "overflow-y": "auto",
     "overflow-x": "hidden",
@@ -120,7 +122,7 @@ export const ExplorerTreeView: Component<ExplorerTreeViewProps> = (props) => {
       <div style={projectHeaderStyle()}>
         <div style={projectTitleStyle()}>
           <span style={projectTextStyle()}>{props.title || "Project"}</span>
-          <CortexIcon name="chevron-down" size={16} color="#FFFFFF" />
+          <CortexIcon name="chevron-down" size={20} color="#FFFFFF" />
         </div>
 
         <div style={actionsStyle()}>

@@ -1,10 +1,13 @@
 /**
  * ExplorerHeader - Tab header for Explorer panel
- * Matches Figma Explorer component (590:10817) tab section
+ * Figma: pill-in-container tab switcher (file 4hKtI49khKHjribAGpFUkW, node 1060:33326)
  *
- * Layout: row, stretch, fill width
- * Active tab: folder icon + "Explorer" (Figtree 14px 500, #E9E9EA)
- * Inactive tab: magic wand icon + "AI Terminal" (14px, gradient text)
+ * Outer frame: 320×48, padding 4 4 4 12
+ * Tab bar: 312×32, bg #141415, border-radius 8px, padding 4, gap 4
+ * Active button: 150×24, bg #1C1C1D, border-radius 4px
+ * Inactive button: 150×24, bg transparent, border-radius 4px
+ * Active text: Figtree 14px/500, #FCFCFC
+ * Inactive text: Figtree 14px/500, #8C8C8F
  */
 
 import { Component, JSX } from "solid-js";
@@ -20,77 +23,78 @@ export interface ExplorerHeaderProps {
 export const ExplorerHeader: Component<ExplorerHeaderProps> = (props) => {
   const activeTab = () => props.activeTab ?? "explorer";
 
-  const containerStyle = (): JSX.CSSProperties => ({
+  const outerStyle = (): JSX.CSSProperties => ({
     display: "flex",
-    "flex-direction": "row",
+    "flex-direction": "column",
     "align-self": "stretch",
     width: "100%",
+    padding: "4px 4px 12px 4px",
     "flex-shrink": "0",
+    "box-sizing": "border-box",
   });
 
-  const tabStyle = (isActive: boolean): JSX.CSSProperties => ({
+  const barStyle = (): JSX.CSSProperties => ({
+    display: "flex",
+    "flex-direction": "row",
+    "align-items": "center",
+    gap: "4px",
+    padding: "4px",
+    background: "#141415",
+    "border-radius": "8px",
+    height: "32px",
+    "box-sizing": "border-box",
+  });
+
+  const btnStyle = (isActive: boolean): JSX.CSSProperties => ({
     display: "flex",
     "flex-direction": "row",
     "justify-content": "center",
     "align-items": "center",
-    gap: "6px",
-    padding: "10px 16px",
+    gap: "4px",
+    padding: "4px",
     flex: "1",
+    height: "24px",
     cursor: "pointer",
-    background: isActive ? "transparent" : "var(--cortex-bg-primary)",
+    background: isActive ? "#1C1C1D" : "transparent",
     border: "none",
-    "border-bottom": isActive ? "none" : "1px solid var(--cortex-border-default)",
-    "border-right": isActive ? "1px solid var(--cortex-border-default)" : "none",
-    "border-radius": isActive ? "0px 0px 0px 6px" : "0px 0px 0px 6px",
-    height: isActive ? "auto" : "36px",
+    "border-radius": "4px",
+    "box-sizing": "border-box",
   });
 
-  const tabTextStyle = (isActive: boolean): JSX.CSSProperties => ({
+  const textStyle = (isActive: boolean): JSX.CSSProperties => ({
     "font-family": "Figtree, var(--cortex-font-sans, Inter, sans-serif)",
     "font-size": "14px",
     "font-weight": "500",
-    "line-height": "1em",
-    color: isActive ? "var(--cortex-text-primary)" : "var(--cortex-text-secondary)",
-    "white-space": "nowrap",
-  });
-
-  const gradientTextStyle = (): JSX.CSSProperties => ({
-    "font-family": "Figtree, var(--cortex-font-sans, Inter, sans-serif)",
-    "font-size": "14px",
-    "font-weight": "500",
-    "line-height": "1em",
-    background: "linear-gradient(90deg, var(--cortex-text-secondary) 0%, var(--cortex-text-primary) 100%)",
-    "-webkit-background-clip": "text",
-    "-webkit-text-fill-color": "transparent",
-    "background-clip": "text",
+    "line-height": "1.15em",
+    color: isActive ? "#FCFCFC" : "#8C8C8F",
     "white-space": "nowrap",
   });
 
   return (
-    <div style={containerStyle()}>
-      <button
-        style={tabStyle(activeTab() === "explorer")}
-        onClick={() => props.onTabChange?.("explorer")}
-        aria-label="Explorer"
-        aria-selected={activeTab() === "explorer"}
-        role="tab"
-      >
-        <CortexIcon name="folder" size={16} color={activeTab() === "explorer" ? "var(--cortex-text-primary)" : "var(--cortex-text-secondary)"} />
-        <span style={tabTextStyle(activeTab() === "explorer")}>Explorer</span>
-      </button>
+    <div style={outerStyle()}>
+      <div style={barStyle()}>
+        <button
+          style={btnStyle(activeTab() === "explorer")}
+          onClick={() => props.onTabChange?.("explorer")}
+          aria-label="Explorer"
+          aria-selected={activeTab() === "explorer"}
+          role="tab"
+        >
+          <CortexIcon name="folder" size={16} color={activeTab() === "explorer" ? "#FCFCFC" : "#8C8C8F"} />
+          <span style={textStyle(activeTab() === "explorer")}>Explorer</span>
+        </button>
 
-      <button
-        style={tabStyle(activeTab() === "ai-terminal")}
-        onClick={() => props.onTabChange?.("ai-terminal")}
-        aria-label="AI Terminal"
-        aria-selected={activeTab() === "ai-terminal"}
-        role="tab"
-      >
-        <CortexIcon name="star" size={16} color="var(--cortex-text-primary)" />
-        <span style={activeTab() === "ai-terminal" ? tabTextStyle(true) : gradientTextStyle()}>
-          AI Terminal
-        </span>
-      </button>
+        <button
+          style={btnStyle(activeTab() === "ai-terminal")}
+          onClick={() => props.onTabChange?.("ai-terminal")}
+          aria-label="AI Terminal"
+          aria-selected={activeTab() === "ai-terminal"}
+          role="tab"
+        >
+          <CortexIcon name="star" size={16} color={activeTab() === "ai-terminal" ? "#FCFCFC" : "#8C8C8F"} />
+          <span style={textStyle(activeTab() === "ai-terminal")}>AI Terminal</span>
+        </button>
+      </div>
     </div>
   );
 };
