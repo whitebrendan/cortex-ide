@@ -308,12 +308,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 3px;
+  background: var(--cortex-scrollbar-thumb-bg, #2E2F31);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #8C8D8F;
+  background: var(--cortex-scrollbar-thumb-hover-bg, #8C8D8F);
 }
 
 /* =============================================================================

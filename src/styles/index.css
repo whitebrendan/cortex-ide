@@ -68,6 +68,9 @@
 /* Cortex UI Design System tokens - pixel-perfect UI from Figma */
 @import "./cortex-tokens.css";
 
+/* Cortex scrollbar tokens - Figma-aligned scrollbar design */
+@import "./cortex-scrollbar.css";
+
 /* Base styles use design tokens - MUST come after design-tokens */
 @import "./base.css";
 @import "./layout.css";
@@ -455,11 +458,11 @@ button.btn-vscode,
 }
 
 .file-explorer-content:hover::-webkit-scrollbar-thumb {
-  background: #8C8D8F;
+  background: var(--cortex-scrollbar-thumb, #2E2F31);
 }
 
 .file-explorer-content::-webkit-scrollbar-thumb:hover {
-  background: #8C8D8F;
+  background: var(--cortex-scrollbar-thumb-hover, #8C8D8F);
 }
 
 .file-explorer-empty,
