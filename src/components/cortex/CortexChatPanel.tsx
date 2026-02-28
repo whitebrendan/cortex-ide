@@ -173,7 +173,7 @@ const MinimizedChat: Component<Omit<CortexChatPanelProps, "state">> = (props) =>
     width: "369px",
     height: "297px",
     background: "var(--cortex-small-btn-bg)",
-    "border-radius": "16px",
+    "border-radius": "12px",
     border: "1px solid var(--cortex-border-subtle)",
     display: "flex",
     "flex-direction": "column",
@@ -227,7 +227,7 @@ const ExpandedChat: Component<Omit<CortexChatPanelProps, "state">> = (props) => 
     width: "369px",
     "max-height": "calc(100vh - 120px)",
     background: "var(--cortex-small-btn-bg)",
-    "border-radius": "16px",
+    "border-radius": "12px",
     border: "1px solid var(--cortex-border-subtle)",
     display: "flex",
     "flex-direction": "column",
@@ -257,7 +257,7 @@ const ExpandedChat: Component<Omit<CortexChatPanelProps, "state">> = (props) => 
       padding: "8px",
       background: "var(--cortex-border-default)",
       border: "1px solid var(--cortex-border-accent)",
-      "border-radius": "16px",
+      "border-radius": "12px",
     }}>
       <PromptInputBlock {...props} style={{ width: "100%" }} />
     </div>

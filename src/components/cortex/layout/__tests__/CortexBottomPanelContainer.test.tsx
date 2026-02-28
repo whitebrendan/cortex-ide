@@ -36,6 +36,16 @@ vi.mock("@/components/cortex/CortexGitHistory", () => ({
   ),
 }));
 
+vi.mock("@/components/debugger/DebugConsole", () => ({
+  DebugConsole: () => <div data-testid="debug-console">Debug Console</div>,
+}));
+
+vi.mock("@/components/cortex/primitives", () => ({
+  CortexIcon: (props: { name: string; size?: string }) => (
+    <span data-testid={`icon-${props.name}`} />
+  ),
+}));
+
 function createDefaultProps(overrides: Partial<CortexBottomPanelContainerProps> = {}): CortexBottomPanelContainerProps {
   return {
     bottomPanelTab: "terminal",
@@ -145,6 +155,13 @@ describe("CortexBottomPanelContainer", () => {
       const { findByTestId } = renderWithSuspense(props);
 
       expect(await findByTestId("git-history")).toBeTruthy();
+    });
+
+    it("should render debug console when debug console tab is active", async () => {
+      const props = createDefaultProps({ bottomPanelTab: "debug console" });
+      const { findByTestId } = renderWithSuspense(props);
+
+      expect(await findByTestId("debug-console")).toBeTruthy();
     });
   });
 
