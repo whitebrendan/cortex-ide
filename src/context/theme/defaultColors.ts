@@ -9,7 +9,7 @@ export const darkColors: ThemeColors = {
   background: "#18181a",
   backgroundSecondary: "#18181a",
   backgroundTertiary: "#3C3F41",
-  foreground: "#D8DEE9",
+  foreground: "#FCFCFC",
   foregroundMuted: "#CCCCCC99",
   primary: "#4c9df3",
   primaryHover: "#66aefa",

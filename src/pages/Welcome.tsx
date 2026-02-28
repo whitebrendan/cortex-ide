@@ -74,6 +74,7 @@ const Welcome: Component = () => {
         "justify-content": "center",
         width: "100%",
         height: "100%",
+        "min-height": "0",
         background: "#141415",
         overflow: "auto",
         "font-family": "'Figtree', var(--cortex-font-sans)",

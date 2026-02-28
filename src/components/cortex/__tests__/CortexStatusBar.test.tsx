@@ -355,16 +355,16 @@ describe("CortexStatusBar", () => {
       expect(footer?.style.backgroundColor).toBe("green");
     });
 
-    it("should have correct padding of 8px", () => {
+    it("should have correct padding of 0 24px", () => {
       const { container } = render(() => <CortexStatusBar />);
       const footer = container.querySelector("footer");
-      expect(footer?.style.padding).toBe("8px");
+      expect(footer?.style.padding).toBe("0px 24px");
     });
 
-    it("should have a fixed height of 48px", () => {
+    it("should have Figma-exact height from design token", () => {
       const { container } = render(() => <CortexStatusBar />);
       const footer = container.querySelector("footer");
-      expect(footer?.style.height).toBe("48px");
+      expect(footer?.style.height).toBe("var(--cortex-height-statusbar, 24px)");
     });
 
     it("should have gap of 40px", () => {
@@ -385,10 +385,10 @@ describe("CortexStatusBar", () => {
       expect(footer?.style.flexShrink).toBe("0");
     });
 
-    it("should have font-size 14px", () => {
+    it("should have font-size 12px", () => {
       const { container } = render(() => <CortexStatusBar />);
       const footer = container.querySelector("footer");
-      expect(footer?.style.fontSize).toBe("14px");
+      expect(footer?.style.fontSize).toBe("12px");
     });
 
     it("should have font-weight 500", () => {
