@@ -61,15 +61,16 @@ describe("CortexActivityBar Component Logic", () => {
       { id: "search", icon: "search", label: "Search" },
       { id: "git", icon: "git", label: "Source Control" },
       { id: "debug", icon: "play", label: "Run & Debug" },
-      { id: "plugins", icon: "plugins", label: "Plugins" },
+      { id: "extensions", icon: "box", label: "Extensions" },
       { id: "agents", icon: "users", label: "AI Agents" },
-      { id: "extensions", icon: "grid", label: "Extensions" },
+      { id: "dashboard", icon: "dashboard", label: "Dashboard" },
       { id: "docs", icon: "book", label: "Documentation" },
-      { id: "themes", icon: "brush", label: "Themes" },
+      { id: "map", icon: "map", label: "Roadmap" },
+      { id: "themes", icon: "draw", label: "Themes" },
     ];
 
-    it("should have 10 default items", () => {
-      expect(DEFAULT_ITEMS).toHaveLength(10);
+    it("should have 11 default items", () => {
+      expect(DEFAULT_ITEMS).toHaveLength(11);
     });
 
     it("should start with home item", () => {
