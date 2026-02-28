@@ -65,7 +65,7 @@ export const CortexActivityBar: Component<CortexActivityBarProps> = (props) => {
           display: "flex",
           "flex-direction": "column",
           width: "var(--cortex-space-10)",
-          height: "100%",
+          "align-self": "flex-start",
           background: "var(--cortex-sidebar-bg)",
           "border-radius": "var(--cortex-sidebar-radius)",
           border: "1px solid var(--cortex-border-default)",

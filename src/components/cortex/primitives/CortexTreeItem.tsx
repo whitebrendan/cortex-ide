@@ -88,7 +88,7 @@ export const CortexTreeItem: Component<CortexTreeItemProps> = (props) => {
   const hasChildren = () => local.item.type === "folder" && local.item.children && local.item.children.length > 0;
 
   const indentPx = () => level() * 26;
-  const isFolder = () => local.item.type === "folder";
+
 
   const rowStyle = (): JSX.CSSProperties => ({
     display: "flex",
@@ -106,7 +106,7 @@ export const CortexTreeItem: Component<CortexTreeItemProps> = (props) => {
       : "transparent",
     "border-radius": "4px",
     transition: "background 100ms ease",
-    outline: "none",
+
     ...local.style,
   });
 
