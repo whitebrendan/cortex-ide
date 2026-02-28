@@ -458,11 +458,11 @@ button.btn-vscode,
 }
 
 .file-explorer-content:hover::-webkit-scrollbar-thumb {
-  background: var(--cortex-scrollbar-thumb, #2E2F31);
+  background: #8C8D8F;
 }
 
 .file-explorer-content::-webkit-scrollbar-thumb:hover {
-  background: var(--cortex-scrollbar-thumb-hover, #8C8D8F);
+  background: #8C8D8F;
 }
 
 .file-explorer-empty,

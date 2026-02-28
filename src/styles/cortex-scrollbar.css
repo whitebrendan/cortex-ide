@@ -3,9 +3,9 @@
    =============================================================================
    Figma spec:
    - Width: 6px
-   - Track: #2E2F31 (transparent by default, visible on scroll areas)
-   - Thumb (rest): #2E2F31 (blends with track, appears on scroll)
-   - Thumb (hover): #8C8D8F (subtle gray highlight)
+   - Track: #2E2F31 (dark track background)
+   - Thumb (rest): transparent (invisible until hovered)
+   - Thumb (hover): #8C8D8F (subtle gray highlight on hover)
    - Border-radius: 4px (rounded pill)
    
    This file defines the canonical scrollbar tokens. Scrollbar application rules
@@ -18,8 +18,8 @@
 :root {
   --cortex-scrollbar-width: 6px;
   --cortex-scrollbar-height: 6px;
-  --cortex-scrollbar-track: transparent;
-  --cortex-scrollbar-thumb: #2E2F31;
+  --cortex-scrollbar-track: #2E2F31;
+  --cortex-scrollbar-thumb: transparent;
   --cortex-scrollbar-thumb-hover: #8C8D8F;
   --cortex-scrollbar-radius: 4px;
 }

@@ -64,8 +64,8 @@ body,
   padding: 0;
   background: var(--cortex-bg-primary, #141415) !important;
   color: var(--cortex-text-primary, #FCFCFC) !important;
-  font-family: var(--cortex-font-sans, 'Inter', -apple-system, BlinkMacSystemFont, sans-serif);
-  font-size: 14px;
+  font-family: var(--cortex-font-sans, 'Figtree', -apple-system, BlinkMacSystemFont, sans-serif);
+  font-size: 13px;
   line-height: 1.4;
   font-weight: 400;
   letter-spacing: 0;
