@@ -1,0 +1,73 @@
+================================================================================
+TypeScript Compilation Error Report
+Generated from: npx tsc --noEmit
+Project: cortex-desktop (Cortex IDE)
+================================================================================
+
+RESULT: PASS (0 errors)
+
+The project compiles cleanly with the current tsconfig.json settings:
+  - strict: true
+  - noUnusedLocals: true
+  - noUnusedParameters: true
+  - noFallthroughCasesInSwitch: true
+  - skipLibCheck: true
+
+No TypeScript compilation errors were found.
+
+================================================================================
+Additional Checks
+================================================================================
+
+--- Check: npx tsc --noEmit --skipLibCheck false ---
+Result: 10 errors (5 in node_modules, 5 in src/vite-env.d.ts)
+
+node_modules/vite/types/importMeta.d.ts(15,3): error TS2687: All declarations of 'BASE_URL' must have identical modifiers.
+node_modules/vite/types/importMeta.d.ts(16,3): error TS2687: All declarations of 'MODE' must have identical modifiers.
+node_modules/vite/types/importMeta.d.ts(17,3): error TS2687: All declarations of 'DEV' must have identical modifiers.
+node_modules/vite/types/importMeta.d.ts(18,3): error TS2687: All declarations of 'PROD' must have identical modifiers.
+node_modules/vite/types/importMeta.d.ts(19,3): error TS2687: All declarations of 'SSR' must have identical modifiers.
+src/vite-env.d.ts(4,12): error TS2687: All declarations of 'DEV' must have identical modifiers.
+src/vite-env.d.ts(5,12): error TS2687: All declarations of 'PROD' must have identical modifiers.
+src/vite-env.d.ts(6,12): error TS2687: All declarations of 'MODE' must have identical modifiers.
+src/vite-env.d.ts(7,12): error TS2687: All declarations of 'BASE_URL' must have identical modifiers.
+src/vite-env.d.ts(8,12): error TS2687: All declarations of 'SSR' must have identical modifiers.
+
+Root cause: src/vite-env.d.ts re-declares ImportMetaEnv properties without the
+'readonly' modifier, conflicting with vite/client's declarations. The file
+already includes `/// <reference types="vite/client" />`, making the manual
+re-declarations redundant and conflicting.
+
+--- Check: npx tsc --noEmit --noUncheckedIndexedAccess ---
+Result: ~3,981 errors
+
+This flag is NOT currently enabled in tsconfig.json. If enabled, it would add
+`| undefined` to all indexed access types (array[i], record[key]), requiring
+explicit null checks throughout the codebase. Sample errors include:
+  - "Object is possibly 'undefined'" (TS2532)
+  - "Type 'X | undefined' is not assignable to type 'X'" (TS2322)
+  - "'item' is possibly 'undefined'" (TS18048)
+
+--- Check: mcp-server/npx tsc --noEmit ---
+Result: PASS (0 errors)
+
+The mcp-server sub-project also compiles cleanly with its own tsconfig.json.
+
+================================================================================
+Type Safety Concerns (not compilation errors, but code quality issues)
+================================================================================
+
+Total `: any` annotations:    935 occurrences across src/
+Total `as any` type casts:    528 occurrences across src/
+Total `@ts-ignore` comments:    7 occurrences (all in src/components/editor/VimMode.tsx)
+Total `@ts-expect-error`:      22 occurrences (3 in editor/, 19 in settings/)
+
+In non-test source files only:
+  `: any` annotations:  75 occurrences
+  `as any` type casts:  50 occurrences
+  `@ts-ignore`:          7 occurrences
+  `@ts-expect-error`:   22 occurrences
+
+In test files only:
+  `: any` annotations: 860 occurrences
+  `as any` type casts: 478 occurrences

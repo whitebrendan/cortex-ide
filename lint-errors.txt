@@ -1,0 +1,43 @@
+================================================================================
+ESLint Error Report
+Project: cortex-desktop (Cortex IDE)
+================================================================================
+
+RESULT: NO LINTER CONFIGURED
+
+The project does not have an ESLint configuration file. There is no:
+  - eslint.config.js / eslint.config.mjs / eslint.config.cjs (ESLint v9+ flat config)
+  - .eslintrc.js / .eslintrc.json / .eslintrc.yml (ESLint v8 legacy config)
+
+There is no "lint" script in package.json. Available scripts are:
+  - dev, build, build:analyze, preview
+  - tauri, tauri:dev, tauri:build
+  - typecheck (tsc --noEmit)
+  - test, test:watch, test:ui, test:coverage
+
+ESLint is not listed in package.json dependencies or devDependencies.
+
+Attempting to run `npx eslint src/` installs ESLint v10.0.2 on the fly,
+which then fails with:
+  "ESLint couldn't find an eslint.config.(js|mjs|cjs) file."
+
+No other linting tools (Biome, Prettier with lint rules, dprint, etc.) are
+configured at the project root.
+
+================================================================================
+Recommendation
+================================================================================
+
+The project relies solely on TypeScript's built-in checks via `tsc --noEmit`
+with strict mode enabled. Consider adding ESLint with:
+  - @typescript-eslint/parser
+  - @typescript-eslint/eslint-plugin
+  - eslint-plugin-solid (for SolidJS-specific rules)
+  - eslint-config-prettier (if Prettier is used)
+
+This would catch issues like:
+  - Unused imports (beyond what noUnusedLocals catches)
+  - Consistent type imports (import type vs import)
+  - No floating promises
+  - Exhaustive switch/case
+  - SolidJS reactivity rules (e.g., no destructuring of props)
