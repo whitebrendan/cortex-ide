@@ -252,7 +252,27 @@ src/vite-env.d.ts(8,12): error TS2687: All declarations of 'SSR' must have ident
 
 ## 6. Error Categories Summary
 
-### By Error Type
+### By Error Type (task-requested categories)
+
+| Error Type | Source Code | Test Code | mcp-server | Total |
+|------------|-----------|-----------|------------|-------|
+| **Missing imports** (TS2307) | 0 | 0 | 4 (latent) | 4 |
+| **Unused variables** (TS6133) | 0 | 0 | 2 (latent) | 2 |
+| **Type mismatches** (TS2345, TS2322) | 0 | 0 | 1 (latent) | 1 |
+| **Incorrect generics** | 0 (but 17 use `any` instead of proper generics in decorators.ts) | 0 | 0 | 17 (quality) |
+| **Any-type issues** (`: any` annotations) | 75 | 860 | 0 | 935 |
+| **Any-type issues** (`as any` casts) | 50 | 478 | 0 | 528 |
+| **Any-type issues** (`@ts-ignore`/`@ts-expect-error`) | 29 | 0 | 0 | 29 |
+| **Wrong prop types** (icon names, settings access cast to `any`) | 12 | 0 | 0 | 12 |
+| **Implicit any** (TS7006) | 0 | 0 | 17 (latent) | 17 |
+| **Duplicate type declarations** (TS2687) | 5 (suppressed) | 0 | 0 | 5 |
+
+Notes:
+- "Missing imports" and "Implicit any" in mcp-server are latent — they only appear when `node_modules` is absent.
+- "Wrong prop types" includes: icon name props cast via `as any` (7 in session/, tasks/, agents/, ai/ components), settings access via `as any` (5 in TabBar.tsx, VariablesView.tsx).
+- "Incorrect generics" refers to `src/utils/decorators.ts` where `throttle`, `debounce`, `memoize`, `once`, `sequentialize` use `(...args: any[]) => any` instead of proper generic constraints.
+
+### By Annotation Type
 
 | Category | Count | Location |
 |----------|-------|----------|
@@ -262,7 +282,7 @@ src/vite-env.d.ts(8,12): error TS2687: All declarations of 'SSR' must have ident
 | `as any` type casts (tests) | 478 | Test mocks, setup utilities |
 | `@ts-ignore` (source) | 7 | VimMode.tsx (Monaco internal APIs) |
 | `@ts-expect-error` (source) | 22 | SettingsEditor.tsx (19), editor (3) |
-| vite-env.d.ts TS2687 conflicts | 5 | src/vite-env.d.ts |
+| vite-env.d.ts TS2687 conflicts | 5 | src/vite-env.d.ts (suppressed by skipLibCheck) |
 | Missing linter configuration | 1 | Project root (no ESLint config) |
 | Failing test | 1 | CortexBottomPanelContainer.test.tsx |
 
@@ -274,6 +294,8 @@ src/vite-env.d.ts(8,12): error TS2687: All declarations of 'SSR' must have ident
 | **Monaco internal API access** | 9 | Use `@ts-expect-error` with comments; unavoidable |
 | **Dynamic key access in settings** | 19 | Add proper index signature types |
 | **Debug protocol untyped data** | 20 | Define DAP protocol interfaces |
+| **Wrong prop types for icon names** | 7 | Create `IconName` union type, use across components |
+| **Wrong prop types for settings access** | 5 | Use typed settings accessor instead of `(settings as any).path` |
 | **`window as any` for missing APIs** | 3 | Add `requestIdleCallback` to global types |
 | **Untyped catch clauses** | ~5 | Use `unknown` instead of `any` |
 | **Test mock shortcuts** | ~1,338 | Lower priority; test-only |
