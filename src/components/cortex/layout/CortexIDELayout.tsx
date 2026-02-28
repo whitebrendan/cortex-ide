@@ -48,16 +48,8 @@ export function CortexIDELayout(props: CortexIDELayoutProps) {
     "flex-direction": "column",
     overflow: "hidden",
     "min-width": "0",
-    height: "calc(100% - 16px)",
-    "margin-top": "8px",
-    "margin-bottom": "8px",
-    "margin-left": "12px",
-    "margin-right": "8px",
-    background: "var(--cortex-bg-primary)",
-    "border-radius": "var(--cortex-container-radius, 24px)",
-    border: "1px solid var(--cortex-border-default)",
-    "box-shadow": "var(--cortex-panel-shadow, 0px 4px 26px 15px rgba(38,36,37,0.38), inset 0px 0px 13.1px 6px rgba(26,24,25,0.2))",
-    transition: "box-shadow 200ms ease-out",
+    background: "var(--cortex-bg-secondary)",
+    "border-radius": "var(--cortex-sidebar-radius, 12px)",
   });
 
   return (
@@ -69,7 +61,7 @@ export function CortexIDELayout(props: CortexIDELayoutProps) {
       />
 
       <div style={{ display: "flex", flex: "1", overflow: "hidden", "flex-direction": "column" }}>
-        <div style={{ display: "flex", flex: "1", overflow: "hidden" }}>
+        <div style={{ display: "flex", flex: "1", overflow: "hidden", gap: "8px", padding: "0 8px" }}>
           <CortexSidebarContainer
             sidebarTab={props.sidebarTab}
             sidebarCollapsed={props.sidebarCollapsed}

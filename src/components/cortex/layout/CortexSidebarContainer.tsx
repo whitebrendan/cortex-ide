@@ -70,15 +70,11 @@ export interface CortexSidebarContainerProps {
 export function CortexSidebarContainer(props: CortexSidebarContainerProps) {
   const sidebarStyle = (): JSX.CSSProperties => ({
     width: props.sidebarCollapsed ? "0" : `${props.sidebarWidth}px`,
-    height: "calc(100% - 16px)",
-    "margin-top": "var(--cortex-space-2)",
-    "margin-bottom": "var(--cortex-space-2)",
     "flex-shrink": "0",
     overflow: "hidden",
     transition: props.isResizing ? "none" : "width 150ms ease, opacity 150ms ease",
     background: "var(--cortex-bg-secondary)",
-    "border-radius": "12px",
-    border: "1px solid var(--cortex-border-default)",
+    "border-radius": "var(--cortex-sidebar-radius, 12px)",
     opacity: props.sidebarCollapsed ? "0" : "1",
     display: "flex",
     "flex-direction": "column",

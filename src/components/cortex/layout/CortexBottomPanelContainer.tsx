@@ -29,10 +29,11 @@ export function CortexBottomPanelContainer(props: CortexBottomPanelContainerProp
     <Show when={!props.bottomPanelCollapsed}>
       <div
         style={{
-          width: "4px",
+          height: "4px",
           cursor: "row-resize",
           background: "transparent",
           transition: "background 200ms ease-out",
+          "flex-shrink": "0",
         }}
         onMouseDown={(e) => {
           e.preventDefault();
@@ -61,7 +62,8 @@ export function CortexBottomPanelContainer(props: CortexBottomPanelContainerProp
         "flex-shrink": "0",
         display: "flex",
         "flex-direction": "column",
-        "border-top": "1px solid var(--cortex-border-default)",
+        background: "var(--cortex-bg-secondary)",
+        "border-radius": "12px 12px 0 0",
       }}>
         <div style={{
           display: "flex",
