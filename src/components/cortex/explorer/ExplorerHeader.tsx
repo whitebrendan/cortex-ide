@@ -4,10 +4,10 @@
  *
  * Outer frame: 320×48, padding top=4 right=4 bottom=12 left=4
  * Tab bar: 312×32, bg #141415, border-radius 8px, padding 4, gap 4
- * Active button: 150×24, bg #1C1C1D, border-radius 4px
+ * Active button: 150×24, bg #1C1C1D, border 1px solid #2E2F31, border-radius 4px
  * Inactive button: 150×24, bg transparent, border-radius 4px
  * Active text: Figtree 14px/500, #FCFCFC
- * Inactive text: Figtree 14px/500, #8C8C8F
+ * Inactive text: Figtree 14px/500, #8C8D8F
  */
 
 import { Component, JSX } from "solid-js";
@@ -56,7 +56,7 @@ export const ExplorerHeader: Component<ExplorerHeaderProps> = (props) => {
     height: "24px",
     cursor: "pointer",
     background: isActive ? "#1C1C1D" : "transparent",
-    border: "none",
+    border: isActive ? "1px solid #2E2F31" : "1px solid transparent",
     "border-radius": "4px",
     "box-sizing": "border-box",
   });
@@ -66,7 +66,7 @@ export const ExplorerHeader: Component<ExplorerHeaderProps> = (props) => {
     "font-size": "14px",
     "font-weight": "500",
     "line-height": "1.15em",
-    color: isActive ? "#FCFCFC" : "#8C8C8F",
+    color: isActive ? "#FCFCFC" : "#8C8D8F",
     "white-space": "nowrap",
   });
 
@@ -80,7 +80,7 @@ export const ExplorerHeader: Component<ExplorerHeaderProps> = (props) => {
           aria-selected={activeTab() === "explorer"}
           role="tab"
         >
-          <CortexIcon name="folder" size={16} color={activeTab() === "explorer" ? "#FCFCFC" : "#8C8C8F"} />
+          <CortexIcon name="folder" size={16} color={activeTab() === "explorer" ? "#FCFCFC" : "#8C8D8F"} />
           <span style={textStyle(activeTab() === "explorer")}>Explorer</span>
         </button>
 
@@ -91,7 +91,7 @@ export const ExplorerHeader: Component<ExplorerHeaderProps> = (props) => {
           aria-selected={activeTab() === "ai-terminal"}
           role="tab"
         >
-          <CortexIcon name="star" size={16} color={activeTab() === "ai-terminal" ? "#FCFCFC" : "#8C8C8F"} />
+          <CortexIcon name="star" size={16} color={activeTab() === "ai-terminal" ? "#FCFCFC" : "#8C8D8F"} />
           <span style={textStyle(activeTab() === "ai-terminal")}>AI Terminal</span>
         </button>
       </div>

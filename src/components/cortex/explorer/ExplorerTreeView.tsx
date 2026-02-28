@@ -1,11 +1,12 @@
 /**
- * ExplorerTreeView - Project header + scrollable tree view
+ * ExplorerTreeView - Section title + project header + scrollable tree view
  * Figma: file 4hKtI49khKHjribAGpFUkW, node 1060:33326
  *
+ * Section title: "EXPLORER" 11px uppercase, weight 600, color #8C8D8F
  * Heading: 320×20, row, padding 0 16px, gap 62 (space-between)
- * Title: Figtree 16px/600, #E9E9EA, chevron 20×20 beside it, gap 2
- * Actions: row, gap 2, four 20×20 icon buttons
- * Tree area: column, gap 4, padding 16px top/bottom (sections), 16px left/right
+ * Title: Figtree 16px/600, #E9E9EA, chevron 16×16 beside it, gap 2
+ * Actions: row, gap 2, four 20×20 icon buttons (16×16 icons)
+ * Tree area: column, gap 4, padding 16px all sides
  * Item height: 20px, item gap: 4px
  */
 
@@ -71,6 +72,18 @@ export const ExplorerTreeView: Component<ExplorerTreeViewProps> = (props) => {
     "min-height": "0",
   });
 
+  const sectionTitleStyle = (): JSX.CSSProperties => ({
+    "font-family": "Figtree, var(--cortex-font-sans, Inter, sans-serif)",
+    "font-size": "11px",
+    "font-weight": "600",
+    "line-height": "1em",
+    "text-transform": "uppercase",
+    color: "#8C8D8F",
+    padding: "0 16px",
+    "margin-bottom": "12px",
+    "flex-shrink": "0",
+  });
+
   const projectHeaderStyle = (): JSX.CSSProperties => ({
     display: "flex",
     "flex-direction": "row",
@@ -94,7 +107,7 @@ export const ExplorerTreeView: Component<ExplorerTreeViewProps> = (props) => {
     "font-family": "Figtree, var(--cortex-font-sans, Inter, sans-serif)",
     "font-size": "16px",
     "font-weight": "600",
-    "line-height": "1em",
+    "line-height": "1.25em",
     color: "#E9E9EA",
   });
 
@@ -110,7 +123,7 @@ export const ExplorerTreeView: Component<ExplorerTreeViewProps> = (props) => {
     "flex-direction": "column",
     "align-self": "stretch",
     gap: "4px",
-    padding: "0 16px",
+    padding: "16px",
     flex: "1",
     "overflow-y": "auto",
     "overflow-x": "hidden",
@@ -119,10 +132,12 @@ export const ExplorerTreeView: Component<ExplorerTreeViewProps> = (props) => {
 
   return (
     <div style={containerStyle()}>
+      <div style={sectionTitleStyle()}>EXPLORER</div>
+
       <div style={projectHeaderStyle()}>
         <div style={projectTitleStyle()}>
           <span style={projectTextStyle()}>{props.title || "Project"}</span>
-          <CortexIcon name="chevron-down" size={20} color="#FFFFFF" />
+          <CortexIcon name="chevron-down" size={16} color="#FFFFFF" />
         </div>
 
         <div style={actionsStyle()}>

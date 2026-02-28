@@ -2,11 +2,16 @@
  * CortexTreeItem - Tree view item component for FileExplorer
  * Figma: file 4hKtI49khKHjribAGpFUkW, node 1060:33326
  *
- * Item row: 288×20, row, center, stretch
- * Folder: chevron 20×20 + gap 8 + icon 16×16 + name (Figtree 14/400 #E9E9EA)
- * File: padding-left 28 + icon 16×16 + gap 4 + name (Figtree 14/400 #E9E9EA)
- * Indent per level: 26px
- * Item gap: 4px
+ * Folder row: 20px height, gap 8px between chevron and content
+ *   - Chevron: 12×12 icon in 20×20 container
+ *   - Folder icon: 16×16
+ *   - Text: Figtree 13px 400, #FCFCFC
+ * File row: 20px height, gap 4px
+ *   - File icon: 16×16
+ *   - Text: Figtree 13px 400, #FCFCFC
+ * Indent: folders pL = level * 26, files pL = 28 + (level-1) * 26 (level>0) or 28 (level 0)
+ * Hover: bg #252628
+ * Selected: bg #252628 + left 2px solid #B2FF22
  */
 
 import { Component, JSX, splitProps, createSignal, Show, For } from "solid-js";
@@ -86,27 +91,34 @@ export const CortexTreeItem: Component<CortexTreeItemProps> = (props) => {
   const [isPressed, setIsPressed] = createSignal(false);
   const level = () => local.level || 0;
   const hasChildren = () => local.item.type === "folder" && local.item.children && local.item.children.length > 0;
-
-  const indentPx = () => level() * 26;
   const isFolder = () => local.item.type === "folder";
+
+  const indentPx = () => {
+    if (isFolder()) {
+      return level() * 26;
+    }
+    return level() > 0 ? 2 + level() * 26 : 28;
+  };
 
   const rowStyle = (): JSX.CSSProperties => ({
     display: "flex",
     "align-items": "center",
     "align-self": "stretch",
-    gap: "8px",
+    gap: isFolder() ? "8px" : "4px",
     height: "20px",
-    padding: "0",
+    padding: isFolder() ? "0" : "2px 0",
     "padding-left": `${indentPx()}px`,
+    "padding-right": "8px",
     cursor: "pointer",
-    background: local.isSelected
-      ? "#2E2F31"
+    background: local.isSelected || isPressed()
+      ? "#252628"
       : isHovered()
-      ? "#2E2F31"
+      ? "#252628"
       : "transparent",
-    "border-radius": "4px",
+    "border-left": local.isSelected ? "2px solid #B2FF22" : "2px solid transparent",
     transition: "background 100ms ease",
-
+    "box-sizing": "border-box",
+    outline: "none",
     ...local.style,
   });
 
@@ -119,7 +131,7 @@ export const CortexTreeItem: Component<CortexTreeItemProps> = (props) => {
     "flex-shrink": "0",
   });
 
-  const textRowStyle = (): JSX.CSSProperties => ({
+  const folderContentStyle = (): JSX.CSSProperties => ({
     display: "flex",
     "align-items": "center",
     gap: "4px",
@@ -127,21 +139,20 @@ export const CortexTreeItem: Component<CortexTreeItemProps> = (props) => {
     "min-width": "0",
   });
 
-  const fileIconStyle = (): JSX.CSSProperties => ({
-    width: "16px",
-    height: "16px",
+  const fileContentStyle = (): JSX.CSSProperties => ({
     display: "flex",
     "align-items": "center",
-    "justify-content": "center",
-    "flex-shrink": "0",
+    gap: "4px",
+    flex: "1",
+    "min-width": "0",
   });
 
   const textStyle = (): JSX.CSSProperties => ({
     "font-family": "Figtree, var(--cortex-font-sans, Inter, sans-serif)",
-    "font-size": "14px",
+    "font-size": "13px",
     "font-weight": "400",
     "line-height": "1em",
-    color: "#E9E9EA",
+    color: "#FCFCFC",
     "white-space": "nowrap",
     overflow: "hidden",
     "text-overflow": "ellipsis",
@@ -184,26 +195,28 @@ export const CortexTreeItem: Component<CortexTreeItemProps> = (props) => {
         }}
         {...others}
       >
-        <Show when={isFolder()}>
+        <Show when={isFolder()} fallback={
+          <div style={fileContentStyle()}>
+            <CortexIcon name={icon()} size={16} color="#8C8D8F" />
+            <span style={textStyle()}>{local.item.name}</span>
+          </div>
+        }>
           <div style={chevronContainerStyle()}>
             <CortexIcon
               name={local.isExpanded ? "chevron-down" : "chevron-right"}
+              size={12}
+              color="#8C8D8F"
+            />
+          </div>
+          <div style={folderContentStyle()}>
+            <CortexIcon
+              name={local.isExpanded ? "folder-open" : "folder"}
               size={16}
               color="#8C8D8F"
             />
+            <span style={textStyle()}>{local.item.name}</span>
           </div>
         </Show>
-
-        <div style={textRowStyle()}>
-          <div style={fileIconStyle()}>
-            <CortexIcon
-              name={local.isExpanded && isFolder() ? "folder-open" : icon()}
-              size={16}
-              color="#8C8D8F"
-            />
-          </div>
-          <span style={textStyle()}>{local.item.name}</span>
-        </div>
       </div>
 
       <Show when={local.isExpanded && hasChildren()}>
