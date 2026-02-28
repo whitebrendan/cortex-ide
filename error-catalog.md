@@ -146,6 +146,13 @@ src/vite-env.d.ts(8,12): error TS2687: All declarations of 'SSR' must have ident
 | src/providers/ | 6 | 10 | 16 |
 | src/hooks/ | 0 | 8 | 8 |
 | src/pages/ | 0 | 3 | 3 |
+| src/api/ | 0 | 0 | 0 |
+| src/store/ | 0 | 0 | 0 |
+| src/services/ | 0 | 0 | 0 |
+| src/lib/ | 0 | 0 | 0 |
+| src/sdk/ | 0 | 0 | 0 |
+| src/types/ | 0 | 0 | 0 |
+| mcp-server/ | 0 | 0 | 0 |
 | src/ (root files) | 1 | 0 | 1 |
 | **Total** | **107** | **828** | **935** |
 
@@ -160,6 +167,11 @@ src/vite-env.d.ts(8,12): error TS2687: All declarations of 'SSR' must have ident
 | src/hooks/ | 4 | 22 | 26 |
 | src/sdk/ | 0 | 4 | 4 |
 | src/types/ | 1 | 0 | 1 |
+| src/api/ | 0 | 0 | 0 |
+| src/store/ | 0 | 0 | 0 |
+| src/services/ | 0 | 0 | 0 |
+| src/lib/ | 0 | 0 | 0 |
+| mcp-server/ | 0 | 0 | 0 |
 | src/ (root files) | 1 | 0 | 1 |
 | **Total** | **63** | **465** | **528** |
 

@@ -1,7 +1,17 @@
 ================================================================================
-ESLint Error Report
+ESLint / Lint Error Report
+Generated from: npm run lint 2>&1 | head -500 and npm run lint 2>&1 | tail -500
 Project: cortex-desktop (Cortex IDE)
 ================================================================================
+
+--- Command: npm run lint 2>&1 | head -500 ---
+npm error Missing script: "lint"
+npm error
+npm error Did you mean this?
+npm error   npm link # Symlink a package folder
+
+--- Command: npm run lint 2>&1 | tail -500 ---
+(same output as above — no lint script exists)
 
 RESULT: NO LINTER CONFIGURED
 

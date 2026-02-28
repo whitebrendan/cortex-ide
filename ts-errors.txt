@@ -4,7 +4,13 @@ Generated from: npx tsc --noEmit
 Project: cortex-desktop (Cortex IDE)
 ================================================================================
 
-RESULT: PASS (0 errors)
+--- Command: npx tsc --noEmit 2>&1 | head -500 ---
+(empty — 0 lines of output)
+
+--- Command: npx tsc --noEmit 2>&1 | tail -500 ---
+(empty — 0 lines of output)
+
+RESULT: PASS (0 errors, exit code 0)
 
 The project compiles cleanly with the current tsconfig.json settings:
   - strict: true
@@ -14,6 +20,11 @@ The project compiles cleanly with the current tsconfig.json settings:
   - skipLibCheck: true
 
 No TypeScript compilation errors were found.
+
+--- Command: cd mcp-server && npx tsc --noEmit ---
+(empty — 0 lines of output, exit code 0)
+
+The mcp-server sub-project also compiles cleanly.
 
 ================================================================================
 Additional Checks
