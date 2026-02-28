@@ -193,8 +193,8 @@ export function MultiFileDiffEditor(props: MultiFileDiffEditorProps) {
         renderWhitespace: "selection",
         minimap: { enabled: true },
         scrollbar: {
-          verticalScrollbarSize: 10,
-          horizontalScrollbarSize: 10,
+          verticalScrollbarSize: 8,
+          horizontalScrollbarSize: 8,
           useShadows: false,
         },
       });

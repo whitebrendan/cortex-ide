@@ -215,7 +215,7 @@ export function DiffView(props: DiffViewProps) {
         fontSize: 13, lineHeight: 20, fontLigatures: true, scrollBeyondLastLine: false, smoothScrolling: true,
         fontFamily: "'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, Monaco, 'Courier New', monospace",
         minimap: { enabled: false },
-        scrollbar: { verticalScrollbarSize: 10, horizontalScrollbarSize: 10, useShadows: false },
+        scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8, useShadows: false },
       });
       const ts = Date.now(), fp = props.file || "untitled";
       const oUri = monaco.Uri.parse(`diff://original-${ts}/${fp}`);

@@ -369,8 +369,8 @@ export function SearchEditor(props: SearchEditorProps) {
       scrollbar: {
         vertical: "auto",
         horizontal: "auto",
-        verticalScrollbarSize: 10,
-        horizontalScrollbarSize: 10,
+        verticalScrollbarSize: 8,
+        horizontalScrollbarSize: 8,
       },
       padding: { top: 12, bottom: 12 },
       automaticLayout: true,

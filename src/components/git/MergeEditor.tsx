@@ -578,8 +578,8 @@ export function MergeEditor(props: MergeEditorProps) {
         scrollbar: {
           vertical: "visible",
           horizontal: "visible",
-          verticalScrollbarSize: 10,
-          horizontalScrollbarSize: 10,
+          verticalScrollbarSize: 8,
+          horizontalScrollbarSize: 8,
         },
         padding: { top: 8 },
       };
@@ -1419,8 +1419,8 @@ export function MergeEditor(props: MergeEditorProps) {
         "'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, Monaco, monospace",
       minimap: { enabled: false },
       scrollbar: {
-        verticalScrollbarSize: 10,
-        horizontalScrollbarSize: 10,
+        verticalScrollbarSize: 8,
+        horizontalScrollbarSize: 8,
       },
     });
 
