@@ -2,7 +2,7 @@
  * ExplorerHeader - Tab header for Explorer panel
  * Figma: pill-in-container tab switcher (file 4hKtI49khKHjribAGpFUkW, node 1060:33326)
  *
- * Outer frame: 320×48, padding 4 4 4 12
+ * Outer frame: 320×48, padding top=4 right=4 bottom=12 left=4
  * Tab bar: 312×32, bg #141415, border-radius 8px, padding 4, gap 4
  * Active button: 150×24, bg #1C1C1D, border-radius 4px
  * Inactive button: 150×24, bg transparent, border-radius 4px

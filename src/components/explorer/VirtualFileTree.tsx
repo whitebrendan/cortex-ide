@@ -57,7 +57,7 @@ export interface VirtualFileTreeProps {
   onOpen?: (path: string) => void;
 }
 
-const DEFAULT_ITEM_HEIGHT = 18;
+const DEFAULT_ITEM_HEIGHT = 20;
 const DEFAULT_OVERSCAN = 10;
 const LAZY_LOAD_DEPTH = 1;
 

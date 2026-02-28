@@ -781,7 +781,7 @@ File type icon: `16×16` (inside tab)
 | Align Items | `center`                      | `center`                     |
 | Height      | `20px`                        | `20px`                       |
 | Gap         | `8px`                         | `4px`                        |
-| Padding     | `0 8px 0 {indent}`            | `2px 8px 2px {indent+28}`   |
+| Padding     | `0 8px 0 {indent}`            | `0 8px 0 max(0,level-1)*26+28` |
 | Sizing H    | `fill`                        | `fill`                       |
 
 ### Indentation
