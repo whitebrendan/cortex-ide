@@ -312,30 +312,16 @@ describe("CortexPromptInput", () => {
   });
 
   describe("action buttons", () => {
-    it("calls onPlusClick when plus button is clicked", async () => {
-      const handlePlusClick = vi.fn();
-      const { container } = render(() => (
-        <CortexPromptInput onPlusClick={handlePlusClick} />
-      ));
-      const icons = container.querySelectorAll("[data-testid='cortex-icon']");
-      const plusIcon = Array.from(icons).find(
-        (icon) => icon.getAttribute("data-name") === "plus"
-      );
-      const button = plusIcon?.closest("button");
-      await fireEvent.click(button!);
-      expect(handlePlusClick).toHaveBeenCalled();
-    });
-
-    it("calls onUploadClick when upload button is clicked", async () => {
+    it("calls onUploadClick when attach button is clicked", async () => {
       const handleUploadClick = vi.fn();
       const { container } = render(() => (
         <CortexPromptInput onUploadClick={handleUploadClick} />
       ));
       const icons = container.querySelectorAll("[data-testid='cortex-icon']");
-      const uploadIcon = Array.from(icons).find(
-        (icon) => icon.getAttribute("data-name") === "upload"
+      const attachIcon = Array.from(icons).find(
+        (icon) => icon.getAttribute("data-name") === "attach"
       );
-      const button = uploadIcon?.closest("button");
+      const button = attachIcon?.closest("button");
       await fireEvent.click(button!);
       expect(handleUploadClick).toHaveBeenCalled();
     });
@@ -347,7 +333,7 @@ describe("CortexPromptInput", () => {
       const { container } = render(() => (
         <CortexPromptInput value="test message" onSubmit={handleSubmit} />
       ));
-      const sendButton = container.querySelector("button[style*='32px']");
+      const sendButton = container.querySelector("button[style*='999px']");
       await fireEvent.click(sendButton!);
       expect(handleSubmit).toHaveBeenCalledWith("test message");
     });
@@ -369,14 +355,14 @@ describe("CortexPromptInput", () => {
       const { container } = render(() => (
         <CortexPromptInput isProcessing onStop={handleStop} />
       ));
-      const sendButton = container.querySelector("button[style*='32px']");
+      const sendButton = container.querySelector("button[style*='999px']");
       await fireEvent.click(sendButton!);
       expect(handleStop).toHaveBeenCalled();
     });
 
     it("applies error background to send button when processing", () => {
       const { container } = render(() => <CortexPromptInput isProcessing />);
-      const sendButton = container.querySelector("button[style*='32px']") as HTMLElement;
+      const sendButton = container.querySelector("button[style*='999px']") as HTMLElement;
       expect(sendButton.style.background).toContain("cortex-error");
     });
   });

@@ -174,13 +174,12 @@ describe("CortexChatPanel", () => {
   describe("Home State", () => {
     it("should render home state by default", () => {
       const { container } = render(() => <CortexChatPanel />);
-      expect(container.textContent).toContain("What would you like to build");
+      expect(container.textContent).toContain("Hey, start building or open your project.");
     });
 
     it("should render home state when state is home", () => {
       const { container } = render(() => <CortexChatPanel state="home" />);
-      expect(container.textContent).toContain("What would you like to build");
-      expect(container.textContent).toContain("Start a conversation or open a project");
+      expect(container.textContent).toContain("Hey, start building or open your project.");
     });
 
     it("should render prompt input in home state", () => {
@@ -188,81 +187,12 @@ describe("CortexChatPanel", () => {
       expect(getByTestId("prompt-input")).toBeTruthy();
     });
 
-    it("should render quick action buttons in home state", () => {
-      const { container } = render(() => <CortexChatPanel state="home" />);
-      expect(container.textContent).toContain("Build");
-      expect(container.textContent).toContain("Import Code");
-      expect(container.textContent).toContain("Import Design");
-    });
-
-    it("should call onBuildClick when Build button is clicked", async () => {
-      const onBuildClick = vi.fn();
-      const { container } = render(() => (
-        <CortexChatPanel state="home" onBuildClick={onBuildClick} />
-      ));
-
-      const buildButton = Array.from(container.querySelectorAll("button")).find(
-        (btn) => btn.textContent?.includes("Build")
-      );
-      if (buildButton) {
-        await fireEvent.click(buildButton);
-      }
-
-      expect(onBuildClick).toHaveBeenCalled();
-    });
-
-    it("should call onImportCodeClick when Import Code button is clicked", async () => {
-      const onImportCodeClick = vi.fn();
-      const { container } = render(() => (
-        <CortexChatPanel state="home" onImportCodeClick={onImportCodeClick} />
-      ));
-
-      const importButton = Array.from(container.querySelectorAll("button")).find(
-        (btn) => btn.textContent?.includes("Import Code")
-      );
-      if (importButton) {
-        await fireEvent.click(importButton);
-      }
-
-      expect(onImportCodeClick).toHaveBeenCalled();
-    });
-
-    it("should call onImportDesignClick when Import Design button is clicked", async () => {
-      const onImportDesignClick = vi.fn();
-      const { container } = render(() => (
-        <CortexChatPanel state="home" onImportDesignClick={onImportDesignClick} />
-      ));
-
-      const importButton = Array.from(container.querySelectorAll("button")).find(
-        (btn) => btn.textContent?.includes("Import Design")
-      );
-      if (importButton) {
-        await fireEvent.click(importButton);
-      }
-
-      expect(onImportDesignClick).toHaveBeenCalled();
-    });
-
-    it("should render logo image in home state", () => {
-      const { container } = render(() => <CortexChatPanel state="home" />);
-      const logo = container.querySelector("img");
-      expect(logo).toBeTruthy();
-      expect(logo?.getAttribute("src")).toBe("/assets/claude-logo.svg");
-    });
-
-    it("should render title as h1 with 56px font size", () => {
+    it("should render title as h1 with 32px font size", () => {
       const { container } = render(() => <CortexChatPanel state="home" />);
       const h1 = container.querySelector("h1");
       expect(h1).toBeTruthy();
-      expect(h1?.style.fontSize).toBe("56px");
+      expect(h1?.style.fontSize).toBe("32px");
       expect(h1?.style.fontWeight).toBe("500");
-    });
-
-    it("should render subtitle as p element", () => {
-      const { container } = render(() => <CortexChatPanel state="home" />);
-      const subtitle = container.querySelector("p");
-      expect(subtitle).toBeTruthy();
-      expect(subtitle?.textContent).toBe("Start a conversation or open a project");
     });
 
     it("should center content in home state", () => {
@@ -276,7 +206,7 @@ describe("CortexChatPanel", () => {
   describe("Minimized State", () => {
     it("should render minimized state", () => {
       const { container } = render(() => <CortexChatPanel state="minimized" />);
-      expect(container.textContent).toContain("What would you like to build");
+      expect(container.textContent).toContain("What would you like to build?");
     });
 
     it("should render minimized title as h2", () => {
@@ -681,7 +611,7 @@ describe("CortexChatPanel", () => {
       const { container } = render(() => <CortexChatPanel />);
       const h1 = container.querySelector("h1");
       expect(h1).toBeTruthy();
-      expect(container.textContent).toContain("What would you like to build");
+      expect(container.textContent).toContain("Hey, start building or open your project.");
     });
   });
 

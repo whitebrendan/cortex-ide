@@ -111,25 +111,79 @@ const ProfileContent: Component = () => {
   const [appVersion] = createResource(() => getVersion().catch(() => "0.1.0"));
 
   return (
-    <div style={{ padding: "24px 20px", display: "flex", "flex-direction": "column", gap: "24px" }}>
-      <div style={{ display: "flex", "align-items": "center", gap: "16px" }}>
-        <div style={avatarStyle}>
-          <CortexIcon name="user" size={32} color="var(--cortex-text-inactive)" />
+    <div style={{
+      padding: "12px",
+      display: "flex",
+      "flex-direction": "column",
+      "align-items": "flex-end",
+      position: "relative",
+    }}>
+      {/* Contents: Figma 1304:21901 - column, center, gap 16px */}
+      <div style={{
+        display: "flex",
+        "flex-direction": "column",
+        "align-items": "center",
+        gap: "16px",
+        width: "100%",
+      }}>
+        {/* Logo + Sign In title */}
+        <div style={{
+          display: "flex",
+          "flex-direction": "column",
+          "align-items": "center",
+          width: "100px",
+        }}>
+          <div style={{
+            width: "100px",
+            height: "100px",
+            "border-radius": "12px",
+            display: "flex",
+            "align-items": "center",
+            "justify-content": "center",
+          }}>
+            <CortexIcon name="user" size={48} color="var(--cortex-text-inactive)" />
+          </div>
+          <div style={{
+            "font-family": "var(--cortex-font-sans)",
+            "font-size": "16px",
+            "font-weight": "500",
+            color: "var(--cortex-text-primary)",
+            "text-align": "center",
+            "line-height": "16px",
+            width: "100%",
+          }}>Sign In</div>
         </div>
-        <div>
-          <div style={{ "font-size": "16px", "font-weight": "500", color: "var(--cortex-text-primary)" }}>User</div>
-          <div style={{ "font-size": "13px", color: "var(--cortex-text-inactive)", "margin-top": "2px" }}>Not signed in</div>
+
+        {/* Description */}
+        <div style={{
+          "font-family": "var(--cortex-font-sans)",
+          "font-size": "12px",
+          "font-weight": "400",
+          color: "var(--cortex-text-inactive)",
+          "text-align": "center",
+          "line-height": "15px",
+          width: "100%",
+        }}>In order to use AI functions you need to connect your Google or GitHub account</div>
+
+        {/* Buttons: Figma 1304:21893 - column, gap 8px */}
+        <div style={{
+          display: "flex",
+          "flex-direction": "column",
+          gap: "8px",
+          width: "100%",
+        }}>
+          <button style={signInBtnStyle}>
+            <CortexIcon name="git-logo" size={16} color="var(--cortex-text-primary)" />
+            <span>Continue with GitHub</span>
+          </button>
+          <button style={signInBtnStyle}>
+            <CortexIcon name="globe" size={16} color="var(--cortex-text-primary)" />
+            <span>Continue with Google</span>
+          </button>
         </div>
       </div>
-      <button style={signInBtnStyle}>
-        <CortexIcon name="git-logo" size={16} color="var(--cortex-text-primary)" />
-        <span>Continue with GitHub</span>
-      </button>
-      <button style={{ ...signInBtnStyle, "margin-top": "-12px" }}>
-        <CortexIcon name="globe" size={16} color="var(--cortex-text-primary)" />
-        <span>Continue with Google</span>
-      </button>
-      <div style={{ "margin-top": "auto", "font-size": "12px", color: "var(--cortex-text-inactive)" }}>
+
+      <div style={{ "margin-top": "auto", "font-size": "12px", color: "var(--cortex-text-inactive)", padding: "12px 0 0" }}>
         Cortex Desktop v{appVersion() ?? "0.1.0"}
       </div>
     </div>
@@ -252,19 +306,13 @@ const tabIndicatorStyle = {
 
 const contentStyle = { flex: "1", overflow: "auto" as const };
 
-const avatarStyle = {
-  width: "64px", height: "64px", "border-radius": "var(--cortex-radius-full)",
-  background: "var(--cortex-bg-hover)",
-  border: "2px solid var(--cortex-border-default)",
-  display: "flex", "align-items": "center", "justify-content": "center", "flex-shrink": "0",
-};
-
 const signInBtnStyle = {
-  display: "flex", "align-items": "center", "justify-content": "center", gap: "8px",
-  padding: "10px 16px", background: "var(--cortex-bg-hover)",
-  border: "1px solid var(--cortex-border-default)",
-  "border-radius": "var(--cortex-radius-md)", color: "var(--cortex-text-primary)",
-  "font-size": "13px", "font-family": "var(--cortex-font-sans)", cursor: "pointer",
+  display: "flex", "align-items": "center", "justify-content": "center", gap: "4px",
+  padding: "8px", background: "var(--cortex-border-default)",
+  border: "none",
+  "border-radius": "8px", color: "var(--cortex-text-primary)",
+  "font-size": "14px", "font-weight": "500", "font-family": "var(--cortex-font-sans)",
+  cursor: "pointer", height: "32px", width: "100%",
 };
 
 const placeholderStyle = {

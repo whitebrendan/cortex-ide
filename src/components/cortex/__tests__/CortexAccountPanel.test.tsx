@@ -43,8 +43,8 @@ describe("CortexAccountPanel", () => {
 
     it("should show Profile tab content by default", () => {
       const { container } = render(() => <CortexAccountPanel />);
-      expect(container.textContent).toContain("User");
-      expect(container.textContent).toContain("Not signed in");
+      expect(container.textContent).toContain("Sign In");
+      expect(container.textContent).toContain("Continue with GitHub");
     });
   });
 
@@ -54,10 +54,10 @@ describe("CortexAccountPanel", () => {
       expect(container.querySelector('[data-testid="icon-user"]')).toBeTruthy();
     });
 
-    it("should show User label when not signed in", () => {
+    it("should show Sign In label when not signed in", () => {
       const { container } = render(() => <CortexAccountPanel />);
-      expect(container.textContent).toContain("User");
-      expect(container.textContent).toContain("Not signed in");
+      expect(container.textContent).toContain("Sign In");
+      expect(container.textContent).toContain("In order to use AI functions you need to connect your Google or GitHub account");
     });
 
     it("should display app version placeholder or resolved version", async () => {
