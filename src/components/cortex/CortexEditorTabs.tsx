@@ -7,7 +7,7 @@
  * - Active tab: bg #252628, text #E9E9EA, border-radius 8px
  * - Inactive tab: transparent bg, text #8C8D8F
  * - Tab height: 32px, padding 8px, gap 4px between elements
- * - Tab structure: file icon (16×16) + filename (Figtree Medium 14px/115%) + close (16×16)
+ * - Tab structure: file icon (16×16) + filename (Inter Medium 14px/115%) + close (16×16)
  * - Close button: visible on hover/active, hidden (opacity 0) on inactive
  * - Modified dot: 8px circle indicator
  * - Horizontal scrolling when tabs overflow, 4px gap between tabs
@@ -277,7 +277,7 @@ const EditorTabItem: Component<EditorTabItemProps> = (props) => {
   });
 
   const nameStyle = (): JSX.CSSProperties => ({
-    "font-family": "var(--cortex-font-sans, 'Figtree', sans-serif)",
+    "font-family": "var(--cortex-font-sans, 'Inter', sans-serif)",
     "font-size": "14px",
     "font-weight": "500",
     "line-height": "115%",
