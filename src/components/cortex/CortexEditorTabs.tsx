@@ -64,11 +64,9 @@ export const CortexEditorTabs: Component<CortexEditorTabsProps> = (props) => {
   const containerStyle = (): JSX.CSSProperties => ({
     display: "flex",
     "align-items": "center",
-    "align-self": "stretch",
     height: "40px",
     background: "var(--cortex-bg-secondary, #1C1C1D)",
     padding: "4px 8px 4px 4px",
-    "border-bottom": "1px solid var(--cortex-border-default)",
     overflow: "hidden",
     "flex-shrink": "0",
     position: "relative",
@@ -82,7 +80,7 @@ export const CortexEditorTabs: Component<CortexEditorTabsProps> = (props) => {
     "overflow-x": "auto",
     "overflow-y": "hidden",
     flex: "1",
-    height: "100%",
+    "min-width": "0",
     "scrollbar-width": "none",
   });
 
@@ -283,7 +281,7 @@ const EditorTabItem: Component<EditorTabItemProps> = (props) => {
     "font-size": "14px",
     "font-weight": "500",
     "line-height": "115%",
-    color: props.isActive ? "var(--cortex-text-primary)" : "var(--cortex-text-secondary)",
+    color: props.isActive ? "#E9E9EA" : "var(--cortex-text-secondary)",
     "white-space": "nowrap",
     "font-style": props.tab.isPreview ? "italic" : "normal",
   });
@@ -352,7 +350,7 @@ const EditorTabItem: Component<EditorTabItemProps> = (props) => {
         >
           <CortexIcon
             name="xmark"
-            size={12}
+            size={10}
             color="var(--cortex-text-secondary, #8C8D8F)"
           />
         </button>
