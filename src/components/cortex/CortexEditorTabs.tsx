@@ -2,15 +2,15 @@
  * CortexEditorTabs - Pixel-perfect editor tab bar matching Figma design
  *
  * Figma specs (node 1156:23697, file 4hKtI49khKHjribAGpFUkW):
- * - Tab bar height: 40px, bg #1C1C1D, padding 4px 8px 4px 4px
- * - Bottom border: 1px solid #2E2F31 (stroke outside)
- * - Active tab: bg #252628, text #E9E9EA, border-radius 8px
+ * - Tab bar height: 36px, bg #1C1C1D, padding 2px 8px 2px 4px
+ * - Active tab: bg #252628, text #FCFCFC, border-radius 8px 8px 0 0
  * - Inactive tab: transparent bg, text #8C8D8F
  * - Tab height: 32px, padding 8px, gap 4px between elements
- * - Tab structure: file icon (16×16) + filename (Inter Medium 14px/115%) + close (16×16)
+ * - Tab structure: file icon (16×16) + filename (Figtree Medium 13px) + close (16×16)
  * - Close button: visible on hover/active, hidden (opacity 0) on inactive
  * - Modified dot: 8px circle indicator
  * - Horizontal scrolling when tabs overflow, 4px gap between tabs
+ * - Tab separator: 1px vertical divider between inactive tabs
  * - Drag-to-reorder tabs
  * - Right-click context menu (Close, Close Others, Close All, Copy Path)
  */
@@ -64,9 +64,10 @@ export const CortexEditorTabs: Component<CortexEditorTabsProps> = (props) => {
   const containerStyle = (): JSX.CSSProperties => ({
     display: "flex",
     "align-items": "center",
-    height: "40px",
+    "align-self": "stretch",
+    height: "36px",
     background: "var(--cortex-bg-secondary, #1C1C1D)",
-    padding: "4px 8px 4px 4px",
+    padding: "2px 8px 2px 4px",
     overflow: "hidden",
     "flex-shrink": "0",
     position: "relative",
@@ -76,7 +77,7 @@ export const CortexEditorTabs: Component<CortexEditorTabsProps> = (props) => {
   const scrollContainerStyle = (): JSX.CSSProperties => ({
     display: "flex",
     "align-items": "center",
-    gap: "4px",
+    gap: "0px",
     "overflow-x": "auto",
     "overflow-y": "hidden",
     flex: "1",
@@ -91,39 +92,59 @@ export const CortexEditorTabs: Component<CortexEditorTabsProps> = (props) => {
         class="cortex-editor-tabs-scroll"
       >
         <For each={props.tabs}>
-          {(tab) => (
-            <EditorTabItem
-              tab={tab}
-              isActive={props.activeTabId === tab.id}
-              onSelect={() => props.onTabSelect?.(tab.id)}
-              onClose={() => props.onTabClose?.(tab.id)}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                setContextMenuState({
-                  visible: true,
-                  x: e.clientX,
-                  y: e.clientY,
-                  tabId: tab.id,
-                  tabPath: tab.path,
-                });
-              }}
-              onDragStart={(e) => {
-                e.dataTransfer?.setData("text/plain", tab.id);
-                if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
-              }}
-              onDragOver={(e) => {
-                e.preventDefault();
-                if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                const sourceId = e.dataTransfer?.getData("text/plain");
-                if (sourceId && sourceId !== tab.id) {
-                  props.onTabReorder?.(sourceId, tab.id);
-                }
-              }}
-            />
-          )}
+          {(tab, index) => {
+            const isActive = () => props.activeTabId === tab.id;
+            const nextTab = () => props.tabs[index() + 1];
+            const isNextActive = () => nextTab() && props.activeTabId === nextTab()?.id;
+            const isLast = () => index() === props.tabs.length - 1;
+            const showSeparator = () => !isActive() && !isNextActive() && !isLast();
+
+            return (
+              <>
+                <EditorTabItem
+                  tab={tab}
+                  isActive={isActive()}
+                  onSelect={() => props.onTabSelect?.(tab.id)}
+                  onClose={() => props.onTabClose?.(tab.id)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setContextMenuState({
+                      visible: true,
+                      x: e.clientX,
+                      y: e.clientY,
+                      tabId: tab.id,
+                      tabPath: tab.path,
+                    });
+                  }}
+                  onDragStart={(e) => {
+                    e.dataTransfer?.setData("text/plain", tab.id);
+                    if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const sourceId = e.dataTransfer?.getData("text/plain");
+                    if (sourceId && sourceId !== tab.id) {
+                      props.onTabReorder?.(sourceId, tab.id);
+                    }
+                  }}
+                />
+                <Show when={showSeparator()}>
+                  <div
+                    style={{
+                      width: "1px",
+                      height: "16px",
+                      background: "var(--cortex-border-default, #2E2F31)",
+                      "flex-shrink": "0",
+                    }}
+                  />
+                </Show>
+              </>
+            );
+          }}
         </For>
       </div>
 
@@ -180,8 +201,8 @@ const TabContextMenu: Component<TabContextMenuProps> = (props) => {
     left: `${props.x}px`,
     top: `${props.y}px`,
     "z-index": "9999",
-    background: "var(--cortex-bg-secondary)",
-    border: "1px solid var(--cortex-border-default)",
+    background: "var(--cortex-bg-elevated, #252628)",
+    border: "1px solid var(--cortex-border-default, #2E2F31)",
     "border-radius": "8px",
     padding: "4px 0",
     "min-width": "160px",
@@ -196,8 +217,8 @@ const TabContextMenu: Component<TabContextMenuProps> = (props) => {
     padding: "6px 12px",
     background: "transparent",
     border: "none",
-    color: "var(--cortex-text-on-surface)",
-    "font-family": "var(--cortex-font-sans)",
+    color: "var(--cortex-text-primary, #FCFCFC)",
+    "font-family": "var(--cortex-font-sans, 'Figtree', sans-serif)",
     "font-size": "12px",
     cursor: "pointer",
     "text-align": "left",
@@ -214,7 +235,7 @@ const TabContextMenu: Component<TabContextMenuProps> = (props) => {
       <button
         style={itemStyle}
         onClick={handleClick(props.onClose)}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--cortex-icon-button-hover-bg)"; }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--cortex-bg-hover, #2E2F31)"; }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
       >
         Close
@@ -222,7 +243,7 @@ const TabContextMenu: Component<TabContextMenuProps> = (props) => {
       <button
         style={itemStyle}
         onClick={handleClick(props.onCloseOthers)}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--cortex-icon-button-hover-bg)"; }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--cortex-bg-hover, #2E2F31)"; }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
       >
         Close Others
@@ -230,16 +251,16 @@ const TabContextMenu: Component<TabContextMenuProps> = (props) => {
       <button
         style={itemStyle}
         onClick={handleClick(props.onCloseAll)}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--cortex-icon-button-hover-bg)"; }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--cortex-bg-hover, #2E2F31)"; }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
       >
         Close All
       </button>
-      <div style={{ height: "1px", background: "var(--cortex-border-default)", margin: "4px 0" }} />
+      <div style={{ height: "1px", background: "var(--cortex-border-default, #2E2F31)", margin: "4px 0" }} />
       <button
         style={itemStyle}
         onClick={handleClick(props.onCopyPath)}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--cortex-icon-button-hover-bg)"; }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--cortex-bg-hover, #2E2F31)"; }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
       >
         Copy Path
@@ -268,8 +289,8 @@ const EditorTabItem: Component<EditorTabItemProps> = (props) => {
     gap: "4px",
     height: "32px",
     padding: "8px",
-    background: props.isActive ? "var(--cortex-bg-elevated)" : "transparent",
-    "border-radius": "8px",
+    background: props.isActive ? "var(--cortex-bg-elevated, #252628)" : "transparent",
+    "border-radius": props.isActive ? "8px 8px 0 0" : "8px",
     cursor: "pointer",
     transition: "background 100ms ease",
     "flex-shrink": "0",
@@ -277,11 +298,11 @@ const EditorTabItem: Component<EditorTabItemProps> = (props) => {
   });
 
   const nameStyle = (): JSX.CSSProperties => ({
-    "font-family": "var(--cortex-font-sans, 'Inter', sans-serif)",
-    "font-size": "14px",
+    "font-family": "var(--cortex-font-sans, 'Figtree', sans-serif)",
+    "font-size": "13px",
     "font-weight": "500",
     "line-height": "115%",
-    color: props.isActive ? "#E9E9EA" : "var(--cortex-text-secondary)",
+    color: props.isActive ? "var(--cortex-text-primary, #FCFCFC)" : "var(--cortex-text-secondary, #8C8D8F)",
     "white-space": "nowrap",
     "font-style": props.tab.isPreview ? "italic" : "normal",
   });
@@ -306,7 +327,7 @@ const EditorTabItem: Component<EditorTabItemProps> = (props) => {
     width: "8px",
     height: "8px",
     "border-radius": "var(--cortex-radius-full, 50%)",
-    background: "var(--cortex-text-muted, #8C8D8F)",
+    background: "var(--cortex-text-secondary, #8C8D8F)",
     "flex-shrink": "0",
   });
 
@@ -341,7 +362,7 @@ const EditorTabItem: Component<EditorTabItemProps> = (props) => {
           style={closeButtonStyle()}
           onClick={handleClose}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.background = "var(--cortex-interactive-hover)";
+            (e.currentTarget as HTMLElement).style.background = "var(--cortex-bg-hover, #2E2F31)";
           }}
           onMouseLeave={(e) => {
             (e.currentTarget as HTMLElement).style.background = "transparent";
@@ -493,8 +514,8 @@ const FileTypeIcon: Component<FileTypeIconProps> = (props) => {
 
   return (
     <svg width={size()} height={size()} viewBox="0 0 16 16" fill="none">
-      <path d="M4 2h5l4 4v8a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="var(--cortex-text-inactive, #8C8D8F)" stroke-width="1.2" fill="none" />
-      <path d="M9 2v4h4" stroke="var(--cortex-text-inactive, #8C8D8F)" stroke-width="1.2" fill="none" />
+      <path d="M4 2h5l4 4v8a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="var(--cortex-text-secondary, #8C8D8F)" stroke-width="1.2" fill="none" />
+      <path d="M9 2v4h4" stroke="var(--cortex-text-secondary, #8C8D8F)" stroke-width="1.2" fill="none" />
     </svg>
   );
 };
