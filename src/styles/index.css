@@ -445,21 +445,21 @@ button.btn-vscode,
 }
 
 .file-explorer-content::-webkit-scrollbar-track {
-  background: transparent;
+  background: #2E2F31;
 }
 
 .file-explorer-content::-webkit-scrollbar-thumb {
   background: transparent;
-  border-radius: 4px;
+  border-radius: 3px;
   transition: background-color 0.2s;
 }
 
 .file-explorer-content:hover::-webkit-scrollbar-thumb {
-  background: #43454A;
+  background: #8C8D8F;
 }
 
 .file-explorer-content::-webkit-scrollbar-thumb:hover {
-  background: #5A5D63;
+  background: #8C8D8F;
 }
 
 .file-explorer-empty,

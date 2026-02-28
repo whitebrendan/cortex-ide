@@ -31,12 +31,12 @@
   --cortex-scrollbar-width-thin: 6px;
   --cortex-scrollbar-slider-min-size: 20px;
   
-  /* Scrollbar Colors - Figma-aligned */
+  /* Scrollbar Colors - Figma aligned (#2E2F31 track, #8C8D8F thumb on hover) */
   --cortex-scrollbar-shadow: rgba(0, 0, 0, 0.35);
-  --cortex-scrollbar-track-bg: transparent;
-  --cortex-scrollbar-thumb-bg: var(--cortex-scrollbar-thumb, #2E2F31);
-  --cortex-scrollbar-thumb-hover-bg: var(--cortex-scrollbar-thumb-hover, #8C8D8F);
-  --cortex-scrollbar-thumb-active-bg: var(--cortex-scrollbar-thumb-hover, #8C8D8F);
+  --cortex-scrollbar-track-bg: #2E2F31;
+  --cortex-scrollbar-thumb-bg: transparent;
+  --cortex-scrollbar-thumb-hover-bg: #8C8D8F;
+  --cortex-scrollbar-thumb-active-bg: #8C8D8F;
   
   /* Scrollbar Timing */
   --cortex-scrollbar-hide-timeout: 500ms;
@@ -71,16 +71,16 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--cortex-scrollbar-thumb-bg, #2E2F31);
-  border-radius: 4px;
+  background: transparent;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--cortex-scrollbar-thumb-hover-bg, #8C8D8F);
+  background: #8C8D8F;
 }
 
 ::-webkit-scrollbar-corner {
-  background: transparent;
+  background: #2E2F31;
 }
 
 /* VS Code-style scrollbar classes */

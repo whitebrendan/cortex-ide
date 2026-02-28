@@ -62,7 +62,7 @@
   --cortex-menu-items-holder-z-index: 2000;
   
   /* Scrollbar */
-  --cortex-menu-scrollbar-size: 8px;
+  --cortex-menu-scrollbar-size: 6px;
   
   /* Timing tokens - VS Code specifications */
   --cortex-menu-submenu-show-delay: 250ms;
@@ -508,7 +508,7 @@
 }
 
 .cortex-menu-scrollable::-webkit-scrollbar-track {
-  background: transparent;
+  background: #2E2F31;
 }
 
 .cortex-menu-scrollable::-webkit-scrollbar-thumb {
