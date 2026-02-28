@@ -48,10 +48,55 @@ explicit null checks throughout the codebase. Sample errors include:
   - "Type 'X | undefined' is not assignable to type 'X'" (TS2322)
   - "'item' is possibly 'undefined'" (TS18048)
 
---- Check: mcp-server/npx tsc --noEmit ---
+--- Check: mcp-server/npx tsc --noEmit (with node_modules installed) ---
 Result: PASS (0 errors)
 
-The mcp-server sub-project also compiles cleanly with its own tsconfig.json.
+The mcp-server sub-project compiles cleanly with its own tsconfig.json when
+dependencies are installed.
+
+--- Check: mcp-server/npx tsc --noEmit (WITHOUT node_modules) ---
+Result: FAIL (22 errors)
+
+When mcp-server/node_modules is missing, 22 errors surface. These are latent
+issues that cascade from 4 missing module declarations:
+
+src/client.ts(104,25): error TS2345: Argument of type 'string | NonSharedBuffer' is not assignable to parameter of type 'Buffer<ArrayBufferLike>'.
+  Type 'string' is not assignable to type 'Buffer<ArrayBufferLike>'.
+src/index.ts(13,45): error TS2307: Cannot find module '@modelcontextprotocol/sdk/server/mcp.js' or its corresponding type declarations.
+src/index.ts(14,38): error TS2307: Cannot find module '@modelcontextprotocol/sdk/server/stdio.js' or its corresponding type declarations.
+src/index.ts(15,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+src/index.ts(20,22): error TS2307: Cannot find module 'glob' or its corresponding type declarations.
+src/index.ts(115,12): error TS7006: Parameter 'uri' implicitly has an 'any' type.
+src/index.ts(115,17): error TS7006: Parameter 'params' implicitly has an 'any' type.
+src/index.ts(154,12): error TS7006: Parameter 'args' implicitly has an 'any' type.
+src/index.ts(193,12): error TS7006: Parameter 'args' implicitly has an 'any' type.
+src/index.ts(220,12): error TS7006: Parameter 'args' implicitly has an 'any' type.
+src/index.ts(251,12): error TS7006: Parameter 'args' implicitly has an 'any' type.
+src/index.ts(282,12): error TS7006: Parameter 'args' implicitly has an 'any' type.
+src/index.ts(312,12): error TS7006: Parameter 'args' implicitly has an 'any' type.
+src/index.ts(344,12): error TS7006: Parameter 'args' implicitly has an 'any' type.
+src/index.ts(373,12): error TS7006: Parameter 'args' implicitly has an 'any' type.
+src/index.ts(401,12): error TS7006: Parameter 'args' implicitly has an 'any' type.
+src/index.ts(455,12): error TS7006: Parameter 'args' implicitly has an 'any' type.
+src/index.ts(486,12): error TS7006: Parameter 'args' implicitly has an 'any' type.
+src/index.ts(512,12): error TS7006: Parameter 'args' implicitly has an 'any' type.
+src/index.ts(551,12): error TS7006: Parameter 'args' implicitly has an 'any' type.
+src/index.ts(608,12): error TS7006: Parameter 'args' implicitly has an 'any' type.
+src/index.ts(665,12): error TS7006: Parameter 'args' implicitly has an 'any' type.
+
+Breakdown: 4 missing imports (TS2307), 1 type mismatch (TS2345), 17 implicit any (TS7006).
+The TS7006 errors cascade from the TS2307 errors — the MCP SDK provides type
+inference for callback parameters.
+
+--- Check: mcp-server/npx tsc --noEmit --noUnusedLocals --noUnusedParameters ---
+Result: FAIL (2 additional errors)
+
+src/index.ts(72,7): error TS6133: 'truncationSchema' is declared but its value is never read.
+src/index.ts(665,12): error TS6133: 'args' is declared but its value is never read.
+
+Note: mcp-server/tsconfig.json does NOT enable noUnusedLocals or
+noUnusedParameters (unlike the main tsconfig.json which does). These 2 errors
+would surface if those flags were enabled for consistency.
 
 ================================================================================
 Type Safety Concerns (not compilation errors, but code quality issues)

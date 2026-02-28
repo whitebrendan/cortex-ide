@@ -5,7 +5,9 @@
 | Check | Result |
 |-------|--------|
 | `npx tsc --noEmit` (current config) | **0 errors** ✅ |
-| `npx tsc --noEmit` (mcp-server/) | **0 errors** ✅ |
+| `npx tsc --noEmit` (mcp-server/, with deps) | **0 errors** ✅ |
+| `npx tsc --noEmit` (mcp-server/, without deps) | **22 errors** (4 missing imports, 1 type mismatch, 17 implicit any) |
+| `npx tsc --noEmit --noUnusedLocals` (mcp-server/) | **2 errors** (unused variables) |
 | `npx tsc --noEmit --skipLibCheck false` | **10 errors** (5 in node_modules, 5 in src/vite-env.d.ts) |
 | `npx tsc --noEmit --noUncheckedIndexedAccess` | **~3,981 errors** (flag not enabled) |
 | `npm run lint` | **No linter configured** (no ESLint, no Biome) |
@@ -49,6 +51,8 @@ The project compiles cleanly under its current `tsconfig.json` settings. The iss
 | `skipLibCheck: true` hides vite-env.d.ts conflicts | Low | With `skipLibCheck: false`, 5 TS2687 errors appear in `src/vite-env.d.ts` due to conflicting `ImportMetaEnv` declarations (missing `readonly` modifiers vs. `vite/client` types) |
 | `noUncheckedIndexedAccess` not enabled | Medium | Would catch ~3,981 potential runtime errors from unguarded array/record access. Not enabled — would be a large effort to add. |
 | `exactOptionalPropertyTypes` not enabled | Low | Would enforce `undefined` vs. missing property distinction |
+| `forceConsistentCasingInFileNames` not enabled | Medium | Risk of case-sensitivity issues across OS. mcp-server has this enabled but main tsconfig does not. |
+| `noImplicitReturns` not enabled | Low | Could catch missing return statements in functions |
 | `exclude` only covers `cov-*.test.*` files | Info | 811 cov-test files excluded; 314 non-cov test files are type-checked (which is fine) |
 
 ### tsconfig.node.json (Vite config)
@@ -94,7 +98,21 @@ The project compiles cleanly under its current `tsconfig.json` settings. The iss
 }
 ```
 
-**Issues found:** None. Compiles cleanly. Missing `noUnusedLocals`/`noUnusedParameters` but this is a small 2-file project.
+**Issues found:**
+
+| Issue | Severity | Details |
+|-------|----------|---------|
+| `noUnusedLocals` not enabled | Medium | Inconsistent with main tsconfig — allows dead code. 1 instance found: `truncationSchema` (line 72) declared but never used |
+| `noUnusedParameters` not enabled | Medium | Inconsistent with main tsconfig — allows unused params. 1 instance found: `args` (line 665) declared but never used |
+| `noFallthroughCasesInSwitch` not enabled | Low | Inconsistent with main tsconfig |
+| `forceConsistentCasingInFileNames` enabled | ✅ | Good — but main tsconfig is missing this flag |
+
+**Latent errors (without node_modules):** 22 errors surface when `mcp-server/node_modules` is missing:
+- 4 × TS2307 (Cannot find module) — `@modelcontextprotocol/sdk`, `zod`, `glob`
+- 1 × TS2345 (Type mismatch) — `Buffer` type in `client.ts:104`
+- 17 × TS7006 (Implicit any) — Callback params that cascade from missing module types
+
+These resolve to 0 when `npm install` is run in the mcp-server directory.
 
 ---
 
