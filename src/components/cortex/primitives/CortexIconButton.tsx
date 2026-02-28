@@ -51,7 +51,7 @@ export const CortexIconButton: Component<CortexIconButtonProps> = (props) => {
     margin: "0",
     border: "none",
     background: getBackground(),
-    "border-radius": "4px",
+    "border-radius": (hovered() || pressed()) && !local.disabled ? "4px" : "0",
     cursor: local.disabled ? "not-allowed" : "pointer",
     opacity: local.disabled ? "0.5" : "1",
     transition: "all var(--cortex-transition-normal, 150ms ease)",
@@ -79,7 +79,7 @@ export const CortexIconButton: Component<CortexIconButtonProps> = (props) => {
   };
 
   const handleFocus = () => {
-    setFocused(true);
+    if (!local.disabled) setFocused(true);
   };
 
   const handleBlur = () => {

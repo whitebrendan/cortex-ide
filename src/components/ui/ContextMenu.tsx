@@ -34,24 +34,24 @@ import { Icon } from "./Icon";
 // =============================================================================
 
 const JB_COLORS = {
-  // Container
-  background: "var(--cortex-bg-hover, var(--cortex-bg-hover))",
-  backgroundHover: "var(--cortex-bg-hover, var(--cortex-bg-hover))",
-  border: "var(--cortex-bg-active)",
+  // Container - Figma: bg #1C1C1D, border #2E2F31
+  background: "var(--cortex-dropdown-bg, #1C1C1D)",
+  backgroundHover: "var(--cortex-dropdown-bg, #1C1C1D)",
+  border: "var(--cortex-border-default, #2E2F31)",
   shadow: "0 4px 12px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.25)",
   
   // Text
   foreground: "var(--cortex-text-secondary)",
-  foregroundHover: "var(--cortex-text-primary, var(--cortex-text-primary))",
+  foregroundHover: "var(--cortex-text-primary)",
   shortcut: "var(--cortex-text-inactive)",
-  disabled: "var(--cortex-bg-active)",
+  disabled: "var(--cortex-text-disabled)",
   header: "var(--cortex-info)",
   
-  // Hover state
-  hoverBg: "var(--cortex-bg-hover)",
+  // Hover state - Figma: #252628
+  hoverBg: "var(--cortex-bg-hover, #252628)",
   
-  // Separator
-  separator: "var(--cortex-bg-hover)",
+  // Separator - Figma: #2E2F31
+  separator: "var(--cortex-border-default, #2E2F31)",
   
   // Icon colors
   iconDefault: "var(--cortex-text-inactive)",
@@ -71,7 +71,7 @@ const JB_STYLES = {
     minWidth: "200px",
     maxWidth: "340px",
     padding: "5px 0",
-    borderRadius: "var(--cortex-radius-md)",
+    borderRadius: "var(--cortex-radius-md, 8px)",
     fontSize: "13px",
     fontWeight: "450",
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",

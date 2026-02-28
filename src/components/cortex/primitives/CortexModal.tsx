@@ -304,7 +304,7 @@ export const CortexModal: Component<CortexModalProps> = (props) => {
                       "border-radius": "var(--cortex-radius-sm, 4px)",
                       color: "var(--cortex-text-muted)",
                       cursor: "pointer",
-                      transition: "background var(--cortex-transition-fast, 100ms ease), color var(--cortex-transition-fast, 100ms ease)",
+                      transition: "background var(--cortex-transition-fast, 100ms ease), color var(--cortex-transition-fast, 100ms ease), box-shadow var(--cortex-transition-fast, 100ms ease)",
                       "flex-shrink": "0",
                     }}
                     onMouseEnter={(e) => {
@@ -314,6 +314,12 @@ export const CortexModal: Component<CortexModalProps> = (props) => {
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = "transparent";
                       e.currentTarget.style.color = "var(--cortex-text-muted)";
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.boxShadow = "var(--cortex-focus-ring)";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.boxShadow = "none";
                     }}
                     aria-label="Close modal"
                   >

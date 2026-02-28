@@ -32,7 +32,7 @@
   
   /* VS Code menu sizing tokens - exact specs */
   --cortex-menu-min-width: 160px;
-  --cortex-menu-border-radius: 6px;
+  --cortex-menu-border-radius: 8px;
   --cortex-menu-item-border-radius: 0;
   --cortex-menu-font-size: 13px;
   --cortex-menu-item-height: 26px;
@@ -691,7 +691,7 @@
   position: fixed;
   background: var(--cortex-menu-background-color, var(--jb-popup));
   border: 1px solid var(--cortex-menu-border-color, var(--jb-border-default));
-  border-radius: 6px;
+  border-radius: 8px;
   box-shadow: 0 2px 8px var(--cortex-menu-shadow-color);
   min-width: 160px;
   padding: 4px 0;

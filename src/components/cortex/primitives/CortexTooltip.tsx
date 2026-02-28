@@ -53,8 +53,16 @@ export const CortexTooltip: Component<CortexTooltipProps> = (props) => {
     "white-space": "nowrap",
     "pointer-events": "none",
     opacity: isVisible() ? "1" : "0",
-    transform: isVisible() ? "translateY(0)" : "translateY(-4px)",
-    transition: "opacity 150ms ease, transform 150ms ease",
+    transform: isVisible()
+      ? "translate(-50%, 0)"
+      : position() === "top"
+        ? "translate(-50%, 4px)"
+        : position() === "bottom"
+          ? "translate(-50%, -4px)"
+          : position() === "left"
+            ? "translate(4px, -50%)"
+            : "translate(-4px, -50%)",
+    transition: "opacity var(--cortex-transition-normal, 150ms ease), transform var(--cortex-transition-normal, 150ms ease)",
     ...local.style,
   });
 

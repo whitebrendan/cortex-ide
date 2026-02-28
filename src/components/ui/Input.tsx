@@ -62,15 +62,14 @@ export function Input(props: InputProps) {
     background: "var(--cortex-bg-primary)",
     border: local.error 
       ? "1px solid var(--cortex-error)" 
-      : isFocused() 
-        ? "2px solid var(--cortex-accent-primary)"
-        : "1px solid var(--cortex-border-default)",
+      : "1px solid " + (isFocused() ? "var(--cortex-accent-primary)" : "var(--cortex-border-default)"),
     "border-radius": "var(--cortex-radius-md)",
     color: "var(--cortex-text-primary)",
     "font-family": "var(--cortex-font-sans)",
     "font-size": "13px",
     outline: "none",
-    transition: "border-color var(--cortex-transition-fast)",
+    "box-shadow": isFocused() && !local.error ? "var(--cortex-focus-ring)" : "none",
+    transition: "border-color var(--cortex-transition-fast), box-shadow var(--cortex-transition-fast)",
     ...local.style,
   });
 
@@ -189,16 +188,15 @@ export function Textarea(props: TextareaProps) {
     background: "var(--cortex-bg-primary)",
     border: local.error 
       ? "1px solid var(--cortex-error)" 
-      : isFocused() 
-        ? "2px solid var(--cortex-accent-primary)"
-        : "1px solid var(--cortex-border-default)",
+      : "1px solid " + (isFocused() ? "var(--cortex-accent-primary)" : "var(--cortex-border-default)"),
     "border-radius": "var(--cortex-radius-md)",
     color: "var(--cortex-text-primary)",
     "font-family": "var(--cortex-font-sans)",
     "font-size": "13px",
     outline: "none",
     resize: "vertical",
-    transition: "border-color var(--cortex-transition-fast)",
+    "box-shadow": isFocused() && !local.error ? "var(--cortex-focus-ring)" : "none",
+    transition: "border-color var(--cortex-transition-fast), box-shadow var(--cortex-transition-fast)",
     ...local.style,
   });
 

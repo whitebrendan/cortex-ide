@@ -146,7 +146,7 @@ describe("CortexDropdownItem", () => {
       expect(item.style.background).toBe("transparent");
 
       await fireEvent.mouseEnter(item);
-      expect(item.style.background).toBe("rgb(37, 38, 40)");
+      expect(item.style.background).toBe("var(--cortex-dropdown-item-hover, #252628)");
     });
 
     it("resets background color on mouse leave", async () => {
@@ -156,7 +156,7 @@ describe("CortexDropdownItem", () => {
       const item = getByRole("menuitem") as HTMLElement;
 
       await fireEvent.mouseEnter(item);
-      expect(item.style.background).toBe("rgb(37, 38, 40)");
+      expect(item.style.background).toBe("var(--cortex-dropdown-item-hover, #252628)");
 
       await fireEvent.mouseLeave(item);
       expect(item.style.background).toBe("transparent");

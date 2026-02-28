@@ -267,10 +267,11 @@ export const CortexDropdown: Component<CortexDropdownProps> = (props) => {
       bottom: pos.showAbove ? `${window.innerHeight - pos.y + 4}px` : undefined,
       width: `${pos.width}px`,
       "min-width": "160px",
-      background: "var(--cortex-bg-secondary)",
-      border: "1px solid var(--cortex-border-default)",
+      background: "var(--cortex-dropdown-bg, #1C1C1D)",
+      border: "1px solid var(--cortex-dropdown-border, #2E2F31)",
+      "border-radius": "var(--cortex-dropdown-radius, var(--cortex-radius-md, 8px))",
       padding: "4px",
-      "box-shadow": "0 8px 16px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.4)",
+      "box-shadow": "var(--cortex-dropdown-shadow, 0 8px 16px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.4))",
       "z-index": "var(--cortex-z-dropdown, 600)",
       overflow: "hidden",
     };
@@ -280,16 +281,16 @@ export const CortexDropdown: Component<CortexDropdownProps> = (props) => {
     display: "flex",
     "align-items": "center",
     gap: "8px",
-    padding: "4px 8px",
+    padding: "6px 8px",
     cursor: opt.disabled ? "not-allowed" : "pointer",
     opacity: opt.disabled ? "0.5" : "1",
     background:
       index === highlightedIndex()
-        ? "#252628"
+        ? "var(--cortex-dropdown-item-hover, #252628)"
         : opt.value === local.value
           ? "rgba(255,255,255,0.08)"
           : "transparent",
-    "border-radius": index === highlightedIndex() ? "4px" : "0",
+    "border-radius": "var(--cortex-radius-xs, 4px)",
     color:
       opt.value === local.value
         ? "var(--cortex-accent-primary)"
