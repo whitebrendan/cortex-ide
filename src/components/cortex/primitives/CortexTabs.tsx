@@ -166,7 +166,7 @@ export const CortexTabs: Component<CortexTabsProps> = (props) => {
         height: "2px",
         background: "var(--cortex-accent-primary)",
         "border-radius": "1px 1px 0 0",
-        transition: "left 200ms ease, width 200ms ease",
+        transition: "left var(--cortex-transition-normal, 150ms ease), width var(--cortex-transition-normal, 150ms ease)",
       });
     } else {
       setIndicatorStyle({
@@ -177,7 +177,7 @@ export const CortexTabs: Component<CortexTabsProps> = (props) => {
         height: `${tabRect.height}px`,
         background: "var(--cortex-accent-primary)",
         "border-radius": "0 1px 1px 0",
-        transition: "top 200ms ease, height 200ms ease",
+        transition: "top var(--cortex-transition-normal, 150ms ease), height var(--cortex-transition-normal, 150ms ease)",
       });
     }
   };
@@ -336,7 +336,19 @@ export const CortexTabs: Component<CortexTabsProps> = (props) => {
               onMouseLeave={(e) => {
                 if (!tab.disabled && tab.id !== local.activeTab) {
                   e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "var(--cortex-text-on-surface)";
+                  e.currentTarget.style.color = variant() === "pills"
+                    ? "var(--cortex-text-muted)"
+                    : "var(--cortex-text-on-surface)";
+                }
+              }}
+              onMouseDown={(e) => {
+                if (!tab.disabled && tab.id !== local.activeTab) {
+                  e.currentTarget.style.background = "var(--cortex-bg-active, rgba(255,255,255,0.08))";
+                }
+              }}
+              onMouseUp={(e) => {
+                if (!tab.disabled && tab.id !== local.activeTab) {
+                  e.currentTarget.style.background = "var(--cortex-interactive-hover, rgba(255,255,255,0.05))";
                 }
               }}
             >

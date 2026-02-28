@@ -105,21 +105,21 @@
   
   /* Animation */
   transition: 
-    background-color 0.15s ease, 
-    color 0.15s ease, 
-    opacity 0.15s ease,
-    transform 0.15s ease;
+    background-color var(--cortex-transition-normal, 150ms ease), 
+    color var(--cortex-transition-normal, 150ms ease), 
+    opacity var(--cortex-transition-normal, 150ms ease),
+    transform var(--cortex-transition-normal, 150ms ease);
 }
 
 .activity-bar-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #FAFAFA;
+  background: var(--cortex-icon-button-hover-bg, rgba(255, 255, 255, 0.08));
+  color: var(--cortex-text-primary, #FAFAFA);
   opacity: 1;
 }
 
 .activity-bar-item:active {
-  background: rgba(255, 255, 255, 0.12);
-  color: #FAFAFA;
+  background: var(--cortex-bg-active, rgba(255, 255, 255, 0.12));
+  color: var(--cortex-text-primary, #FAFAFA);
   opacity: 1;
 }
 
@@ -131,8 +131,8 @@
 /* Active state */
 .activity-bar-item[aria-pressed="true"],
 .activity-bar-item.active {
-  background: rgba(255, 255, 255, 0.12);
-  color: #FAFAFA;
+  background: var(--cortex-bg-active, rgba(255, 255, 255, 0.12));
+  color: var(--cortex-text-primary, #FAFAFA);
   opacity: 1;
 }
 
@@ -306,15 +306,19 @@
   cursor: pointer;
   
   /* Animation */
-  transition: background-color 0.1s ease;
+  transition: background-color var(--cortex-transition-fast, 100ms ease);
 }
 
 .context-menu-item:hover:not(:disabled) {
-  background: var(--jb-surface-hover);
+  background: var(--cortex-dropdown-item-hover, var(--jb-surface-hover));
+}
+
+.context-menu-item:active:not(:disabled) {
+  background: var(--cortex-dropdown-item-active, var(--cortex-bg-active));
 }
 
 .context-menu-item:focus-visible {
-  background: var(--jb-surface-hover);
+  background: var(--cortex-dropdown-item-hover, var(--jb-surface-hover));
   outline: none;
 }
 
@@ -366,7 +370,7 @@
   border-radius: 1px;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.15s ease;
+  transition: opacity var(--cortex-transition-normal, 150ms ease);
 }
 
 .activity-bar-drop-zone[data-visible="true"] {

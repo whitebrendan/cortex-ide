@@ -84,10 +84,18 @@ export const CortexTreeItem: Component<CortexTreeItemProps> = (props) => {
   ]);
 
   const [isHovered, setIsHovered] = createSignal(false);
+  const [isPressed, setIsPressed] = createSignal(false);
   const level = () => local.level || 0;
   const hasChildren = () => local.item.type === "folder" && local.item.children && local.item.children.length > 0;
 
   const indentPx = () => level() * 24;
+
+  const getRowBackground = (): string => {
+    if (isPressed()) return "var(--cortex-bg-active, rgba(255, 255, 255, 0.08))";
+    if (local.isSelected) return "var(--cortex-interactive-selected, rgba(255, 255, 255, 0.05))";
+    if (isHovered()) return "var(--cortex-interactive-hover, rgba(255, 255, 255, 0.03))";
+    return "transparent";
+  };
 
   const rowStyle = (): JSX.CSSProperties => ({
     display: "flex",
@@ -98,13 +106,10 @@ export const CortexTreeItem: Component<CortexTreeItemProps> = (props) => {
     padding: "0",
     "padding-left": `${indentPx()}px`,
     cursor: "pointer",
-    background: local.isSelected
-      ? "rgba(255, 255, 255, 0.05)"
-      : isHovered()
-      ? "rgba(255, 255, 255, 0.03)"
-      : "transparent",
-    "border-radius": local.isSelected ? "2px" : "0",
-    transition: "background 100ms ease",
+    background: getRowBackground(),
+    "border-radius": local.isSelected || isPressed() ? "2px" : "0",
+    transition: "background var(--cortex-transition-fast, 100ms ease)",
+    outline: "none",
     ...local.style,
   });
 
@@ -167,10 +172,19 @@ export const CortexTreeItem: Component<CortexTreeItemProps> = (props) => {
       <div
         class={local.class}
         style={rowStyle()}
+        tabIndex={0}
         onClick={handleClick}
         onContextMenu={handleContextMenu}
         onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        onMouseLeave={() => { setIsHovered(false); setIsPressed(false); }}
+        onMouseDown={() => setIsPressed(true)}
+        onMouseUp={() => setIsPressed(false)}
+        onKeyDown={(e: KeyboardEvent) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleClick(e as unknown as MouseEvent);
+          }
+        }}
         {...others}
       >
         <div style={folderIconContainerStyle()}>

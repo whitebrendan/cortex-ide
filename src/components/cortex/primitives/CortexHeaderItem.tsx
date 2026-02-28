@@ -31,8 +31,16 @@ export const CortexHeaderItem: Component<CortexHeaderItemProps> = (props) => {
   ]);
 
   const [hovered, setHovered] = createSignal(false);
+  const [pressed, setPressed] = createSignal(false);
+  const [focused, setFocused] = createSignal(false);
 
-  const isHighlighted = () => hovered() || local.isActive;
+  const isHighlighted = () => hovered() || local.isActive || pressed();
+
+  const getBackground = (): string => {
+    if (pressed()) return "var(--cortex-bg-active, #252628)";
+    if (isHighlighted()) return "var(--cortex-bg-secondary)";
+    return "transparent";
+  };
 
   const baseStyle = (): JSX.CSSProperties => ({
     display: "inline-flex",
@@ -41,7 +49,7 @@ export const CortexHeaderItem: Component<CortexHeaderItemProps> = (props) => {
     padding: "8px 10px",
     gap: "10px",
     border: "none",
-    background: isHighlighted() ? "var(--cortex-bg-secondary)" : "transparent",
+    background: getBackground(),
     "border-radius": isHighlighted() ? "8px" : "0",
     color: isHighlighted() ? "var(--cortex-text-primary)" : "var(--cortex-text-secondary)",
     "font-family": "'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
@@ -49,9 +57,11 @@ export const CortexHeaderItem: Component<CortexHeaderItemProps> = (props) => {
     "font-weight": "500",
     "line-height": "1em",
     cursor: "pointer",
-    transition: "all 150ms ease",
+    transition: "all var(--cortex-transition-normal, 150ms ease)",
     "white-space": "nowrap",
     "user-select": "none",
+    outline: "none",
+    "box-shadow": focused() ? "var(--cortex-focus-ring)" : "none",
     ...local.style,
   });
 
@@ -62,6 +72,23 @@ export const CortexHeaderItem: Component<CortexHeaderItemProps> = (props) => {
 
   const handleMouseLeave = () => {
     setHovered(false);
+    setPressed(false);
+  };
+
+  const handleMouseDown = () => {
+    setPressed(true);
+  };
+
+  const handleMouseUp = () => {
+    setPressed(false);
+  };
+
+  const handleFocus = () => {
+    setFocused(true);
+  };
+
+  const handleBlur = () => {
+    setFocused(false);
   };
 
   const handleClick = (e: MouseEvent) => {
@@ -76,6 +103,10 @@ export const CortexHeaderItem: Component<CortexHeaderItemProps> = (props) => {
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
       {...others}
     >
       {local.label}

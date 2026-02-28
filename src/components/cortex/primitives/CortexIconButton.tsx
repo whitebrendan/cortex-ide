@@ -28,9 +28,18 @@ export const CortexIconButton: Component<CortexIconButtonProps> = (props) => {
   ]);
 
   const [hovered, setHovered] = createSignal(false);
+  const [pressed, setPressed] = createSignal(false);
+  const [focused, setFocused] = createSignal(false);
 
   const size = () => local.size ?? 20;
   const iconSize = () => Math.round(size() * 0.8);
+
+  const getBackground = (): string => {
+    if (local.disabled) return "transparent";
+    if (pressed()) return "var(--cortex-bg-active, rgba(252, 252, 252, 0.12))";
+    if (hovered()) return "var(--cortex-icon-button-hover-bg)";
+    return "transparent";
+  };
 
   const containerStyle = (): JSX.CSSProperties => ({
     display: "inline-flex",
@@ -41,12 +50,14 @@ export const CortexIconButton: Component<CortexIconButtonProps> = (props) => {
     padding: "0",
     margin: "0",
     border: "none",
-    background: hovered() && !local.disabled ? "var(--cortex-icon-button-hover-bg)" : "transparent",
-    "border-radius": hovered() && !local.disabled ? "4px" : "0",
+    background: getBackground(),
+    "border-radius": "4px",
     cursor: local.disabled ? "not-allowed" : "pointer",
     opacity: local.disabled ? "0.5" : "1",
     transition: "all var(--cortex-transition-normal, 150ms ease)",
     "flex-shrink": "0",
+    outline: "none",
+    "box-shadow": focused() ? "var(--cortex-focus-ring)" : "none",
     ...local.style,
   });
 
@@ -56,6 +67,23 @@ export const CortexIconButton: Component<CortexIconButtonProps> = (props) => {
 
   const handleMouseLeave = () => {
     setHovered(false);
+    setPressed(false);
+  };
+
+  const handleMouseDown = () => {
+    if (!local.disabled) setPressed(true);
+  };
+
+  const handleMouseUp = () => {
+    setPressed(false);
+  };
+
+  const handleFocus = () => {
+    setFocused(true);
+  };
+
+  const handleBlur = () => {
+    setFocused(false);
   };
 
   const handleClick = (e: MouseEvent) => {
@@ -71,6 +99,10 @@ export const CortexIconButton: Component<CortexIconButtonProps> = (props) => {
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
       title={local.title}
       disabled={local.disabled}
       {...others}

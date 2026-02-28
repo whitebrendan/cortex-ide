@@ -47,8 +47,16 @@ export const CortexInput: Component<CortexInputProps> = (props) => {
   ]);
 
   const [isFocused, setIsFocused] = createSignal(false);
+  const [isHovered, setIsHovered] = createSignal(false);
   const size = () => local.size || "md";
   const specs = () => SIZE_SPECS[size()];
+
+  const getBorderColor = (): string => {
+    if (local.error) return "1px solid var(--cortex-input-border-error, var(--cortex-error))";
+    if (isFocused()) return "1px solid var(--cortex-input-border-focus, var(--cortex-accent-primary))";
+    if (isHovered() && !local.disabled) return "1px solid var(--cortex-input-border-hover, var(--cortex-border-hover))";
+    return "1px solid var(--cortex-border-accent)";
+  };
 
   const containerStyle = (): JSX.CSSProperties => ({
     display: "flex",
@@ -58,16 +66,13 @@ export const CortexInput: Component<CortexInputProps> = (props) => {
     "min-height": local.multiline ? `${specs().height}px` : undefined,
     padding: `${specs().padding}px`,
     background: "var(--cortex-sidebar-bg)",
-    border: local.error
-      ? "1px solid var(--cortex-input-border-error, var(--cortex-error))"
-      : isFocused()
-      ? "1px solid var(--cortex-input-border-focus, var(--cortex-accent-primary))"
-      : "1px solid var(--cortex-border-accent)",
+    border: getBorderColor(),
     "border-radius": "var(--cortex-sidebar-radius, 12px)",
-    transition: "border-color var(--cortex-transition-normal, 150ms ease)",
+    transition: "border-color var(--cortex-transition-normal, 150ms ease), box-shadow var(--cortex-transition-normal, 150ms ease)",
     opacity: local.disabled ? "0.5" : "1",
     cursor: local.disabled ? "not-allowed" : "text",
     outline: "none",
+    "box-shadow": isFocused() ? "var(--cortex-focus-ring)" : "none",
     ...local.style,
   });
 
@@ -114,7 +119,12 @@ export const CortexInput: Component<CortexInputProps> = (props) => {
   };
 
   return (
-    <div class={local.class} style={containerStyle()}>
+    <div
+      class={local.class}
+      style={containerStyle()}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <Show when={local.leftIcon}>
         <CortexIcon
           name={local.leftIcon!}

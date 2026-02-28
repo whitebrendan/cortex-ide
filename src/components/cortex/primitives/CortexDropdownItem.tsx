@@ -32,6 +32,14 @@ export const CortexDropdownItem: Component<CortexDropdownItemProps> = (props) =>
   ]);
 
   const [hovered, setHovered] = createSignal(false);
+  const [pressed, setPressed] = createSignal(false);
+  const [focused, setFocused] = createSignal(false);
+
+  const getItemBackground = (): string => {
+    if (pressed()) return "var(--cortex-dropdown-item-active, var(--cortex-bg-active, #2A2B2E))";
+    if (hovered() || focused()) return "var(--cortex-dropdown-item-hover, #252628)";
+    return "transparent";
+  };
 
   const baseStyle = (): JSX.CSSProperties => {
     if (local.isRecentFile) {
@@ -47,10 +55,12 @@ export const CortexDropdownItem: Component<CortexDropdownItemProps> = (props) =>
         transition: "all var(--cortex-transition-normal, 150ms ease)",
         "text-align": "left",
         width: "100%",
+        outline: "none",
         ...local.style,
       };
     }
 
+    const isHighlighted = hovered() || focused() || pressed();
     return {
       display: "flex",
       "flex-direction": "row",
@@ -59,13 +69,14 @@ export const CortexDropdownItem: Component<CortexDropdownItemProps> = (props) =>
       "align-self": "stretch",
       padding: "4px 8px",
       gap: "8px",
-      background: hovered() ? "#252628" : "transparent",
-      "border-radius": hovered() ? "4px" : "0",
+      background: getItemBackground(),
+      "border-radius": isHighlighted ? "4px" : "0",
       border: "none",
       cursor: "pointer",
       transition: "all var(--cortex-transition-normal, 150ms ease)",
       "text-align": "left",
       width: "100%",
+      outline: "none",
       ...local.style,
     };
   };
@@ -97,6 +108,30 @@ export const CortexDropdownItem: Component<CortexDropdownItemProps> = (props) =>
 
   const handleMouseLeave = () => {
     setHovered(false);
+    setPressed(false);
+  };
+
+  const handleMouseDown = () => {
+    if (!local.isRecentFile) setPressed(true);
+  };
+
+  const handleMouseUp = () => {
+    setPressed(false);
+  };
+
+  const handleFocus = () => {
+    if (!local.isRecentFile) setFocused(true);
+  };
+
+  const handleBlur = () => {
+    setFocused(false);
+  };
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      local.onClick?.(e as unknown as MouseEvent);
+    }
   };
 
   const handleClick = (e: MouseEvent) => {
@@ -113,6 +148,11 @@ export const CortexDropdownItem: Component<CortexDropdownItemProps> = (props) =>
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
       {...others}
     >
       <span style={labelStyle()}>{local.label}</span>

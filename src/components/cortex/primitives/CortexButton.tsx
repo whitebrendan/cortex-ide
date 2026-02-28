@@ -13,7 +13,7 @@
  *   Font: Geist 14px weight 400, letterSpacing -1.5%
  */
 
-import { Component, JSX, splitProps, Show } from "solid-js";
+import { Component, JSX, splitProps, Show, createSignal } from "solid-js";
 import { CortexIcon } from "./CortexIcon";
 
 export type CortexButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "accent";
@@ -79,6 +79,8 @@ export const CortexButton: Component<CortexButtonProps> = (props) => {
   const variant = () => local.variant || "primary";
   const size = () => local.size || "md";
   const iconPos = () => local.iconPosition || "left";
+  const [pressed, setPressed] = createSignal(false);
+  const [focused, setFocused] = createSignal(false);
 
   const baseStyle = (): JSX.CSSProperties => ({
     display: "inline-flex",
@@ -95,6 +97,7 @@ export const CortexButton: Component<CortexButtonProps> = (props) => {
     "user-select": "none",
     width: local.fullWidth ? "100%" : "auto",
     outline: "none",
+    "box-shadow": focused() ? "var(--cortex-focus-ring-offset)" : "none",
     ...SIZE_STYLES[size()],
     ...local.style,
   });
@@ -136,47 +139,73 @@ export const CortexButton: Component<CortexButtonProps> = (props) => {
     }
   };
 
+  const getActiveBackground = (): string => {
+    switch (variant()) {
+      case "primary": return "var(--cortex-btn-primary-bg-active, var(--cortex-accent-pressed))";
+      case "secondary": return "var(--cortex-btn-secondary-bg-active, var(--cortex-bg-active))";
+      case "ghost": return "var(--cortex-btn-ghost-bg-active, var(--cortex-bg-active))";
+      case "danger": return "var(--cortex-btn-danger-bg-active, var(--cortex-palette-error-700))";
+      case "accent": return "var(--cortex-accent-pressed, #1A4F8A)";
+      default: return "";
+    }
+  };
+
+  const getHoverBackground = (): string => {
+    switch (variant()) {
+      case "primary": return "var(--cortex-btn-primary-bg-hover, var(--cortex-accent-hover, #6C8A2C))";
+      case "secondary": return "var(--cortex-btn-secondary-bg-hover, rgba(255,255,255,0.08))";
+      case "ghost": return "var(--cortex-btn-ghost-bg-hover, rgba(255,255,255,0.05))";
+      case "danger": return "var(--cortex-btn-danger-bg-hover, var(--cortex-error-hover))";
+      case "accent": return "var(--cortex-accent-hover, #1E5CAD)";
+      default: return "";
+    }
+  };
+
+  const getDefaultBackground = (): string => {
+    switch (variant()) {
+      case "primary": return "var(--cortex-btn-primary-bg, var(--cortex-accent-primary))";
+      case "secondary": return "var(--cortex-small-btn-bg, #1A1B1F)";
+      case "ghost": return "var(--cortex-btn-ghost-bg, transparent)";
+      case "danger": return "var(--cortex-btn-danger-bg, var(--cortex-error))";
+      case "accent": return "var(--cortex-accent-blue, #266FCF)";
+      default: return "";
+    }
+  };
+
   const handleMouseEnter = (e: MouseEvent) => {
     if (local.disabled) return;
     const target = e.currentTarget as HTMLElement;
-    switch (variant()) {
-      case "primary":
-        target.style.background = "var(--cortex-btn-primary-bg-hover, var(--cortex-accent-hover, #6C8A2C))";
-        break;
-      case "secondary":
-        target.style.background = "var(--cortex-btn-secondary-bg-hover, rgba(255,255,255,0.08))";
-        break;
-      case "ghost":
-        target.style.background = "var(--cortex-btn-ghost-bg-hover, rgba(255,255,255,0.05))";
-        break;
-      case "danger":
-        target.style.background = "var(--cortex-btn-danger-bg-hover, var(--cortex-error-hover))";
-        break;
-      case "accent":
-        target.style.background = "var(--cortex-accent-hover, #1E5CAD)";
-        break;
+    if (!pressed()) {
+      target.style.background = getHoverBackground();
     }
   };
 
   const handleMouseLeave = (e: MouseEvent) => {
     const target = e.currentTarget as HTMLElement;
-    switch (variant()) {
-      case "primary":
-        target.style.background = "var(--cortex-btn-primary-bg, var(--cortex-accent-primary))";
-        break;
-      case "secondary":
-        target.style.background = "var(--cortex-small-btn-bg, #1A1B1F)";
-        break;
-      case "ghost":
-        target.style.background = "var(--cortex-btn-ghost-bg, transparent)";
-        break;
-      case "danger":
-        target.style.background = "var(--cortex-btn-danger-bg, var(--cortex-error))";
-        break;
-      case "accent":
-        target.style.background = "var(--cortex-accent-blue, #266FCF)";
-        break;
-    }
+    setPressed(false);
+    target.style.background = getDefaultBackground();
+  };
+
+  const handleMouseDown = (e: MouseEvent) => {
+    if (local.disabled) return;
+    setPressed(true);
+    const target = e.currentTarget as HTMLElement;
+    target.style.background = getActiveBackground();
+  };
+
+  const handleMouseUp = (e: MouseEvent) => {
+    if (local.disabled) return;
+    setPressed(false);
+    const target = e.currentTarget as HTMLElement;
+    target.style.background = getHoverBackground();
+  };
+
+  const handleFocus = () => {
+    setFocused(true);
+  };
+
+  const handleBlur = () => {
+    setFocused(false);
   };
 
   const handleClick = (e: MouseEvent) => {
@@ -193,6 +222,10 @@ export const CortexButton: Component<CortexButtonProps> = (props) => {
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
       title={local.title}
       {...others}
     >
