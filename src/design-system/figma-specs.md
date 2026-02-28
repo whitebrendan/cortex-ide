@@ -258,7 +258,7 @@ Inner icon size: `16×16px` (offset `2px, 2px` inside `20×20` container)
 
 | Element   | Type     | Font         | Color     |
 |-----------|----------|--------------|-----------|
-| Text      | TEXT     | Figtree 14px 500 | `#8C8D8F` |
+| Text      | TEXT     | Inter 14px 500 | `#8C8D8F` |
 | Chevron   | INSTANCE | —            | `#FFFFFF` |
 
 Chevron icon: `16×16px`
@@ -267,7 +267,7 @@ Chevron icon: `16×16px`
 
 | Property    | Value   |
 |-------------|---------|
-| Font Family | Figtree |
+| Font Family | Inter |
 | Font Weight | 500     |
 | Font Size   | `14px`  |
 | Line Height | `1em`   |
@@ -286,7 +286,7 @@ Chevron icon: `16×16px`
 
 | Element              | Font         | Color     |
 |----------------------|--------------|-----------|
-| "Code Navigation Help" | Figtree 14px 500 | `#FCFCFC` |
+| "Code Navigation Help" | Inter 14px 500 | `#FCFCFC` |
 | Chevron (left)       | —            | `#FFFFFF` |
 
 ---
@@ -543,7 +543,7 @@ Chevron icon: `16×16px`
 | Property    | Value              |
 |-------------|--------------------|
 | Text        | "Analysing prompt..." |
-| Font Family | Figtree            |
+| Font Family | Inter            |
 | Font Weight | 500                |
 | Font Size   | `16px`             |
 | Line Height | `1em`              |
@@ -714,7 +714,7 @@ Title text:
 
 | Property    | Value    |
 |-------------|----------|
-| Font Family | Figtree  |
+| Font Family | Inter  |
 | Font Weight | 500      |
 | Font Size   | `18px`   |
 | Line Height | `1.333em`|
@@ -777,7 +777,7 @@ Sub-item tag:
 
 | Element         | Font         | Color     |
 |-----------------|--------------|-----------|
-| "New workspace" | Figtree 14px 500 | `#8C8D8F` |
+| "New workspace" | Inter 14px 500 | `#8C8D8F` |
 | Plus icon       | `16×16px`    | —         |
 
 #### Right — Main Content Panel (`277:6605`)
@@ -931,9 +931,9 @@ Terminal inner sections divider: `1px 0px 0px` top `#4E4F54`
 
 | Style          | Font    | Weight | Size   | Line Height |
 |----------------|---------|--------|--------|-------------|
-| Body / Default | Figtree | 500    | `14px` | `1em`       |
-| Body Large     | Figtree | 500    | `16px` | `1em`       |
-| Heading        | Figtree | 500    | `18px` | `1.333em`   |
+| Body / Default | Inter   | 500    | `14px` | `1em`       |
+| Body Large     | Inter   | 500    | `16px` | `1em`       |
+| Heading        | Inter   | 500    | `18px` | `1.333em`   |
 
 ### Spacing Scale (common values from components)
 
