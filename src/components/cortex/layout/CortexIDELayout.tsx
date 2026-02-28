@@ -48,8 +48,9 @@ export function CortexIDELayout(props: CortexIDELayoutProps) {
     "flex-direction": "column",
     overflow: "hidden",
     "min-width": "0",
-    background: "var(--cortex-bg-secondary)",
-    "border-radius": "var(--cortex-sidebar-radius, 12px)",
+    background: "var(--cortex-bg-secondary, #1C1C1D)",
+    "border-radius": "12px",
+    border: "1px solid var(--cortex-border-default)",
   });
 
   return (

@@ -149,10 +149,10 @@ describe("CortexTitleBar", () => {
       expect(header?.hasAttribute("data-tauri-drag-region")).toBe(true);
     });
 
-    it("should have correct height of 56px", () => {
+    it("should have correct height of 48px", () => {
       const { container } = render(() => <CortexTitleBar />);
       const header = container.querySelector("header");
-      expect(header?.style.height).toBe("56px");
+      expect(header?.style.height).toBe("48px");
     });
 
     it("should have flex layout with space-between", () => {

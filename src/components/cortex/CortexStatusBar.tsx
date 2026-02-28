@@ -2,7 +2,7 @@
  * CortexStatusBar - Pixel-perfect IDE footer matching Figma design
  *
  * Figma specs (node 1156:23808 "footer"):
- * - Container: flex row, space-between, gap 40px, padding 8px, height hug (48px total)
+ * - Container: flex row, space-between, gap 40px, padding 8px, height 48px (fixed)
  * - No background (transparent), border-top 1px solid #2E2F31
  * - Left section (gap 4px): 4 icon buttons (sidebar, terminal, git, info) — 32×32 with 8px padding, 16×16 icons
  * - Right section: Code Navigation Help text button with left chevron
@@ -72,6 +72,8 @@ export const CortexStatusBar: Component<CortexStatusBarProps> = (props) => {
     "align-items": "center",
     "justify-content": "space-between",
     gap: "40px",
+    height: "48px",
+    "min-height": "48px",
     padding: "8px",
     "flex-shrink": "0",
     "border-top": "1px solid var(--cortex-border-default, #2E2F31)",

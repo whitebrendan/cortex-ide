@@ -361,10 +361,10 @@ describe("CortexStatusBar", () => {
       expect(footer?.style.padding).toBe("8px");
     });
 
-    it("should not have a fixed height", () => {
+    it("should have a fixed height of 48px", () => {
       const { container } = render(() => <CortexStatusBar />);
       const footer = container.querySelector("footer");
-      expect(footer?.style.height).toBe("");
+      expect(footer?.style.height).toBe("48px");
     });
 
     it("should have gap of 40px", () => {

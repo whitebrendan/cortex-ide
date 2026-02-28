@@ -166,7 +166,7 @@
 | `12px`  | Header left gap, content area gap, chat container padding    |
 | `16px`  | Chat inner gap, workspace list padding, sidebar header       |
 | `20px`  | Footer icon gap, right section gap                           |
-| `24px`  | Footer padding-x, content column gap, status bar padding-x   |
+| `24px`  | Content column gap                                            |
 | `32px`  | Chat bubble gap, sub-item indent padding                     |
 | `40px`  | Footer gap between sections                                  |
 | `44px`  | Header gap                                                   |
@@ -347,7 +347,7 @@ Home, Folder, search-sm, Git, Play, Plugins, Users, Grid, Book, Map, Brush, Acco
 | Gap             | `44px`             |
 | Padding         | `0px 0px 0px 8px`  |
 | Width           | `1543px` (fixed)   |
-| Height          | `56px` (fixed)     |
+| Height          | `48px` (fixed)     |
 
 ### Left Section (Logo + Toggle)
 
@@ -501,9 +501,9 @@ File type icon: `16×16` (inside tab)
 | Justify Content | `space-between`    |
 | Align Items     | `center`           |
 | Gap             | `40px`             |
-| Padding         | `8px 24px`         |
+| Padding         | `8px`              |
 | Width           | `1543px` (fixed)   |
-| Height          | `42px` (fixed)     |
+| Height          | `48px` (fixed)     |
 
 ### Left Section (Status Icons)
 
@@ -933,10 +933,10 @@ File type icon: `16×16` (inside tab)
 | Full viewport          | `1920px`  | `1080px` |
 | Main panel             | `1543px`  | hug      |
 | Main panel offset      | `x:189px` | `y:75px` |
-| Main panel radius      | `24px`    | —        |
+| Main panel radius      | `16px`    | —        |
 | Content area height    | —         | `831px`  |
-| Title bar height       | —         | `56px`   |
-| Status bar height      | —         | `42px`   |
+| Title bar height       | —         | `48px`   |
+| Status bar height      | —         | `48px`   |
 | Activity bar width     | `~46px`   | —        |
 | Sidebar panel          | hug       | fill     |
 | Sidebar panel radius   | `16px`    | —        |

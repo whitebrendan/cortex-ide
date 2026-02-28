@@ -3,7 +3,7 @@
  * Layout: Flexbox with justify-content: space-between
  * Left: Logo (40×40) + (Vibe/IDE toggle + Open Project) + Menu items
  * Right: Config badge + Start/Pause + vertical separator + Window controls
- * Gap: 44px, Padding: 0 0 0 8px, Height: 56px
+ * Gap: 44px, Padding: 0 0 0 8px, Height: 48px
  *
  * OS-aware window controls:
  * - macOS: traffic-light circles on the LEFT
@@ -186,8 +186,8 @@ export const CortexTitleBar: Component<CortexTitleBarProps> = (props) => {
         "align-items": "center",
         gap: "44px",
         width: "100%",
-        height: "56px",
-        "min-height": "56px",
+        height: "48px",
+        "min-height": "48px",
         padding: "0 0 0 8px",
         background: "transparent",
         position: "relative",

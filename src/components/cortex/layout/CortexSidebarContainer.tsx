@@ -70,6 +70,7 @@ export interface CortexSidebarContainerProps {
 export function CortexSidebarContainer(props: CortexSidebarContainerProps) {
   const sidebarStyle = (): JSX.CSSProperties => ({
     width: props.sidebarCollapsed ? "0" : `${props.sidebarWidth}px`,
+    height: "100%",
     "flex-shrink": "0",
     overflow: "hidden",
     transition: props.isResizing ? "none" : "width 150ms ease, opacity 150ms ease",
