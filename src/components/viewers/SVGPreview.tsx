@@ -238,8 +238,8 @@ export function SVGPreview(props: SVGPreviewProps) {
       renderLineHighlight: "line",
       padding: { top: 8, bottom: 8 },
       scrollbar: {
-        verticalScrollbarSize: 10,
-        horizontalScrollbarSize: 10,
+        verticalScrollbarSize: 8,
+        horizontalScrollbarSize: 8,
       },
     });
     

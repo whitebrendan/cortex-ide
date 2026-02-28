@@ -5,7 +5,7 @@
  * - Container: bg #1C1C1D, border 1px solid #2E2F31, border-radius 16px
  * - Structure: EditorTabBar → EditorBreadcrumbs → Monaco container
  * - Monaco area: bg #141415, flex-1, overflow hidden
- * - Scrollbar: 8px thumb, color #2E2F31, track transparent
+ * - Scrollbar: 8px thumb, color rgba(252,252,252,0.12), track transparent
  *
  * Sub-components extracted per 300-line rule:
  * - EditorTabBar: tab bar with file tabs
