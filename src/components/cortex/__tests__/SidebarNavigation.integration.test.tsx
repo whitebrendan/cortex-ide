@@ -119,11 +119,13 @@ const NAV_ITEMS: ActivityBarItem[] = [
   { id: "search", icon: "search", label: "Search" },
   { id: "git", icon: "git", label: "Source Control" },
   { id: "debug", icon: "play", label: "Run & Debug" },
-  { id: "plugins", icon: "plugins", label: "Plugins" },
+  { id: "extensions", icon: "box", label: "Extensions" },
   { id: "agents", icon: "users", label: "AI Agents" },
-  { id: "extensions", icon: "grid", label: "Extensions" },
-  { id: "themes", icon: "brush", label: "Themes" },
+  { id: "plugins", icon: "plugins", label: "Plugins" },
+  { id: "dashboard", icon: "dashboard", label: "Dashboard" },
   { id: "docs", icon: "book", label: "Documentation" },
+  { id: "map", icon: "map", label: "Roadmap" },
+  { id: "themes", icon: "draw", label: "Themes" },
 ];
 
 function SidebarIntegrationWrapper(props: { initialTab?: SidebarTab; initialCollapsed?: boolean }) {
