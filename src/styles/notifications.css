@@ -496,7 +496,7 @@
    16. SCROLLBAR STYLING
    ============================================================================= */
 .notifications-list-container::-webkit-scrollbar {
-  width: 10px;
+  width: 8px;
 }
 
 .notifications-list-container::-webkit-scrollbar-track {
@@ -504,15 +504,12 @@
 }
 
 .notifications-list-container::-webkit-scrollbar-thumb {
-  background: var(--jb-scrollbar-thumb, rgba(121, 121, 121, 0.4));
-  border-radius: 5px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
+  background: var(--cortex-scrollbar-thumb-bg);
+  border-radius: 999px;
 }
 
 .notifications-list-container::-webkit-scrollbar-thumb:hover {
-  background: var(--jb-scrollbar-thumb-hover, rgba(100, 100, 100, 0.7));
-  background-clip: padding-box;
+  background: var(--cortex-scrollbar-thumb-hover-bg);
 }
 
 /* =============================================================================

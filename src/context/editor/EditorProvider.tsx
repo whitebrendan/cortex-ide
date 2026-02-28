@@ -366,7 +366,7 @@ export function EditorProvider(props: ParentProps) {
     bracketPairColorization: { enabled: true }, cursorBlinking: "blink",
     formatOnPaste: false, formatOnType: false, linkedEditing: false,
     stickyScroll: { enabled: true },
-    scrollbar: { verticalScrollbarSize: 12, horizontalScrollbarSize: 12 },
+    scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8 },
   };
 
   const getEditorOptions = (): Record<string, unknown> => {
@@ -393,7 +393,7 @@ export function EditorProvider(props: ParentProps) {
         cursorBlinking: s.cursorBlink, formatOnPaste: s.formatOnPaste,
         formatOnType: s.formatOnType, linkedEditing: s.linkedEditing,
         stickyScroll: { enabled: s.stickyScrollEnabled },
-        scrollbar: { verticalScrollbarSize: 12, horizontalScrollbarSize: 12 },
+        scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8 },
       };
     } catch {
       return { ...defaultEditorOptions };

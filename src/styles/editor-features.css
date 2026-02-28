@@ -2187,8 +2187,8 @@
 }
 
 .peek-references-tabs::-webkit-scrollbar-thumb {
-  background-color: var(--scrollbar-slider-bg);
-  border-radius: 2px;
+  background-color: var(--cortex-scrollbar-thumb-bg);
+  border-radius: 999px;
 }
 
 .peek-references-tab {

@@ -164,8 +164,8 @@ export function DiffEditor(props: DiffEditorProps) {
         
         // Scrollbar
         scrollbar: {
-          verticalScrollbarSize: 10,
-          horizontalScrollbarSize: 10,
+          verticalScrollbarSize: 8,
+          horizontalScrollbarSize: 8,
           useShadows: false,
         },
       });

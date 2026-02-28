@@ -317,18 +317,18 @@
 
 /* Scrollbar base styling */
 .monaco-editor .scrollbar {
-  width: 10px;
+  width: 8px;
 }
 
 /* Scrollbar slider/thumb styling */
 .monaco-editor .scrollbar .slider {
-  background: rgba(191, 189, 182, 0.3);
-  border-radius: 2px;
+  background: var(--cortex-scrollbar-thumb-bg);
+  border-radius: 999px;
 }
 
 /* Scrollbar slider hover state */
 .monaco-editor .scrollbar .slider:hover {
-  background: rgba(191, 189, 182, 0.5);
+  background: var(--cortex-scrollbar-thumb-hover-bg);
 }
 
 /* ============================================================================

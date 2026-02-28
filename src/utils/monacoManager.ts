@@ -461,10 +461,10 @@ class MonacoManager {
         "minimapSlider.hoverBackground": "#2E2F3180",
         "minimapSlider.activeBackground": "#2E2F31a0",
         
-        // Scrollbar - Figma: #2E2F31 thumb, transparent track
-        "scrollbarSlider.background": "#2E2F31",
-        "scrollbarSlider.hoverBackground": "#2E2F31cc",
-        "scrollbarSlider.activeBackground": "#2E2F31e0",
+        // Scrollbar - Figma: rgba(252,252,252,0.12) thumb, transparent track
+        "scrollbarSlider.background": "#FCFCFC1F",
+        "scrollbarSlider.hoverBackground": "#FCFCFC3D",
+        "scrollbarSlider.activeBackground": "#FCFCFC3D",
         
         // Error/warning/info squiggles
         "editorError.foreground": "#FF7070",

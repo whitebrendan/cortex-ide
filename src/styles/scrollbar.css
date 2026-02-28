@@ -31,12 +31,12 @@
   --cortex-scrollbar-width-thin: 6px;
   --cortex-scrollbar-slider-min-size: 20px;
   
-  /* Scrollbar Colors - JetBrains tokens */
+  /* Scrollbar Colors - Figma Scroll Bar component */
   --cortex-scrollbar-shadow: rgba(0, 0, 0, 0.35);
   --cortex-scrollbar-track-bg: transparent;
-  --cortex-scrollbar-thumb-bg: var(--jb-scrollbar-thumb, #43454A);
-  --cortex-scrollbar-thumb-hover-bg: var(--jb-scrollbar-thumb-hover, #5A5D63);
-  --cortex-scrollbar-thumb-active-bg: var(--jb-scrollbar-thumb-hover, #5A5D63);
+  --cortex-scrollbar-thumb-bg: var(--cortex-scrollbar-thumb, rgba(252, 252, 252, 0.12));
+  --cortex-scrollbar-thumb-hover-bg: var(--cortex-scrollbar-thumb-hover, rgba(252, 252, 252, 0.24));
+  --cortex-scrollbar-thumb-active-bg: var(--cortex-scrollbar-thumb-hover, rgba(252, 252, 252, 0.24));
   
   /* Scrollbar Timing */
   --cortex-scrollbar-hide-timeout: 500ms;
@@ -71,12 +71,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--jb-scrollbar-thumb, #43454A);
-  border-radius: 4px;
+  background: var(--cortex-scrollbar-thumb-bg);
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--jb-scrollbar-thumb-hover, #5A5D63);
+  background: var(--cortex-scrollbar-thumb-hover-bg);
 }
 
 ::-webkit-scrollbar-corner {
@@ -98,7 +98,7 @@
 .scrollbar-vscode::-webkit-scrollbar-thumb,
 .monaco-scrollable-element::-webkit-scrollbar-thumb {
   background: var(--cortex-scrollbar-thumb-bg);
-  border-radius: 4px;
+  border-radius: 999px;
   min-height: var(--cortex-scrollbar-slider-min-size);
   min-width: var(--cortex-scrollbar-slider-min-size);
 }

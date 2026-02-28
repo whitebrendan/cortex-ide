@@ -91,8 +91,8 @@ export function buildEditorOptions(
     scrollBeyondLastLine: settings.scrollBeyondLastLine ?? false,
     smoothScrolling: settings.smoothScrolling ?? true,
     scrollbar: {
-      verticalScrollbarSize: 10,
-      horizontalScrollbarSize: 10,
+      verticalScrollbarSize: 8,
+      horizontalScrollbarSize: 8,
       useShadows: false,
     },
 
@@ -249,8 +249,8 @@ export function buildDiffEditorOptions(
     scrollBeyondLastLine: false,
     minimap: { enabled: false },
     scrollbar: {
-      verticalScrollbarSize: 10,
-      horizontalScrollbarSize: 10,
+      verticalScrollbarSize: 8,
+      horizontalScrollbarSize: 8,
       useShadows: false,
     },
   };
