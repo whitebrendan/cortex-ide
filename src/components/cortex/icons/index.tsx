@@ -211,6 +211,7 @@ export const CortexSvgIcon: Component<CortexSvgIconProps> = (props) => {
         display: "inline-block",
         "vertical-align": "middle",
         "flex-shrink": "0",
+        color: local.color ?? "currentColor",
         transition: "color 150ms ease",
         ...local.style,
       }}
