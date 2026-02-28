@@ -190,7 +190,7 @@ export const BranchStatusBarItem: Component<BranchStatusBarItemProps> = (
         <div
           style={{
             position: "absolute",
-            bottom: "28px",
+            bottom: "36px",
             left: "0",
             width: "280px",
             "max-height": "360px",
