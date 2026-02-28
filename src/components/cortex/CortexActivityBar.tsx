@@ -1,11 +1,9 @@
 /**
- * CortexActivityBar - Pixel-perfect activity bar matching Figma sidebar-container
- * Figma node: I1156:23695;885:19533 (sidebar-container)
- * Width: 40px, border-radius 12px, bg #1C1C1D, border 1px solid #2E2F31
+ * CortexActivityBar - Pixel-perfect activity bar matching Figma Sidebar Container (37:893)
+ * Width: 40px, border-radius 12px, bg #141415 (same as app bg), border 1px solid #3C3D40
  * Items: 32×32 containers, 16×16 icons, 4px gap, 8px button padding
- * Active state: #2E2F31 bg (border-default color) with white icon (#FCFCFC), border-radius 8px
- * Inactive: icon #8C8D8F, bg same as container (#1C1C1D)
- * Hover: icon #FCFCFC
+ * Active state: #252628 bg with white icon (#FCFCFC), 2px lime left border (#B2FF22), border-radius 8px
+ * Inactive: #8C8D8F, hover: #FCFCFC
  * Bottom section: settings (settings) + avatar circle (24×24) with green status dot
  */
 
@@ -65,10 +63,13 @@ export const CortexActivityBar: Component<CortexActivityBarProps> = (props) => {
           display: "flex",
           "flex-direction": "column",
           width: "var(--cortex-space-10)",
-          "align-self": "flex-start",
-          background: "var(--cortex-sidebar-bg)",
+          height: "calc(100% - var(--cortex-space-4))",
+          "margin-left": "var(--cortex-space-2)",
+          "margin-top": "var(--cortex-space-2)",
+          "margin-bottom": "var(--cortex-space-2)",
+          background: "var(--cortex-bg-primary)",
           "border-radius": "var(--cortex-sidebar-radius)",
-          border: "1px solid var(--cortex-border-default)",
+          border: "1px solid var(--cortex-sidebar-border)",
           padding: "var(--cortex-space-1)",
           "flex-shrink": "0",
           ...local.style,
@@ -134,7 +135,7 @@ const ActivityBarButton: Component<ActivityBarButtonProps> = (props) => {
   const [isHovered, setIsHovered] = createSignal(false);
 
   const bg = () => {
-    if (props.isActive) return "var(--cortex-border-default)";
+    if (props.isActive) return "var(--cortex-sidebar-selected)";
     if (isHovered()) return "var(--cortex-sidebar-selected)";
     return "transparent";
   };
@@ -157,6 +158,7 @@ const ActivityBarButton: Component<ActivityBarButtonProps> = (props) => {
           height: "var(--cortex-space-8)",
           background: bg(),
           border: "none",
+          "border-left": props.isActive ? "2px solid var(--cortex-accent-primary)" : "2px solid transparent",
           "border-radius": "var(--cortex-radius-md)",
           cursor: "pointer",
           transition: "all var(--cortex-transition-fast)",
@@ -299,7 +301,7 @@ const AvatarButton: Component<{ avatarUrl?: string; onClick?: () => void }> = (p
           height: "6px",
           "border-radius": "var(--cortex-radius-full)",
           background: "var(--cortex-palette-success-400)",
-          border: "1px solid var(--cortex-sidebar-bg)",
+          border: "1px solid var(--cortex-bg-primary)",
         }} />
       </button>
     </CortexTooltip>

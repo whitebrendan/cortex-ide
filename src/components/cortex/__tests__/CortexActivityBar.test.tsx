@@ -141,7 +141,7 @@ describe("CortexActivityBar", () => {
       expect(navButtons[1].getAttribute("aria-pressed")).toBe("false");
     });
 
-    it("should apply lime background on the active item", () => {
+    it("should apply selected background on the active item", () => {
       const items: ActivityBarItem[] = [
         { id: "a", icon: "home", label: "A" },
       ];
@@ -151,7 +151,22 @@ describe("CortexActivityBar", () => {
       ));
       const button = container.querySelector('nav button[aria-label="A"]');
       expect(button).toBeTruthy();
-      expect((button as HTMLElement).style.background).toBe("var(--cortex-border-default)");
+      expect((button as HTMLElement).style.background).toBe("var(--cortex-sidebar-selected)");
+    });
+
+    it("should apply lime left border indicator on the active item", () => {
+      const items: ActivityBarItem[] = [
+        { id: "a", icon: "home", label: "A" },
+        { id: "b", icon: "folder", label: "B" },
+      ];
+
+      const { container } = render(() => (
+        <CortexActivityBar items={items} activeId="a" />
+      ));
+      const activeButton = container.querySelector('nav button[aria-label="A"]') as HTMLElement;
+      const inactiveButton = container.querySelector('nav button[aria-label="B"]') as HTMLElement;
+      expect(activeButton.style.borderLeft).toBe("2px solid var(--cortex-accent-primary)");
+      expect(inactiveButton.style.borderLeft).toBe("2px solid transparent");
     });
   });
 
