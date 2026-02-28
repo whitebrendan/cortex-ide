@@ -33,25 +33,24 @@ describe("CortexActivityBar", () => {
       { id: "search", icon: "search", label: "Search" },
       { id: "git", icon: "git", label: "Source Control" },
       { id: "debug", icon: "play", label: "Run & Debug" },
-      { id: "plugins", icon: "plugins", label: "Plugins" },
+      { id: "extensions", icon: "box", label: "Extensions" },
       { id: "agents", icon: "users", label: "AI Agents" },
-      { id: "extensions", icon: "grid", label: "Extensions" },
+      { id: "dashboard", icon: "dashboard", label: "Dashboard" },
       { id: "docs", icon: "book", label: "Documentation" },
-      { id: "themes", icon: "brush", label: "Themes" },
+      { id: "map", icon: "map", label: "Roadmap" },
+      { id: "themes", icon: "draw", label: "Themes" },
     ];
 
-    it("should render exactly 10 default nav items (plus settings and avatar buttons)", () => {
+    it("should render exactly 11 default nav items (plus settings and avatar buttons)", () => {
       const { container } = render(() => <CortexActivityBar />);
       const navButtons = container.querySelectorAll("nav button[aria-label]");
-      expect(navButtons.length).toBe(10);
+      expect(navButtons.length).toBe(11);
     });
 
     it("should NOT include factory item after Phase 1 removal", () => {
       const { container } = render(() => <CortexActivityBar />);
       const factoryButton = container.querySelector('button[aria-label="Factory"]');
       expect(factoryButton).toBeNull();
-      const factoryIcon = container.querySelector('[data-testid="icon-map"]');
-      expect(factoryIcon).toBeNull();
     });
 
     EXPECTED_ITEMS.forEach((expected, index) => {
@@ -152,7 +151,7 @@ describe("CortexActivityBar", () => {
       ));
       const button = container.querySelector('nav button[aria-label="A"]');
       expect(button).toBeTruthy();
-      expect((button as HTMLElement).style.background).toBe("var(--cortex-accent-primary)");
+      expect((button as HTMLElement).style.background).toBe("var(--cortex-border-default)");
     });
   });
 
@@ -271,9 +270,9 @@ describe("CortexActivityBar", () => {
       expect(onSettingsClick).toHaveBeenCalledTimes(1);
     });
 
-    it("should render settings icon (settings-02)", () => {
+    it("should render settings icon (settings)", () => {
       const { container } = render(() => <CortexActivityBar />);
-      const settingsIcon = container.querySelector('[data-testid="icon-settings-02"]');
+      const settingsIcon = container.querySelector('[data-testid="icon-settings"]');
       expect(settingsIcon).toBeTruthy();
     });
 

@@ -1,10 +1,10 @@
 /**
- * CortexActivityBar - Pixel-perfect activity bar matching Figma Sidebar Container (37:893)
+ * CortexActivityBar - Pixel-perfect activity bar matching Figma sidebar-container
  * Width: 40px, border-radius 12px, bg #1C1C1D, border 1px solid #2E2F31
- * Items: 32×32 containers, 20×20 icons, 8px gap, 4px padding
- * Active state: lime accent bg (#BFFF00) with dark icon (#141415), border-radius 8px
- * Inactive: #8C8D8F, hover: #FCFCFC
- * Bottom section: settings (settings-02) + avatar circle (24×24) with green status dot
+ * Items: 32×32 containers, 16×16 icons, 4px gap, 8px button padding
+ * Active state: bg #2E2E31 with white icon (#FCFCFC), border-radius 8px
+ * Inactive: #8C8C8F, hover: #FCFCFC
+ * Bottom section: settings (settings) + avatar circle (24×24) with green status dot
  */
 
 import { Component, JSX, splitProps, createSignal, For, Show } from "solid-js";
@@ -37,11 +37,12 @@ const DEFAULT_ITEMS: ActivityBarItem[] = [
   { id: "search", icon: "search", label: "Search" },
   { id: "git", icon: "git", label: "Source Control" },
   { id: "debug", icon: "play", label: "Run & Debug" },
-  { id: "plugins", icon: "plugins", label: "Plugins" },
+  { id: "extensions", icon: "box", label: "Extensions" },
   { id: "agents", icon: "users", label: "AI Agents" },
-  { id: "extensions", icon: "grid", label: "Extensions" },
+  { id: "dashboard", icon: "dashboard", label: "Dashboard" },
   { id: "docs", icon: "book", label: "Documentation" },
-  { id: "themes", icon: "brush", label: "Themes" },
+  { id: "map", icon: "map", label: "Roadmap" },
+  { id: "themes", icon: "draw", label: "Themes" },
 ];
 
 export const CortexActivityBar: Component<CortexActivityBarProps> = (props) => {
@@ -82,7 +83,7 @@ export const CortexActivityBar: Component<CortexActivityBarProps> = (props) => {
             "flex-direction": "column",
             "align-items": "center",
             padding: "0",
-            gap: "var(--cortex-space-2)",
+            gap: "var(--cortex-space-1)",
             flex: "1",
             "overflow-y": "auto",
             "overflow-x": "hidden",
@@ -104,7 +105,7 @@ export const CortexActivityBar: Component<CortexActivityBarProps> = (props) => {
           "flex-direction": "column",
           "align-items": "center",
           padding: "0",
-          gap: "var(--cortex-space-2)",
+          gap: "var(--cortex-space-1)",
         }}>
           <ActivityBarSettingsButton onClick={local.onSettingsClick} />
           <AvatarButton
@@ -134,13 +135,13 @@ const ActivityBarButton: Component<ActivityBarButtonProps> = (props) => {
   const [isHovered, setIsHovered] = createSignal(false);
 
   const bg = () => {
-    if (props.isActive) return "var(--cortex-accent-primary)";
+    if (props.isActive) return "var(--cortex-border-default)";
     if (isHovered()) return "var(--cortex-sidebar-selected)";
     return "transparent";
   };
 
   const iconColor = () => {
-    if (props.isActive) return "var(--cortex-icon-active)";
+    if (props.isActive) return "var(--cortex-text-primary)";
     if (isHovered()) return "var(--cortex-text-primary)";
     return "var(--cortex-icon-inactive)";
   };
@@ -160,7 +161,7 @@ const ActivityBarButton: Component<ActivityBarButtonProps> = (props) => {
           "border-radius": "var(--cortex-radius-md)",
           cursor: "pointer",
           transition: "all var(--cortex-transition-fast)",
-          padding: "var(--cortex-space-1-5)",
+          padding: "var(--cortex-space-2)",
           "flex-shrink": "0",
         }}
         onClick={props.onClick}
@@ -171,7 +172,7 @@ const ActivityBarButton: Component<ActivityBarButtonProps> = (props) => {
       >
         <CortexIcon
           name={props.item.icon}
-          size={20}
+          size={16}
           color={iconColor()}
           style={{ transition: "color var(--cortex-transition-fast)" }}
         />
@@ -224,7 +225,7 @@ const ActivityBarSettingsButton: Component<{ onClick?: () => void }> = (props) =
           "border-radius": "var(--cortex-radius-md)",
           cursor: "pointer",
           transition: "all var(--cortex-transition-fast)",
-          padding: "var(--cortex-space-1-5)",
+          padding: "var(--cortex-space-2)",
         }}
         onClick={handleClick}
         onMouseEnter={() => setIsHovered(true)}
@@ -232,8 +233,8 @@ const ActivityBarSettingsButton: Component<{ onClick?: () => void }> = (props) =
         aria-label="Settings"
       >
         <CortexIcon
-          name="settings-02"
-          size={20}
+          name="settings"
+          size={16}
           color={isHovered() ? "var(--cortex-text-primary)" : "var(--cortex-icon-inactive)"}
           style={{ transition: "color var(--cortex-transition-fast)" }}
         />
