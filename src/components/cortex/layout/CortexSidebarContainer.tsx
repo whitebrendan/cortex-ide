@@ -165,7 +165,7 @@ export function CortexSidebarContainer(props: CortexSidebarContainerProps) {
 
       <div
         style={{
-          width: "4px",
+          width: "8px",
           cursor: "col-resize",
           background: "transparent",
           transition: "background 150ms",

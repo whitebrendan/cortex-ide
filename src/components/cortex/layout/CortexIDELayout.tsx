@@ -62,7 +62,7 @@ export function CortexIDELayout(props: CortexIDELayoutProps) {
       />
 
       <div style={{ display: "flex", flex: "1", overflow: "hidden", "flex-direction": "column" }}>
-        <div style={{ display: "flex", flex: "1", overflow: "hidden", gap: "8px" }}>
+        <div style={{ display: "flex", flex: "1", overflow: "hidden", padding: "0 8px" }}>
           <CortexSidebarContainer
             sidebarTab={props.sidebarTab}
             sidebarCollapsed={props.sidebarCollapsed}
