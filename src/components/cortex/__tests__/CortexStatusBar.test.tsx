@@ -92,7 +92,7 @@ describe("CortexStatusBar", () => {
     it("should render left section icon buttons", () => {
       const { container } = render(() => <CortexStatusBar />);
 
-      const layoutIcon = container.querySelector('[data-testid="icon-status-bar/layout-alt-04"]');
+      const layoutIcon = container.querySelector('[data-testid="icon-navigation/menu-left-on"]');
       const terminalIcon = container.querySelector('[data-testid="icon-status-bar/terminal-square"]');
       const branchItem = container.querySelector('[data-testid="branch-status-bar-item"]');
       const infoIcon = container.querySelector('[data-testid="icon-status-bar/info-circle"]');
@@ -202,7 +202,7 @@ describe("CortexStatusBar", () => {
       const { container } = render(() => (
         <CortexStatusBar variant="active" />
       ));
-      const panelIcon = container.querySelector('[data-testid="icon-status-bar/layout-alt-04"]');
+      const panelIcon = container.querySelector('[data-testid="icon-navigation/menu-left-on"]');
       expect(panelIcon?.getAttribute("data-color")).toBe("var(--cortex-text-on-surface, #FCFCFC)");
     });
 
@@ -210,7 +210,7 @@ describe("CortexStatusBar", () => {
       const { container } = render(() => (
         <CortexStatusBar variant="default" />
       ));
-      const panelIcon = container.querySelector('[data-testid="icon-status-bar/layout-alt-04"]');
+      const panelIcon = container.querySelector('[data-testid="icon-navigation/menu-left-on"]');
       expect(panelIcon?.getAttribute("data-color")).toBe("var(--cortex-text-secondary, #8C8D8F)");
     });
   });
