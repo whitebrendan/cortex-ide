@@ -22,13 +22,15 @@ const labelStyle: JSX.CSSProperties = {
 
 const filterInputStyle: JSX.CSSProperties = {
   width: "100%",
-  background: "var(--cortex-bg-primary)",
-  border: "1px solid var(--cortex-bg-hover)",
-  "border-radius": "var(--cortex-radius-sm)",
+  background: "var(--cortex-bg-elevated)",
+  border: "1px solid var(--cortex-border-default)",
+  "border-radius": "var(--cortex-radius-md)",
   color: "var(--cortex-text-primary)",
   padding: "6px 8px",
   "font-size": "12px",
   outline: "none",
+  height: "28px",
+  "box-sizing": "border-box",
 };
 
 export const CortexSearchFilters: Component<CortexSearchFiltersProps> = (props) => {

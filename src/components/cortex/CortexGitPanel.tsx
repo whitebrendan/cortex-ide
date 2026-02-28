@@ -22,9 +22,9 @@ const SectionHeader: Component<{
   <div style={{ "border-bottom": "1px solid var(--cortex-border-default)" }}>
     <div onClick={props.onToggle} style={{ display: "flex", "align-items": "center", padding: "8px 12px", cursor: "pointer", "user-select": "none" }}>
       <CortexIcon name="chevron-right" size={12} style={{ transform: props.expanded ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.15s", "margin-right": "8px" }} color="var(--cortex-text-secondary)" />
-      <span style={{ flex: 1, "font-size": "16px", color: "var(--cortex-text-on-surface)" }}>{props.title}</span>
+      <span style={{ flex: 1, "font-size": "11px", "text-transform": "uppercase", "letter-spacing": "0.5px", color: "var(--cortex-text-secondary)" }}>{props.title}</span>
       <Show when={props.count > 0}>
-        <span style={{ background: "rgba(255,255,255,0.08)", color: "var(--cortex-text-on-surface)", padding: "2px 8px", "border-radius": "4px", "font-size": "14px", "margin-right": "8px" }}>{props.count}</span>
+        <span style={{ background: "rgba(255,255,255,0.08)", color: "var(--cortex-text-secondary)", padding: "2px 6px", "border-radius": "4px", "font-size": "11px", "margin-right": "8px" }}>{props.count}</span>
       </Show>
       <div onClick={(e: MouseEvent) => e.stopPropagation()} style={{ display: "flex", gap: "2px" }}>{props.actions}</div>
     </div>
@@ -40,7 +40,7 @@ const FileRow: Component<{
   return (
     <div class="cortex-git-file-row" style={{ display: "flex", "align-items": "center", padding: "4px 12px 4px 36px", cursor: "pointer", gap: "8px" }}>
       <CortexIcon name="chevron-down" size={12} color="var(--cortex-text-secondary)" />
-      <span style={{ flex: 1, overflow: "hidden", "text-overflow": "ellipsis", "white-space": "nowrap", "font-size": "16px", color: "var(--cortex-text-on-surface)" }}>{name()}</span>
+      <span style={{ flex: 1, overflow: "hidden", "text-overflow": "ellipsis", "white-space": "nowrap", "font-size": "13px", color: "var(--cortex-text-on-surface)" }}>{name()}</span>
       <div class="cortex-git-file-actions" style={{ display: "flex", gap: "2px", opacity: 0 }}>
         <Show when={!props.isStaged}>
           <CortexTooltip content="Open Diff"><CortexIconButton icon="switch-horizontal-01" size={20} onClick={() => window.dispatchEvent(new CustomEvent("cortex:git:diff", { detail: { path: props.file.path, repoId: props.repoId } }))} /></CortexTooltip>
@@ -150,10 +150,10 @@ export const CortexGitPanel: Component = () => {
   onMount(() => { if (repo()) fetchStashes(); });
 
   return (
-    <div style={{ display: "flex", "flex-direction": "column", height: "100%", background: "var(--cortex-bg-primary)", color: "var(--cortex-text-on-surface)", "font-family": "var(--cortex-font-sans)", "font-size": "14px" }}>
+    <div style={{ display: "flex", "flex-direction": "column", height: "100%", background: "var(--cortex-bg-secondary)", color: "var(--cortex-text-on-surface)", "font-family": "var(--cortex-font-sans)", "font-size": "13px" }}>
       <div style={{ display: "flex", "align-items": "center", "justify-content": "space-between", padding: "12px 12px", "border-bottom": "1px solid var(--cortex-border-default)" }}>
         <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
-          <span style={{ "font-size": "16px", "font-weight": "500", color: "var(--cortex-text-on-surface)" }}>Source Control</span>
+          <span style={{ "font-size": "13px", "font-weight": "600", color: "var(--cortex-text-on-surface)" }}>Source Control</span>
         </div>
         <div style={{ display: "flex", gap: "4px", "align-items": "center" }}>
           <CortexTooltip content="Refresh"><CortexIconButton icon="refresh" size={20} onClick={refresh} /></CortexTooltip>
@@ -176,20 +176,20 @@ export const CortexGitPanel: Component = () => {
       <div style={{ padding: "12px", "border-bottom": "1px solid var(--cortex-border-default)", display: "flex", "flex-direction": "column", gap: "8px" }}>
         <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
           <CortexIcon name="git-branch-01" size={16} color="var(--cortex-text-secondary)" />
-          <CortexDropdown options={branchOptions()} value={currentBranch() ?? undefined} onChange={onBranchChange} placeholder="Select branch..." searchable fullWidth style={{ height: "28px", "font-size": "14px", flex: "1" }} />
+          <CortexDropdown options={branchOptions()} value={currentBranch() ?? undefined} onChange={onBranchChange} placeholder="Select branch..." searchable fullWidth style={{ height: "28px", "font-size": "13px", flex: "1" }} />
         </div>
         <input
           value={commitMsg()}
           onInput={(e) => setCommitMsg(e.currentTarget.value)}
           onKeyDown={(e) => { if (e.ctrlKey && e.key === "Enter") handleCommit(); }}
           placeholder={amend() ? "Amend commit message" : "✔ Commit message"}
-          style={{ width: "100%", background: "var(--cortex-bg-secondary)", border: "1px solid var(--cortex-border-default)", "border-radius": "12px", color: "var(--cortex-text-on-surface)", padding: "10px 12px", "font-size": "14px", outline: "none", "box-sizing": "border-box", "font-family": "inherit" }}
+          style={{ width: "100%", background: "var(--cortex-bg-elevated)", border: "1px solid var(--cortex-border-default)", "border-radius": "var(--cortex-radius-md)", color: "var(--cortex-text-on-surface)", padding: "6px 12px", "font-size": "13px", outline: "none", "box-sizing": "border-box", "font-family": "inherit", height: "32px" }}
         />
         <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
           <button
             onClick={handleCommit}
             disabled={!commitMsg().trim() || staged().length === 0}
-            style={{ flex: 1, background: staged().length > 0 && commitMsg().trim() ? "var(--cortex-text-on-surface)" : "var(--cortex-border-default)", color: staged().length > 0 && commitMsg().trim() ? "var(--cortex-accent-text)" : "var(--cortex-text-secondary)", border: "none", "border-radius": "12px", padding: "10px 16px", "font-size": "16px", cursor: staged().length > 0 && commitMsg().trim() ? "pointer" : "default", display: "flex", "align-items": "center", "justify-content": "center", gap: "8px", "font-family": "inherit", opacity: !commitMsg().trim() || staged().length === 0 ? "0.5" : "1" }}
+            style={{ flex: 1, background: staged().length > 0 && commitMsg().trim() ? "var(--cortex-text-on-surface)" : "var(--cortex-border-default)", color: staged().length > 0 && commitMsg().trim() ? "var(--cortex-accent-text)" : "var(--cortex-text-secondary)", border: "none", "border-radius": "var(--cortex-radius-md)", padding: "6px 12px", "font-size": "13px", cursor: staged().length > 0 && commitMsg().trim() ? "pointer" : "default", display: "flex", "align-items": "center", "justify-content": "center", gap: "8px", "font-family": "inherit", opacity: !commitMsg().trim() || staged().length === 0 ? "0.5" : "1" }}
           >
             <span>{amend() ? "Amend" : "Commit"}</span>
             <span style={{ display: "flex", "align-items": "center", gap: "4px", "font-size": "12px" }}>
@@ -248,7 +248,7 @@ export const CortexGitPanel: Component = () => {
           <For each={stashes()}>{(stash) =>
             <div class="cortex-git-file-row" style={{ display: "flex", "align-items": "center", padding: "4px 12px 4px 36px", cursor: "pointer", gap: "8px" }}>
               <CortexIcon name="layers-three-01" size={12} color="var(--cortex-text-secondary)" />
-              <span style={{ flex: 1, overflow: "hidden", "text-overflow": "ellipsis", "white-space": "nowrap", "font-size": "13px", color: "var(--cortex-text-on-surface)" }}>
+              <span style={{ flex: 1, overflow: "hidden", "text-overflow": "ellipsis", "white-space": "nowrap", "font-size": "12px", color: "var(--cortex-text-on-surface)" }}>
                 stash@{`{${stash.index}}`}: {stash.message || "WIP"}
               </span>
               <div class="cortex-git-file-actions" style={{ display: "flex", gap: "2px", opacity: 0 }}>
@@ -260,7 +260,7 @@ export const CortexGitPanel: Component = () => {
         </Show>
       </div>
 
-      <div style={{ padding: "8px 12px", "border-top": "1px solid var(--cortex-border-default)", display: "flex", "align-items": "center", gap: "8px", color: "var(--cortex-text-secondary)", "font-size": "14px" }}>
+      <div style={{ padding: "8px 12px", "border-top": "1px solid var(--cortex-border-default)", display: "flex", "align-items": "center", gap: "8px", color: "var(--cortex-text-secondary)", "font-size": "12px" }}>
         <CortexIcon name="git-branch-01" size={14} color="var(--cortex-text-secondary)" />
         <span>{currentBranch()}</span>
         <Show when={totalChanges() > 0}>

@@ -101,9 +101,11 @@ const renderMatchHighlight = (match: SearchMatchResult): JSX.Element => {
     <span>
       {before}
       <span style={{
-        background: "var(--cortex-accent-primary)",
-        color: "var(--cortex-accent-text)",
+        background: "var(--cortex-search-match)",
+        color: "var(--cortex-accent-primary)",
         "border-radius": "var(--cortex-radius-sm)",
+        padding: "0 2px",
+        "font-weight": "500",
       }}>
         {matched}
       </span>
