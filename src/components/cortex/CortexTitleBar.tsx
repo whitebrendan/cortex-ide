@@ -1,9 +1,9 @@
 /**
- * CortexTitleBar - Pixel-perfect title bar matching Figma Header (443:7609)
+ * CortexTitleBar - Pixel-perfect title bar matching Figma Header (1182:27523)
  * Layout: Flexbox with justify-content: space-between
- * Left: Logo (40×40) + (Vibe/IDE toggle + Open Project) + Menu items
- * Right: Config badge + Start/Pause + vertical separator + Window controls
- * Gap: 44px, Padding: 0 0 0 8px, Height: 48px
+ * Left: Logo (32×32) + (Vibe/IDE toggle + Open Project) + Menu items
+ * Right: Config badge + Start/Pause + Window controls
+ * Height: 48px, Background: var(--cortex-bg-primary) (#141415)
  *
  * OS-aware window controls:
  * - macOS: traffic-light circles on the LEFT
@@ -184,12 +184,10 @@ export const CortexTitleBar: Component<CortexTitleBarProps> = (props) => {
         display: "flex",
         "justify-content": "space-between",
         "align-items": "center",
-        gap: "44px",
         width: "100%",
         height: "48px",
         "min-height": "48px",
-        padding: "0 0 0 8px",
-        background: "transparent",
+        background: "var(--cortex-bg-primary)",
         position: "relative",
         "-webkit-app-region": "drag",
         "user-select": "none",
@@ -202,6 +200,7 @@ export const CortexTitleBar: Component<CortexTitleBarProps> = (props) => {
         display: "flex",
         "align-items": "center",
         gap: "12px",
+        padding: "8px 8px 8px 12px",
         "-webkit-app-region": "no-drag",
         "min-width": "0",
         "flex-shrink": "1",
@@ -211,17 +210,17 @@ export const CortexTitleBar: Component<CortexTitleBarProps> = (props) => {
           {windowControlsEl()}
         </Show>
 
-        <CortexLogo size={40} />
-
         <div style={{
           display: "flex",
           "align-items": "center",
-          gap: "4px",
+          gap: "12px",
         }}>
+          <CortexLogo size={32} />
+
           <div style={{
             display: "flex",
             "align-items": "center",
-            gap: "8px",
+            gap: "6px",
           }}>
             <CortexVibeToggle
               mode={local.mode ?? "ide"}
@@ -235,32 +234,32 @@ export const CortexTitleBar: Component<CortexTitleBarProps> = (props) => {
               {local.projectDropdownChildren}
             </CortexOpenProjectDropdown>
           </div>
+        </div>
 
-          <div ref={menuBarRef} style={{ display: "flex", "align-items": "center", "min-width": "0", overflow: "hidden" }}>
-            <For each={MENU_LABELS}>
-              {(label) => (
-                <div
-                  style={{ position: "relative" }}
-                  onMouseEnter={() => handleMenuMouseEnter(label)}
-                  onMouseLeave={handleMenuMouseLeave}
-                >
-                  <CortexHeaderItem
-                    label={label}
-                    isActive={local.activeMenu === label}
-                    onClick={() => handleMenuClick(label)}
+        <div ref={menuBarRef} style={{ display: "flex", "align-items": "center", gap: "4px", "min-width": "0", overflow: "hidden" }}>
+          <For each={MENU_LABELS}>
+            {(label) => (
+              <div
+                style={{ position: "relative" }}
+                onMouseEnter={() => handleMenuMouseEnter(label)}
+                onMouseLeave={handleMenuMouseLeave}
+              >
+                <CortexHeaderItem
+                  label={label}
+                  isActive={local.activeMenu === label}
+                  onClick={() => handleMenuClick(label)}
+                />
+                <Show when={local.activeMenu === label}>
+                  <TitleBarDropdownMenu
+                    items={getMenuItems(label)}
+                    onItemClick={handleMenuItemClick}
+                    onMouseEnter={cancelCloseTimer}
+                    onMouseLeave={handleMenuMouseLeave}
                   />
-                  <Show when={local.activeMenu === label}>
-                    <TitleBarDropdownMenu
-                      items={getMenuItems(label)}
-                      onItemClick={handleMenuItemClick}
-                      onMouseEnter={cancelCloseTimer}
-                      onMouseLeave={handleMenuMouseLeave}
-                    />
-                  </Show>
-                </div>
-              )}
-            </For>
-          </div>
+                </Show>
+              </div>
+            )}
+          </For>
         </div>
       </div>
 
@@ -268,14 +267,14 @@ export const CortexTitleBar: Component<CortexTitleBarProps> = (props) => {
       <div style={{
         display: "flex",
         "align-items": "center",
-        gap: "20px",
+        gap: "8px",
         "-webkit-app-region": "no-drag",
         "flex-shrink": "0",
       }}>
         <div style={{
           display: "flex",
           "align-items": "center",
-          gap: "8px",
+          gap: "12px",
         }}>
           <CortexConfigBadge
             label={local.configLabel ?? "config"}
@@ -289,14 +288,6 @@ export const CortexTitleBar: Component<CortexTitleBarProps> = (props) => {
             onClick={local.onStartPause}
           />
         </div>
-
-        {/* Vertical Separator */}
-        <div style={{
-          width: "1px",
-          height: "20px",
-          background: "var(--cortex-border-default)",
-          "flex-shrink": "0",
-        }} />
 
         <Show when={!isMac}>
           {windowControlsEl()}

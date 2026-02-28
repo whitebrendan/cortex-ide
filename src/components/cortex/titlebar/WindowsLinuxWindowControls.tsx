@@ -6,8 +6,8 @@ export const WindowsLinuxWindowControls: Component<{
   onClose?: () => void;
 }> = (props) => {
   const buttonBase: JSX.CSSProperties = {
-    width: "46px",
-    height: "32px",
+    width: "40px",
+    height: "48px",
     display: "inline-flex",
     "align-items": "center",
     "justify-content": "center",
@@ -36,8 +36,8 @@ export const WindowsLinuxWindowControls: Component<{
         onMouseLeave={() => setHoveredBtn(null)}
         aria-label="Minimize"
       >
-        <svg width="10" height="1" viewBox="0 0 10 1" fill="currentColor">
-          <rect width="10" height="1" />
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M4 8h8" stroke="currentColor" stroke-width="1.2" />
         </svg>
       </button>
       <button
@@ -48,8 +48,8 @@ export const WindowsLinuxWindowControls: Component<{
         onMouseLeave={() => setHoveredBtn(null)}
         aria-label="Maximize"
       >
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1">
-          <rect x="0.5" y="0.5" width="9" height="9" />
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <rect x="4" y="4" width="8" height="8" stroke="currentColor" stroke-width="1.2" />
         </svg>
       </button>
       <button
@@ -60,9 +60,8 @@ export const WindowsLinuxWindowControls: Component<{
         onMouseLeave={() => setHoveredBtn(null)}
         aria-label="Close"
       >
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.2">
-          <line x1="0" y1="0" x2="10" y2="10" />
-          <line x1="10" y1="0" x2="0" y2="10" />
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.2" />
         </svg>
       </button>
     </div>

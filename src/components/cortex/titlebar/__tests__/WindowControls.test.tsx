@@ -97,8 +97,8 @@ describe("WindowControls", () => {
       const buttons = container.querySelectorAll("button");
       expect(buttons).toHaveLength(3);
       buttons.forEach((btn) => {
-        expect(btn.style.width).toBe("46px");
-        expect(btn.style.height).toBe("32px");
+        expect(btn.style.width).toBe("40px");
+        expect(btn.style.height).toBe("48px");
       });
     });
 
@@ -153,8 +153,8 @@ describe("WindowControls", () => {
       const buttons = container.querySelectorAll("button");
       expect(buttons).toHaveLength(3);
       buttons.forEach((btn) => {
-        expect(btn.style.width).toBe("46px");
-        expect(btn.style.height).toBe("32px");
+        expect(btn.style.width).toBe("40px");
+        expect(btn.style.height).toBe("48px");
       });
     });
 

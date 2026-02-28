@@ -62,7 +62,7 @@ vi.mock("../titlebar/WindowControls", () => ({
 
 vi.mock("../titlebar/CortexLogo", () => ({
   CortexLogo: (props: { size?: number }) => (
-    <div data-testid="cortex-logo" data-size={props.size ?? 40}>logo</div>
+    <div data-testid="cortex-logo" data-size={props.size ?? 32}>logo</div>
   ),
 }));
 
@@ -93,9 +93,9 @@ describe("CortexTitleBar", () => {
       expect(getByTestId("cortex-logo")).toBeTruthy();
     });
 
-    it("should render the logo with size 40", () => {
+    it("should render the logo with size 32", () => {
       const { getByTestId } = render(() => <CortexTitleBar />);
-      expect(getByTestId("cortex-logo").getAttribute("data-size")).toBe("40");
+      expect(getByTestId("cortex-logo").getAttribute("data-size")).toBe("32");
     });
 
     it("should render all menu labels from MENU_LABELS", () => {
@@ -130,16 +130,6 @@ describe("CortexTitleBar", () => {
       const { getByTestId } = render(() => <CortexTitleBar />);
       expect(getByTestId("start-pause")).toBeTruthy();
     });
-
-    it("should render a vertical separator", () => {
-      const { container } = render(() => <CortexTitleBar />);
-      const separators = container.querySelectorAll("div");
-      const separator = Array.from(separators).find((el) => {
-        const s = el.getAttribute("style") || "";
-        return s.includes("width:1px") && s.includes("height:20px");
-      });
-      expect(separator).toBeTruthy();
-    });
   });
 
   describe("Header styling", () => {
@@ -160,6 +150,12 @@ describe("CortexTitleBar", () => {
       const header = container.querySelector("header");
       expect(header?.style.display).toBe("flex");
       expect(header?.style.justifyContent).toBe("space-between");
+    });
+
+    it("should have correct background color", () => {
+      const { container } = render(() => <CortexTitleBar />);
+      const header = container.querySelector("header");
+      expect(header?.style.background).toBe("var(--cortex-bg-primary)");
     });
 
     it("should apply custom class", () => {

@@ -35,11 +35,11 @@ describe("CortexLogo", () => {
   });
 
   describe("Size", () => {
-    it("should render with default size of 40px", () => {
+    it("should render with default size of 32px", () => {
       const { container } = render(() => <CortexLogo />);
       const div = container.querySelector("div");
-      expect(div?.style.width).toBe("40px");
-      expect(div?.style.height).toBe("40px");
+      expect(div?.style.width).toBe("32px");
+      expect(div?.style.height).toBe("32px");
     });
 
     it("should render with custom size prop", () => {
@@ -68,8 +68,8 @@ describe("CortexLogo", () => {
     it("should render with size-based width and height", () => {
       const { container } = render(() => <CortexLogo />);
       const div = container.querySelector("div");
-      expect(div?.style.width).toBe("40px");
-      expect(div?.style.height).toBe("40px");
+      expect(div?.style.width).toBe("32px");
+      expect(div?.style.height).toBe("32px");
     });
 
     it("should render custom size with correct dimensions", () => {

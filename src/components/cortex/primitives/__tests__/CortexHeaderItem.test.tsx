@@ -53,10 +53,22 @@ describe("CortexHeaderItem", () => {
       expect(button.style.color).toBe("var(--cortex-text-secondary)");
     });
 
-    it("has no border radius by default", () => {
+    it("has border radius of 8px by default", () => {
       const { getByRole } = render(() => <CortexHeaderItem label="File" />);
       const button = getByRole("button") as HTMLElement;
-      expect(button.style.borderRadius).toBe("0px");
+      expect(button.style.borderRadius).toBe("8px");
+    });
+
+    it("has font size of 14px", () => {
+      const { getByRole } = render(() => <CortexHeaderItem label="File" />);
+      const button = getByRole("button") as HTMLElement;
+      expect(button.style.fontSize).toBe("14px");
+    });
+
+    it("has padding of 8px", () => {
+      const { getByRole } = render(() => <CortexHeaderItem label="File" />);
+      const button = getByRole("button") as HTMLElement;
+      expect(button.style.padding).toBe("8px");
     });
   });
 
@@ -155,7 +167,7 @@ describe("CortexHeaderItem", () => {
       button.dispatchEvent(mouseLeaveEvent);
       expect(button.style.background).toBe("transparent");
       expect(button.style.color).toBe("var(--cortex-text-secondary)");
-      expect(button.style.borderRadius).toBe("0px");
+      expect(button.style.borderRadius).toBe("8px");
     });
   });
 
