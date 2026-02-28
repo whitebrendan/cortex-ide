@@ -213,7 +213,7 @@
   --cortex-text-xs: 12px;
   --cortex-text-sm: 14px;
   --cortex-text-base: 16px;
-  --cortex-text-lg: 17px;           /* Navigation items */
+  --cortex-text-lg: 18px;           /* Navigation headings (Figma) */
   --cortex-text-xl: 20px;
   --cortex-text-2xl: 24px;
   --cortex-text-3xl: 32px;          /* Page titles */
@@ -373,9 +373,9 @@
   --cortex-height-button-sm: 32px;
   --cortex-height-button-lg: 48px;
   --cortex-height-tab: 44px;
-  --cortex-height-titlebar: 56px;
+  --cortex-height-titlebar: 48px;
   --cortex-height-statusbar: 24px;
-  --cortex-height-navbar: 56px;
+  --cortex-height-navbar: 48px;
   
   --cortex-width-sidebar: 280px;
   --cortex-width-sidebar-sm: 220px;
@@ -454,8 +454,8 @@
   /* ===========================================================================
      COMPONENT TOKENS: DROPDOWN
      =========================================================================== */
-  --cortex-dropdown-bg: #1C1C1D;
-  --cortex-dropdown-border: #2E2F31;
+  --cortex-dropdown-bg: #252628;
+  --cortex-dropdown-border: #3C3D40;
   --cortex-dropdown-radius: var(--cortex-radius-md);
   --cortex-dropdown-shadow: var(--cortex-elevation-3);
   --cortex-dropdown-item-hover: var(--cortex-bg-hover);

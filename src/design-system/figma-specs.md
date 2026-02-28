@@ -1,6 +1,6 @@
 # Figma Design Specs — Core Layout Components
 
-> **Source:** Figma file `twVc2ATkqHp84b1LNOSEaj` (IDE)
+> **Source:** Figma file `4hKtI49khKHjribAGpFUkW` (IDE)
 > **Extracted:** Automated via Figma MCP
 > **Purpose:** Structured reference for implementation tasks. All values are exact from Figma.
 
@@ -926,11 +926,13 @@ Terminal inner sections divider: `1px 0px 0px` top `#4E4F54`
 
 ### Typography
 
-| Style          | Font    | Weight | Size   | Line Height |
-|----------------|---------|--------|--------|-------------|
-| Body / Default | Inter   | 500    | `14px` | `1em`       |
-| Body Large     | Inter   | 500    | `16px` | `1em`       |
-| Heading        | Inter   | 500    | `18px` | `1.333em`   |
+| Style          | Font           | Weight | Size   | Line Height |
+|----------------|----------------|--------|--------|-------------|
+| Caption        | Figtree        | 400    | `12px` | `1em`       |
+| Code           | JetBrains Mono | 400    | `12px` | `1em`       |
+| Body / Default | Figtree        | 500    | `14px` | `1em`       |
+| Body Large     | Figtree        | 500    | `16px` | `1em`       |
+| Heading        | Figtree        | 500    | `18px` | `1.333em`   |
 
 ### Spacing Scale (common values from components)
 
