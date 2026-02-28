@@ -78,7 +78,7 @@ const listStyle: JSX.CSSProperties = {
 };
 
 const emptyStyle: JSX.CSSProperties = {
-  padding: "24px", "text-align": "center", "font-size": "17px", color: "var(--cortex-text-muted, #888)",
+  padding: "24px", "text-align": "center", "font-size": "var(--cortex-text-lg)", color: "var(--cortex-text-muted, #888)",
 };
 
 const separatorStyle: JSX.CSSProperties = {
