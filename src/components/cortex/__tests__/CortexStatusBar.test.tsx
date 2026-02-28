@@ -355,10 +355,10 @@ describe("CortexStatusBar", () => {
       expect(footer?.style.backgroundColor).toBe("green");
     });
 
-    it("should have correct padding of 8px 24px", () => {
+    it("should have correct padding of 8px", () => {
       const { container } = render(() => <CortexStatusBar />);
       const footer = container.querySelector("footer");
-      expect(footer?.style.padding).toBe("8px 24px");
+      expect(footer?.style.padding).toBe("8px");
     });
 
     it("should not have a fixed height", () => {
@@ -397,11 +397,11 @@ describe("CortexStatusBar", () => {
       expect(footer?.style.fontWeight).toBe("500");
     });
 
-    it("should have left section gap of 20px", () => {
+    it("should have left section gap of 4px", () => {
       const { container } = render(() => <CortexStatusBar />);
       const footer = container.querySelector("footer");
       const leftSection = footer?.firstElementChild as HTMLElement;
-      expect(leftSection?.style.gap).toBe("20px");
+      expect(leftSection?.style.gap).toBe("4px");
     });
 
     it("should render icon buttons for panel toggle", () => {
@@ -420,6 +420,8 @@ describe("CortexStatusBar", () => {
       expect(dot?.style.height).toBe("6px");
       expect(dot?.style.borderRadius).toBe("50%");
       expect(dot?.style.position).toBe("absolute");
+      expect(dot?.style.top).toBe("4px");
+      expect(dot?.style.right).toBe("4px");
     });
   });
 

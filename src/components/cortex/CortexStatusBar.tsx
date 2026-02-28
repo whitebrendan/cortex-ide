@@ -1,13 +1,15 @@
 /**
  * CortexStatusBar - Pixel-perfect IDE footer matching Figma design
  *
- * Figma specs (node 443:7673 "Footer"):
- * - Container: flex row, space-between, gap 40px, padding 8px 24px, no fixed height (hug)
+ * Figma specs (node 1156:23808 "footer", component set 1125:18294):
+ * - Container: flex row, space-between, gap 40px, padding 8px, no fixed height (hug)
  * - No background, no border-top (transparent)
- * - Left section (gap 20px): icon buttons for panel toggle, terminal, git branch, notifications
- * - Right section: Code Navigation Help link
- * - Icons: 20×20 containers, 16×16 content, stroke #8C8D8F (default), #FCFCFC (active)
- * - Text: Figtree 14px weight 500, #8C8D8F color
+ * - Left section (gap 4px): icon buttons for panel toggle, terminal, git branch, notifications
+ * - Right section: Code Navigation Help button
+ * - Button-icon: 32×32, padding 8px, border-radius 8px
+ *   - Active: bg #1C1C1D, border 1px solid #2E2E31, icon #FCFCFC
+ *   - Default: transparent, icon #8C8D8F
+ * - Text: Figtree 14px weight 500
  */
 
 import { Component, JSX, splitProps, Show, createSignal } from "solid-js";
@@ -71,7 +73,7 @@ export const CortexStatusBar: Component<CortexStatusBarProps> = (props) => {
     "align-items": "center",
     "justify-content": "space-between",
     gap: "40px",
-    padding: "8px 24px",
+    padding: "8px",
     "flex-shrink": "0",
     "font-family": "var(--cortex-font-sans)",
     "font-size": "14px",
@@ -83,7 +85,7 @@ export const CortexStatusBar: Component<CortexStatusBarProps> = (props) => {
   const sectionStyle: JSX.CSSProperties = {
     display: "flex",
     "align-items": "center",
-    gap: "20px",
+    gap: "4px",
   };
 
   const showNotificationDot = () =>
@@ -131,7 +133,7 @@ export const CortexStatusBar: Component<CortexStatusBarProps> = (props) => {
       </div>
 
       {/* Right Section: Code Navigation Help */}
-      <div style={{ ...sectionStyle, gap: "4px" }}>
+      <div style={{ ...sectionStyle }}>
         <Show when={local.rightItems}>
           {(items) => (
             <>
@@ -150,8 +152,9 @@ export const CortexStatusBar: Component<CortexStatusBarProps> = (props) => {
           style={{
             display: "flex",
             "align-items": "center",
+            "justify-content": "center",
             gap: "4px",
-            padding: "0",
+            padding: "8px",
             border: "none",
             background: "transparent",
             color: "var(--cortex-text-on-surface, #FCFCFC)",
@@ -159,7 +162,8 @@ export const CortexStatusBar: Component<CortexStatusBarProps> = (props) => {
             "font-size": "inherit",
             "font-weight": "inherit",
             cursor: "pointer",
-            height: "26px",
+            height: "32px",
+            "border-radius": "8px",
           }}
           onClick={() => local.onCodeNavHelp?.()}
           title="Code Navigation Help"
@@ -193,19 +197,32 @@ const StatusBarIconButton: Component<StatusBarIconButtonProps> = (props) => {
     return "var(--cortex-text-secondary, #8C8D8F)";
   };
 
+  const buttonBg = () => {
+    if (props.active) return "var(--cortex-bg-surface, #1C1C1D)";
+    if (isHovered()) return "var(--cortex-surface-hover, rgba(255, 255, 255, 0.06))";
+    return "transparent";
+  };
+
+  const buttonBorder = () => {
+    if (props.active) return "1px solid var(--cortex-border-default, #2E2F31)";
+    return "1px solid transparent";
+  };
+
   return (
     <button
       style={{
         display: "flex",
         "align-items": "center",
         "justify-content": "center",
-        width: "20px",
-        height: "20px",
-        padding: "2px",
+        width: "32px",
+        height: "32px",
+        padding: "8px",
         cursor: props.onClick ? "pointer" : "default",
-        background: "transparent",
-        border: "none",
+        background: buttonBg(),
+        border: buttonBorder(),
+        "border-radius": "8px",
         position: "relative",
+        transition: "background 150ms ease, border-color 150ms ease",
       }}
       title={props.title}
       aria-label={props.title}
@@ -223,8 +240,8 @@ const StatusBarIconButton: Component<StatusBarIconButtonProps> = (props) => {
           data-testid="notification-dot"
           style={{
             position: "absolute",
-            top: "1px",
-            right: "1px",
+            top: "4px",
+            right: "4px",
             width: "6px",
             height: "6px",
             "border-radius": "50%",
