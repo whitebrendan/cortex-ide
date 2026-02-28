@@ -1,15 +1,14 @@
 /**
  * CortexStatusBar - Pixel-perfect IDE footer matching Figma design
  *
- * Figma specs (node 1156:23808 "footer", component set 1125:18294):
- * - Container: flex row, space-between, gap 40px, padding 8px, no fixed height (hug)
- * - No background, no border-top (transparent)
- * - Left section (gap 4px): icon buttons for panel toggle, terminal, git branch, notifications
- * - Right section: Code Navigation Help button
- * - Button-icon: 32×32, padding 8px, border-radius 8px
- *   - Active: bg #1C1C1D, border 1px solid #2E2E31, icon #FCFCFC
- *   - Default: transparent, icon #8C8D8F
- * - Text: Figtree 14px weight 500
+ * Figma specs (node 1156:23808 "footer"):
+ * - Container: flex row, space-between, gap 40px, padding 8px, height hug (48px total)
+ * - No background (transparent), border-top 1px solid #2E2F31
+ * - Left section (gap 4px): 4 icon buttons (sidebar, terminal, git, info) — 32×32 with 8px padding, 16×16 icons
+ * - Right section: Code Navigation Help text button with left chevron
+ * - Icon colors: #8C8D8F (default), #FCFCFC (active/hover)
+ * - Active button: bg #1C1C1D, border 1px solid #2E2E31, border-radius 8px
+ * - Text: Figtree 14px weight 500, #8C8D8F (labels) / #FCFCFC (active text)
  */
 
 import { Component, JSX, splitProps, Show, createSignal } from "solid-js";
@@ -75,6 +74,7 @@ export const CortexStatusBar: Component<CortexStatusBarProps> = (props) => {
     gap: "40px",
     padding: "8px",
     "flex-shrink": "0",
+    "border-top": "1px solid var(--cortex-border-default, #2E2F31)",
     "font-family": "var(--cortex-font-sans)",
     "font-size": "14px",
     "font-weight": "500",
@@ -96,7 +96,7 @@ export const CortexStatusBar: Component<CortexStatusBarProps> = (props) => {
       {/* Left Section: Icon buttons */}
       <div style={sectionStyle}>
         <StatusBarIconButton
-          iconName={"status-bar/layout-alt-04" as CortexIconName}
+          iconName={"navigation/menu-left-on" as CortexIconName}
           onClick={local.onTogglePanel}
           title="Toggle Panel"
           active={isActive()}
@@ -133,7 +133,7 @@ export const CortexStatusBar: Component<CortexStatusBarProps> = (props) => {
       </div>
 
       {/* Right Section: Code Navigation Help */}
-      <div style={{ ...sectionStyle }}>
+      <div style={sectionStyle}>
         <Show when={local.rightItems}>
           {(items) => (
             <>
@@ -148,36 +148,51 @@ export const CortexStatusBar: Component<CortexStatusBarProps> = (props) => {
           )}
         </Show>
 
-        <button
-          style={{
-            display: "flex",
-            "align-items": "center",
-            "justify-content": "center",
-            gap: "4px",
-            padding: "8px",
-            border: "none",
-            background: "transparent",
-            color: "var(--cortex-text-on-surface, #FCFCFC)",
-            "font-family": "inherit",
-            "font-size": "inherit",
-            "font-weight": "inherit",
-            cursor: "pointer",
-            height: "32px",
-            "border-radius": "8px",
-          }}
-          onClick={() => local.onCodeNavHelp?.()}
-          title="Code Navigation Help"
-          aria-label="Code Navigation Help"
-        >
-          <CortexSvgIcon
-            name={"navigation/chevron-left" as CortexIconName}
-            size={16}
-            color="var(--cortex-text-secondary, #8C8D8F)"
-          />
-          <span style={{ color: "var(--cortex-text-on-surface, #FCFCFC)" }}>Code Navigation Help</span>
-        </button>
+        <CodeNavHelpButton onClick={() => local.onCodeNavHelp?.()} />
       </div>
     </footer>
+  );
+};
+
+interface CodeNavHelpButtonProps {
+  onClick: () => void;
+}
+
+const CodeNavHelpButton: Component<CodeNavHelpButtonProps> = (props) => {
+  const [isHovered, setIsHovered] = createSignal(false);
+
+  return (
+    <button
+      style={{
+        display: "flex",
+        "align-items": "center",
+        gap: "4px",
+        padding: "8px",
+        border: "none",
+        background: isHovered() ? "rgba(255, 255, 255, 0.06)" : "transparent",
+        "border-radius": "8px",
+        color: "var(--cortex-text-on-surface, #FCFCFC)",
+        "font-family": "inherit",
+        "font-size": "inherit",
+        "font-weight": "inherit",
+        cursor: "pointer",
+        height: "32px",
+        "box-sizing": "border-box",
+        transition: "background 150ms ease",
+      }}
+      onClick={() => props.onClick()}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      title="Code Navigation Help"
+      aria-label="Code Navigation Help"
+    >
+      <CortexSvgIcon
+        name={"navigation/chevron-left" as CortexIconName}
+        size={16}
+        color="var(--cortex-text-secondary, #8C8D8F)"
+      />
+      <span>Code Navigation Help</span>
+    </button>
   );
 };
 
@@ -197,9 +212,9 @@ const StatusBarIconButton: Component<StatusBarIconButtonProps> = (props) => {
     return "var(--cortex-text-secondary, #8C8D8F)";
   };
 
-  const buttonBg = () => {
-    if (props.active) return "var(--cortex-bg-surface, #1C1C1D)";
-    if (isHovered()) return "var(--cortex-surface-hover, rgba(255, 255, 255, 0.06))";
+  const buttonBackground = () => {
+    if (props.active) return "var(--cortex-bg-surface-1, #1C1C1D)";
+    if (isHovered()) return "rgba(255, 255, 255, 0.06)";
     return "transparent";
   };
 
@@ -218,10 +233,11 @@ const StatusBarIconButton: Component<StatusBarIconButtonProps> = (props) => {
         height: "32px",
         padding: "8px",
         cursor: props.onClick ? "pointer" : "default",
-        background: buttonBg(),
+        background: buttonBackground(),
         border: buttonBorder(),
         "border-radius": "8px",
         position: "relative",
+        "box-sizing": "border-box",
         transition: "background 150ms ease, border-color 150ms ease",
       }}
       title={props.title}
