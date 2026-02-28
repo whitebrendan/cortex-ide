@@ -146,6 +146,10 @@
   --cortex-text-link: var(--cortex-palette-lime-500);          /* Link text */
   --cortex-text-link-hover: var(--cortex-palette-lime-400);    /* Link hover */
   
+  /* ---- SEARCH HIGHLIGHT ---- */
+  --cortex-search-match: rgba(178, 255, 34, 0.25);            /* Search match highlight bg */
+  --cortex-search-match-active: rgba(178, 255, 34, 0.45);     /* Active search match highlight */
+
   /* ---- ACCENT COLORS (Figma Exact: #B2FF22) ---- */
   --cortex-accent-primary: #B2FF22;                           /* Primary accent (home icon, moon, send button) */
   --cortex-accent-hover: #6C8A2C;                             /* Hover state */

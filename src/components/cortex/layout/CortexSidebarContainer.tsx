@@ -76,7 +76,7 @@ export function CortexSidebarContainer(props: CortexSidebarContainerProps) {
     transition: props.isResizing ? "none" : "width 150ms ease, opacity 150ms ease",
     background: "#1C1C1D",
     "border-radius": "12px",
-    border: "1px solid var(--cortex-border-default)",
+    border: "1px solid var(--cortex-border-hover)",
     opacity: props.sidebarCollapsed ? "0" : "1",
     display: "flex",
     "flex-direction": "column",

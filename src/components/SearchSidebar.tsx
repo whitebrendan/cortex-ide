@@ -995,9 +995,11 @@ export function SearchSidebar() {
     display: "flex",
     "align-items": "center",
     padding: tokens.spacing.sm,
-    background: tokens.colors.surface.panel,
-    border: `1px solid ${tokens.colors.border.default}`,
-    "border-radius": tokens.radius.sm,
+    background: "var(--cortex-bg-elevated)",
+    border: "1px solid var(--cortex-border-default)",
+    "border-radius": "var(--cortex-radius-md)",
+    height: "28px",
+    "box-sizing": "border-box",
   };
 
   const inputInnerStyle: JSX.CSSProperties = {

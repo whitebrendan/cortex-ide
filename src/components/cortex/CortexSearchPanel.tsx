@@ -24,9 +24,10 @@ interface SearchResponse {
 }
 
 const inputStyle: JSX.CSSProperties = {
-  width: "100%", background: "var(--cortex-bg-primary)",
-  border: "1px solid var(--cortex-bg-hover)", "border-radius": "var(--cortex-radius-sm)",
+  width: "100%", background: "var(--cortex-bg-elevated)",
+  border: "1px solid var(--cortex-border-default)", "border-radius": "var(--cortex-radius-md)",
   color: "var(--cortex-text-primary)", "font-size": "13px", outline: "none",
+  height: "28px", "box-sizing": "border-box",
 };
 
 const chevron = (open: boolean): JSX.CSSProperties => ({
@@ -150,11 +151,11 @@ export const CortexSearchPanel: Component = () => {
 
   return (
     <div style={{ display: "flex", "flex-direction": "column", height: "100%", background: "var(--cortex-bg-secondary)", color: "var(--cortex-text-primary)", "font-family": "var(--cortex-font-sans)", "font-size": "13px" }}>
-      <div style={{ padding: "12px 16px", "border-bottom": "1px solid var(--cortex-bg-hover)" }}>
-        <span style={{ "font-weight": "500" }}>Search</span>
+      <div style={{ padding: "12px 16px", "border-bottom": "1px solid var(--cortex-border-default)" }}>
+        <span style={{ "font-weight": "600", "font-size": "13px" }}>Search</span>
       </div>
 
-      <div style={{ padding: "12px 16px", "border-bottom": "1px solid var(--cortex-bg-hover)" }}>
+      <div style={{ padding: "12px 16px", "border-bottom": "1px solid var(--cortex-border-default)" }}>
         <div style={{ position: "relative", "margin-bottom": "8px" }}>
           <input ref={searchRef} type="text" value={query()} onInput={e => setQuery(e.currentTarget.value)}
             onKeyDown={e => e.key === "Enter" && handleSearch()} placeholder="Search"
@@ -182,7 +183,7 @@ export const CortexSearchPanel: Component = () => {
           <div style={{ display: "flex", "align-items": "center", gap: "6px", "margin-top": "8px" }}>
             <input type="text" value={replace()} onInput={e => setReplace(e.currentTarget.value)}
               placeholder="Replace" style={{ ...inputStyle, padding: "8px", flex: "1" }} />
-            <button onClick={handleReplaceAll} title="Replace All" style={{ background: "var(--cortex-bg-hover)", border: "none", color: "var(--cortex-text-primary)", padding: "6px 10px", "border-radius": "var(--cortex-radius-sm)", cursor: "pointer", "font-size": "12px", "white-space": "nowrap" }}>
+            <button onClick={handleReplaceAll} title="Replace All" style={{ background: "var(--cortex-bg-elevated)", border: "1px solid var(--cortex-border-default)", color: "var(--cortex-text-primary)", padding: "6px 10px", "border-radius": "var(--cortex-radius-md)", cursor: "pointer", "font-size": "12px", "white-space": "nowrap" }}>
               Replace All
             </button>
           </div>
@@ -210,12 +211,12 @@ export const CortexSearchPanel: Component = () => {
           <div style={{ padding: "16px", color: "var(--cortex-error)", "text-align": "center" }}>{error()}</div>
         </Show>
         <Show when={!searching() && results().length > 0}>
-          <div style={{ padding: "8px 16px", color: "var(--cortex-text-inactive)", "font-size": "12px", "border-bottom": "1px solid var(--cortex-bg-hover)" }}>
+          <div style={{ padding: "8px 16px", color: "var(--cortex-text-inactive)", "font-size": "12px", "border-bottom": "1px solid var(--cortex-border-default)" }}>
             {totalMatches()} results in {results().length} files
           </div>
           <For each={results()}>
             {(fr) => (
-              <div style={{ "border-bottom": "1px solid var(--cortex-bg-hover)" }}>
+              <div style={{ "border-bottom": "1px solid var(--cortex-border-default)" }}>
                 <div class="sp-file-row" onClick={() => toggleFile(fr.file)} style={{ display: "flex", "align-items": "center", padding: "6px 16px", cursor: "pointer", gap: "8px" }}>
                   <svg width="12" height="12" viewBox="0 0 16 16" fill="var(--cortex-text-inactive)" style={{ ...chevron(expanded().has(fr.file)), "flex-shrink": "0" }}><path d="M6 4l4 4-4 4V4z"/></svg>
                   <span style={{ "font-weight": "500", overflow: "hidden", "text-overflow": "ellipsis", "white-space": "nowrap" }}>{getFilename(fr.file)}</span>
@@ -234,7 +235,7 @@ export const CortexSearchPanel: Component = () => {
                       <div class="sp-match-row" onClick={() => openMatch(fr.file, m.line, m.column)} style={{ padding: "4px 16px 4px 48px", cursor: "pointer", "font-family": "var(--cortex-font-mono)", "font-size": "12px", "white-space": "nowrap", overflow: "hidden", "text-overflow": "ellipsis" }}>
                         <span style={{ color: "var(--cortex-text-inactive)", "margin-right": "8px", "user-select": "none" }}>{m.line}</span>
                         <span style={{ color: "var(--cortex-text-secondary)" }}>{m.text.slice(0, m.matchStart)}</span>
-                        <span style={{ background: "var(--cortex-accent-primary)", color: "var(--cortex-accent-text)", "border-radius": "var(--cortex-radius-sm)", padding: "0 1px" }}>{m.text.slice(m.matchStart, m.matchEnd)}</span>
+                        <span style={{ background: "var(--cortex-search-match)", color: "var(--cortex-accent-primary)", "border-radius": "var(--cortex-radius-sm)", padding: "0 2px", "font-weight": "500" }}>{m.text.slice(m.matchStart, m.matchEnd)}</span>
                         <span style={{ color: "var(--cortex-text-secondary)" }}>{m.text.slice(m.matchEnd)}</span>
                       </div>
                     )}
