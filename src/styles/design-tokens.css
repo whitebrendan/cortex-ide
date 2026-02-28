@@ -300,9 +300,9 @@
      COMPOSANT: SCROLLBAR
      @deprecated — Use --cortex-scrollbar-*
      =========================================================================== */
-  --scrollbar-thumb: transparent;
+  --scrollbar-thumb: #2E2F31;
   --scrollbar-thumb-hover: #8C8D8F;
-  --scrollbar-track: #2E2F31;
+  --scrollbar-track: transparent;
   --scrollbar-width: 6px;
 
   /* ===========================================================================

@@ -1161,11 +1161,11 @@
 }
 
 .virtual-scroll-container:hover::-webkit-scrollbar-thumb {
-  background: #8C8D8F;
+  background: var(--cortex-scrollbar-thumb, #2E2F31);
 }
 
 .virtual-scroll-container::-webkit-scrollbar-thumb:hover {
-  background: #8C8D8F;
+  background: var(--cortex-scrollbar-thumb-hover, #8C8D8F);
 }
 
 .virtual-scroll-spacer {

@@ -1113,23 +1113,23 @@ html:fullscreen .window-resizer {
    (from floating-panels.css)
    ============================================================================= */
 
-/* Scrollbars - Figma aligned: 6px, #2E2F31 track, #8C8D8F thumb on hover */
+/* Scrollbars - Figma aligned: 6px, #2E2F31 thumb, #8C8D8F hover */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #2E2F31;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 3px;
+  background: var(--cortex-scrollbar-thumb-bg, #2E2F31);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #8C8D8F;
+  background: var(--cortex-scrollbar-thumb-hover-bg, #8C8D8F);
 }
 
 /* =============================================================================

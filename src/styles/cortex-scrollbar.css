@@ -1,5 +1,5 @@
 /* =============================================================================
-   CORTEX SCROLLBAR - Figma-Aligned Scrollbar Design
+   CORTEX SCROLLBAR - Figma-Aligned Scrollbar Design Tokens
    =============================================================================
    Figma spec:
    - Width: 6px
@@ -8,12 +8,11 @@
    - Thumb (hover): #8C8D8F (subtle gray highlight)
    - Border-radius: 4px (rounded pill)
    
-   This file is the canonical scrollbar reference. Other scrollbar declarations
-   in base.css and scrollbar.css should stay in sync with these values.
-   ============================================================================= */
-
-/* =============================================================================
-   1. DESIGN TOKENS
+   This file defines the canonical scrollbar tokens. Scrollbar application rules
+   live in base.css (global) and scrollbar.css (VS Code / Monaco overrides).
+   
+   Usage: @import "./cortex-scrollbar.css";
+   Then reference tokens via var(--cortex-scrollbar-*) in component styles.
    ============================================================================= */
 
 :root {
@@ -23,39 +22,4 @@
   --cortex-scrollbar-thumb: #2E2F31;
   --cortex-scrollbar-thumb-hover: #8C8D8F;
   --cortex-scrollbar-radius: 4px;
-}
-
-/* =============================================================================
-   2. WEBKIT SCROLLBAR (Chromium / Tauri WebView)
-   ============================================================================= */
-
-::-webkit-scrollbar {
-  width: var(--cortex-scrollbar-width);
-  height: var(--cortex-scrollbar-height);
-}
-
-::-webkit-scrollbar-track {
-  background: var(--cortex-scrollbar-track);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--cortex-scrollbar-thumb);
-  border-radius: var(--cortex-scrollbar-radius);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--cortex-scrollbar-thumb-hover);
-}
-
-::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
-/* =============================================================================
-   3. FIREFOX SCROLLBAR (scrollbar-width / scrollbar-color)
-   ============================================================================= */
-
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--cortex-scrollbar-thumb) var(--cortex-scrollbar-track);
 }
