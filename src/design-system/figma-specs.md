@@ -929,6 +929,7 @@ Terminal inner sections divider: `1px 0px 0px` top `#4E4F54`
 | Style          | Font           | Weight | Size   | Line Height |
 |----------------|----------------|--------|--------|-------------|
 | Caption        | Figtree        | 400    | `12px` | `1em`       |
+| Body Compact   | Figtree        | 400    | `13px` | `1.23em`    |
 | Code           | JetBrains Mono | 400    | `12px` | `1em`       |
 | Body / Default | Figtree        | 500    | `14px` | `1em`       |
 | Body Large     | Figtree        | 500    | `16px` | `1em`       |

@@ -203,6 +203,7 @@ export const CortexRawValues = {
   fontSize: {
     '2xs': 10,
     xs: 12,
+    body: 13,
     sm: 14,
     base: 16,
     lg: 18,
@@ -414,6 +415,7 @@ export const CortexTokens = {
     fontSize: {
       '2xs': 'var(--cortex-text-2xs)',
       xs: 'var(--cortex-text-xs)',
+      body: 'var(--cortex-text-body)',
       sm: 'var(--cortex-text-sm)',
       base: 'var(--cortex-text-base)',
       lg: 'var(--cortex-text-lg)',

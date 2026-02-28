@@ -68,7 +68,14 @@
   --cortex-palette-gray-figma-text-secondary: #8C8D8F;
   --cortex-palette-gray-figma-text-surface: #FCFCFC;
   --cortex-palette-gray-figma-open-bg: #E9E9EA;
-  
+
+  /* ----- SHORTHAND ALIASES (Figma source of truth) ----- */
+  --cortex-bg: #141415;
+  --cortex-surface: #1C1C1D;
+  --cortex-border: #2E2F31;
+  --cortex-accent: #B2FF22;
+  --cortex-text: #FCFCFC;
+
   /* ----- SEMANTIC COLORS ----- */
   /* Success (Green) */
   --cortex-palette-success-50: #ECFDF5;
@@ -208,12 +215,13 @@
   --cortex-icon-inactive: #8C8D8F;                            /* Inactive sidebar icons (Figma exact) */
   --cortex-icon-active: #141415;                              /* Active icon on accent bg (Figma exact) */
   
-  /* Font Sizes (Figma: 10, 12, 14, 16) */
+  /* Font Sizes (Figma: 10, 12, 13, 14, 16, 18) */
   --cortex-text-2xs: 10px;          /* Figma smallest text */
   --cortex-text-xs: 12px;
+  --cortex-text-body: 13px;         /* Body text, editor UI */
   --cortex-text-sm: 14px;
   --cortex-text-base: 16px;
-  --cortex-text-lg: 18px;           /* Navigation headings (Figma) */
+  --cortex-text-lg: 18px;           /* Figma heading size */
   --cortex-text-xl: 20px;
   --cortex-text-2xl: 24px;
   --cortex-text-3xl: 32px;          /* Page titles */
