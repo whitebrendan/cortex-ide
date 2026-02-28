@@ -1,13 +1,13 @@
 /**
  * EditorTabBar - Pixel-perfect editor tab bar matching Figma design
  *
- * Figma specs (node 5:12544, layout_DL9R7K / layout_FLO741 / layout_GFZOKQ):
- * - Tab bar: row, align center, stretch, fill width
- * - Active tab: bg #252628, text #FCFCFC, border-radius 8px 8px 0 0, height 36px
- * - Inactive tabs: transparent bg, text #8C8D8F
- * - Tab padding: 10px 16px, gap 6px
+ * Figma specs (node 1156:23692 tabs instance):
+ * - Tab bar: row, align center, stretch, fill width, height 40px
+ * - Container bg: #1C1C1D, border-bottom: 1px solid, padding 4px 8px 4px 4px
+ * - Active tab: bg #252528, text #E9E9EA, border-radius 8px, height 32px
+ * - Inactive tabs: transparent bg, text #8C8C8F
+ * - Tab padding: 8px, gap 6px, font-weight 500
  * - Close button: 16×16, visible on hover/active
- * - Container bg: #141415, border-bottom: 1px solid #2E2F31
  */
 
 import { Component, JSX, For, Show, createSignal, onCleanup } from "solid-js";
@@ -54,8 +54,8 @@ export const EditorTabBar: Component<EditorTabBarProps> = (props) => {
     "align-items": "center",
     "align-self": "stretch",
     height: "40px",
-    background: "var(--cortex-bg-secondary)",
     padding: "4px 8px 4px 4px",
+    background: "var(--cortex-bg-secondary)",
     "border-bottom": "1px solid var(--cortex-border-default)",
     overflow: "hidden",
     "flex-shrink": "0",
@@ -155,11 +155,10 @@ const TabItem: Component<TabItemProps> = (props) => {
     display: "flex",
     "align-items": "center",
     gap: "6px",
-    height: "36px",
-    padding: "10px 16px",
-    background: props.isActive ? "#252628" : "transparent",
-    "border-top-left-radius": "8px",
-    "border-top-right-radius": "8px",
+    height: "32px",
+    padding: "8px",
+    background: props.isActive ? "#252528" : "transparent",
+    "border-radius": "8px",
     cursor: "pointer",
     transition: "background 100ms ease",
     "flex-shrink": "0",
@@ -169,9 +168,9 @@ const TabItem: Component<TabItemProps> = (props) => {
   const nameStyle = (): JSX.CSSProperties => ({
     "font-family": "'Figtree', sans-serif",
     "font-size": "14px",
-    "font-weight": "400",
+    "font-weight": "500",
     "line-height": "1em",
-    color: props.isActive ? "#FCFCFC" : "#8C8D8F",
+    color: props.isActive ? "#E9E9EA" : "#8C8C8F",
     "white-space": "nowrap",
     "font-style": props.tab.isPreview ? "italic" : "normal",
   });

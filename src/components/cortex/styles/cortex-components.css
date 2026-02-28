@@ -307,16 +307,17 @@
 
 .figma-editor-content {
   font-family: var(--cortex-font-mono, 'JetBrains Mono', monospace);
-  font-size: 16px;
+  font-size: 14px;
+  font-weight: 200;
   line-height: 24px;
   tab-size: 2;
 }
 
 .figma-line-number {
   font-family: var(--cortex-font-mono, 'JetBrains Mono', monospace);
-  font-size: 16px;
+  font-size: 14px;
   line-height: 24px;
-  color: var(--cortex-text-muted, var(--cortex-text-inactive));
+  color: var(--cortex-text-secondary, #8C8C8F);
   text-align: right;
   user-select: none;
 }

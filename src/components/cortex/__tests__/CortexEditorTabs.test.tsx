@@ -147,9 +147,9 @@ describe("CortexEditorTabs", () => {
       ));
 
       const activeTab = container.querySelector('[role="tab"]') as HTMLElement;
-      // Active tab uses CSS variable for bg and top-only border-radius per Figma
-      expect(activeTab?.style.background).toContain("var(--cortex-bg-elevated");
-      expect(activeTab?.style.borderRadius).toBe("8px 8px 0 0");
+      // Active tab uses CSS variable for bg and 8px border-radius on all corners
+      expect(activeTab?.style.background).toContain("var(--cortex-bg-elevated)");
+      expect(activeTab?.style.borderRadius).toBe("8px");
     });
 
     it("should not highlight any tab when activeTabId is null", () => {
@@ -368,12 +368,12 @@ describe("CortexEditorTabs", () => {
       expect(tabBar?.style.backgroundColor).toBe("red");
     });
 
-    it("should have correct container height of 36px per Figma", () => {
+    it("should have correct container height of 40px per Figma", () => {
       const { container } = render(() => (
         <CortexEditorTabs tabs={[]} activeTabId={null} />
       ));
       const tabBar = container.firstChild as HTMLElement;
-      expect(tabBar?.style.height).toBe("36px");
+      expect(tabBar?.style.height).toBe("40px");
     });
   });
 });

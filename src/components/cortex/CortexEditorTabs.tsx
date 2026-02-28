@@ -1,13 +1,13 @@
 /**
  * CortexEditorTabs - Pixel-perfect editor tab bar matching Figma design
  *
- * Figma specs (node 1156:23697, file 4hKtI49khKHjribAGpFUkW):
- * - Tab bar height: 36px, bg #1C1C1D, padding 2px 8px 2px 4px
- * - Active tab: bg #252628, text #FCFCFC, border-radius 8px 8px 0 0
- * - Inactive tab: transparent bg, text #8C8D8F
- * - Tab height: 32px, padding 8px, gap 4px between elements
- * - Tab structure: file icon (16×16) + filename (Figtree Medium 13px) + close (16×16)
- * - Close button: visible on hover/active, hidden (opacity 0) on inactive
+ * Figma specs (node 1156:23692 tabs instance):
+ * - Tab bar height: 40px, bg #1C1C1D, border-bottom 1px solid, padding 4px 8px 4px 4px
+ * - Active tab: bg #252528, text #E9E9EA, border-radius 8px, height 32px
+ * - Inactive tab: transparent bg, text #8C8C8F
+ * - Tab structure: file icon (16×16) + filename (14px Figtree w500) + close button (16×16)
+ * - Tab padding: 8px, gap 6px
+ * - Close button: visible on hover/active, x-close icon
  * - Modified dot: 8px circle indicator
  * - Horizontal scrolling when tabs overflow, 4px gap between tabs
  * - Tab separator: 1px vertical divider between inactive tabs
@@ -65,9 +65,10 @@ export const CortexEditorTabs: Component<CortexEditorTabsProps> = (props) => {
     display: "flex",
     "align-items": "center",
     "align-self": "stretch",
-    height: "36px",
-    background: "var(--cortex-bg-secondary, #1C1C1D)",
-    padding: "2px 8px 2px 4px",
+    height: "40px",
+    padding: "4px 8px 4px 4px",
+    background: "var(--cortex-bg-secondary)",
+    "border-bottom": "1px solid var(--cortex-border-default)",
     overflow: "hidden",
     "flex-shrink": "0",
     position: "relative",
@@ -286,11 +287,11 @@ const EditorTabItem: Component<EditorTabItemProps> = (props) => {
   const tabStyle = (): JSX.CSSProperties => ({
     display: "flex",
     "align-items": "center",
-    gap: "4px",
+    gap: "6px",
     height: "32px",
     padding: "8px",
-    background: props.isActive ? "var(--cortex-bg-elevated, #252628)" : "transparent",
-    "border-radius": props.isActive ? "8px 8px 0 0" : "8px",
+    background: props.isActive ? "var(--cortex-bg-elevated)" : "transparent",
+    "border-radius": "8px",
     cursor: "pointer",
     transition: "background 100ms ease",
     "flex-shrink": "0",
@@ -298,11 +299,11 @@ const EditorTabItem: Component<EditorTabItemProps> = (props) => {
   });
 
   const nameStyle = (): JSX.CSSProperties => ({
-    "font-family": "var(--cortex-font-sans, 'Figtree', sans-serif)",
-    "font-size": "13px",
+    "font-family": "'Figtree', sans-serif",
+    "font-size": "14px",
     "font-weight": "500",
-    "line-height": "115%",
-    color: props.isActive ? "var(--cortex-text-primary, #FCFCFC)" : "var(--cortex-text-secondary, #8C8D8F)",
+    "line-height": "1em",
+    color: props.isActive ? "#E9E9EA" : "#8C8C8F",
     "white-space": "nowrap",
     "font-style": props.tab.isPreview ? "italic" : "normal",
   });
