@@ -10,9 +10,15 @@
  * Layout: centered container with title text + AI prompt input
  * Typography: Figtree 32px/40px weight 500 for title
  * Input: bg #1C1C1D, border 1px #2E2F31, border-radius 16px
+ *
+ * Includes CortexOpenProjectDropdown with folder/file/clone actions
+ * and WelcomeRecentFiles (conditional, when recent projects exist).
  */
 
-import { type JSX, createSignal } from "solid-js";
+import { type JSX, createSignal, Show } from "solid-js";
+import { CortexOpenProjectDropdown } from "@/components/cortex/primitives/CortexOpenProjectDropdown";
+import { WelcomeRecentFiles } from "@/components/cortex/WelcomeRecentFiles";
+import { useRecentProjects, type RecentProject } from "@/context/RecentProjectsContext";
 
 export interface WelcomeTabProps {
   class?: string;
@@ -21,8 +27,10 @@ export interface WelcomeTabProps {
 }
 
 export function WelcomeTab(props: WelcomeTabProps) {
+  const recentProjects = useRecentProjects();
   const [inputValue, setInputValue] = createSignal("");
   const [inputFocused, setInputFocused] = createSignal(false);
+  const [dropdownOpen, setDropdownOpen] = createSignal(false);
 
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -47,6 +55,31 @@ export function WelcomeTab(props: WelcomeTabProps) {
     }
   };
 
+  const handleOpenFolder = () => {
+    setDropdownOpen(false);
+    window.dispatchEvent(new CustomEvent("folder:open"));
+  };
+
+  const handleNewFile = () => {
+    setDropdownOpen(false);
+    window.dispatchEvent(new CustomEvent("file:new"));
+  };
+
+  const handleCloneRepo = () => {
+    setDropdownOpen(false);
+    window.dispatchEvent(new CustomEvent("git:clone"));
+  };
+
+  const handleOpenProject = (project: RecentProject) => {
+    recentProjects.openProject(project);
+  };
+
+  const sortedProjects = () => {
+    const pinned = recentProjects.pinnedProjects();
+    const unpinned = recentProjects.unpinnedProjects();
+    return [...pinned, ...unpinned];
+  };
+
   const workspaceStyle = (): JSX.CSSProperties => ({
     display: "flex",
     flex: "1",
@@ -55,6 +88,7 @@ export function WelcomeTab(props: WelcomeTabProps) {
     "justify-content": "center",
     background: "var(--cortex-bg-primary)",
     "min-height": "0",
+    "font-family": "var(--cortex-font-sans)",
     ...props.style,
   });
 
@@ -65,6 +99,7 @@ export function WelcomeTab(props: WelcomeTabProps) {
     gap: "28px",
     "max-width": props.compact ? "none" : "922px",
     width: props.compact ? "auto" : "100%",
+    padding: "40px 24px",
   });
 
   const titleStyle: JSX.CSSProperties = {
@@ -75,7 +110,7 @@ export function WelcomeTab(props: WelcomeTabProps) {
     "line-height": "40px",
     "letter-spacing": "0px",
     "text-align": "center",
-    color: "#FCFCFC",
+    color: "var(--cortex-text-on-surface, #FCFCFC)",
     width: "100%",
   };
 
@@ -83,6 +118,7 @@ export function WelcomeTab(props: WelcomeTabProps) {
     display: "flex",
     "flex-direction": "column",
     width: props.compact ? "100%" : "686px",
+    "max-width": "100%",
     background: "#1C1C1D",
     border: inputFocused()
       ? "1px solid var(--cortex-accent-primary)"
@@ -174,6 +210,12 @@ export function WelcomeTab(props: WelcomeTabProps) {
     padding: "0",
     transition: "background 100ms ease",
   });
+
+  const dropdownWrapperStyle: JSX.CSSProperties = {
+    display: "flex",
+    "align-items": "center",
+    gap: "8px",
+  };
 
   return (
     <div class={props.class} style={workspaceStyle()}>
@@ -304,8 +346,99 @@ export function WelcomeTab(props: WelcomeTabProps) {
             </div>
           </div>
         </div>
+
+        <div style={dropdownWrapperStyle}>
+          <CortexOpenProjectDropdown
+            label="Open Project"
+            isOpen={dropdownOpen()}
+            onClick={() => setDropdownOpen(!dropdownOpen())}
+          >
+            <Show when={dropdownOpen()}>
+              <DropdownMenu
+                onOpenFolder={handleOpenFolder}
+                onNewFile={handleNewFile}
+                onCloneRepo={handleCloneRepo}
+              />
+            </Show>
+          </CortexOpenProjectDropdown>
+        </div>
+
+        <Show when={sortedProjects().length > 0}>
+          <WelcomeRecentFiles
+            projects={sortedProjects()}
+            onOpen={handleOpenProject}
+          />
+        </Show>
       </div>
     </div>
+  );
+}
+
+interface DropdownMenuProps {
+  onOpenFolder: () => void;
+  onNewFile: () => void;
+  onCloneRepo: () => void;
+}
+
+function DropdownMenu(props: DropdownMenuProps) {
+  return (
+    <div style={{
+      position: "absolute",
+      top: "calc(100% + 4px)",
+      left: "0",
+      "min-width": "200px",
+      background: "var(--cortex-dropdown-bg)",
+      border: "1px solid var(--cortex-dropdown-border)",
+      "border-radius": "var(--cortex-radius-md)",
+      "box-shadow": "var(--cortex-elevation-3)",
+      "z-index": "var(--cortex-z-dropdown)",
+      padding: "4px",
+      "font-family": "var(--cortex-font-sans)",
+    }}>
+      <DropdownItem label="Open Folder" icon="folder" onClick={props.onOpenFolder} />
+      <DropdownItem label="New File" icon="file" onClick={props.onNewFile} />
+      <DropdownItem label="Clone Repository" icon="code-branch" onClick={props.onCloneRepo} />
+    </div>
+  );
+}
+
+function DropdownItem(itemProps: { label: string; icon: string; onClick: () => void }) {
+  const [hovered, setHovered] = createSignal(false);
+  return (
+    <button
+      onClick={itemProps.onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex",
+        "align-items": "center",
+        gap: "8px",
+        width: "100%",
+        padding: "8px 12px",
+        background: hovered() ? "var(--cortex-bg-hover)" : "transparent",
+        border: "none",
+        "border-radius": "var(--cortex-radius-xs)",
+        color: "var(--cortex-text-primary)",
+        "font-size": "13px",
+        cursor: "pointer",
+        "text-align": "left",
+        "font-family": "var(--cortex-font-sans)",
+        transition: "background var(--cortex-transition-fast)",
+      }}
+    >
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="var(--cortex-text-secondary)">
+        <Show when={itemProps.icon === "folder"}>
+          <path d="M14.5 3H7.71l-2-2H1.5A1.5 1.5 0 0 0 0 2.5v11A1.5 1.5 0 0 0 1.5 15h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 3z"/>
+        </Show>
+        <Show when={itemProps.icon === "file"}>
+          <path d="M13.85 4.44l-3.29-3.29A1.5 1.5 0 0 0 9.5 0.75H3.5A1.5 1.5 0 0 0 2 2.25v11.5a1.5 1.5 0 0 0 1.5 1.5h9a1.5 1.5 0 0 0 1.5-1.5V5.5a1.5 1.5 0 0 0-.15-1.06z"/>
+        </Show>
+        <Show when={itemProps.icon === "code-branch"}>
+          <path d="M11.75 5a1.25 1.25 0 1 0-1.5 1.22V7.5a.5.5 0 0 1-.5.5H6.25a.5.5 0 0 1-.5-.5V6.22a1.25 1.25 0 1 0-1 0v3.56a1.25 1.25 0 1 0 1 0V8.5a.5.5 0 0 1 .5-.5h3.5a1.5 1.5 0 0 0 1.5-1.5V6.22A1.25 1.25 0 0 0 11.75 5z"/>
+        </Show>
+      </svg>
+      {itemProps.label}
+    </button>
   );
 }
 
