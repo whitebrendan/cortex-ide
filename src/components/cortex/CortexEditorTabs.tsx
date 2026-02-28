@@ -1,15 +1,16 @@
 /**
  * CortexEditorTabs - Pixel-perfect editor tab bar matching Figma design
  *
- * Figma specs (node 5:12544, layout_DL9R7K / layout_FLO741 / layout_GFZOKQ):
- * - Tab bar height: 36px, bg #141415, border-bottom 1px solid #2E2F31
- * - Active tab: bg #252628, text #FCFCFC, border-radius 8px 8px 0 0
+ * Figma specs (node 1156:23697, file 4hKtI49khKHjribAGpFUkW):
+ * - Tab bar height: 40px, bg #1C1C1D, padding 4px 8px 4px 4px
+ * - Bottom border: 1px solid #2E2F31 (stroke outside)
+ * - Active tab: bg #252628, text #E9E9EA, border-radius 8px
  * - Inactive tab: transparent bg, text #8C8D8F
- * - Tab structure: file icon (16×16) + filename (14px Figtree) + close button (16×16)
- * - Tab padding: 10px 16px, gap 6px
- * - Close button: visible on hover/active, x-close icon
+ * - Tab height: 32px, padding 8px, gap 4px between elements
+ * - Tab structure: file icon (16×16) + filename (Figtree Medium 14px/115%) + close (16×16)
+ * - Close button: visible on hover/active, hidden (opacity 0) on inactive
  * - Modified dot: 8px circle indicator
- * - Horizontal scrolling when tabs overflow
+ * - Horizontal scrolling when tabs overflow, 4px gap between tabs
  * - Drag-to-reorder tabs
  * - Right-click context menu (Close, Close Others, Close All, Copy Path)
  */
@@ -64,8 +65,9 @@ export const CortexEditorTabs: Component<CortexEditorTabsProps> = (props) => {
     display: "flex",
     "align-items": "center",
     "align-self": "stretch",
-    height: "36px",
-    background: "var(--cortex-bg-primary)",
+    height: "40px",
+    background: "var(--cortex-bg-secondary, #1C1C1D)",
+    padding: "4px 8px 4px 4px",
     "border-bottom": "1px solid var(--cortex-border-default)",
     overflow: "hidden",
     "flex-shrink": "0",
@@ -76,6 +78,7 @@ export const CortexEditorTabs: Component<CortexEditorTabsProps> = (props) => {
   const scrollContainerStyle = (): JSX.CSSProperties => ({
     display: "flex",
     "align-items": "center",
+    gap: "4px",
     "overflow-x": "auto",
     "overflow-y": "hidden",
     flex: "1",
@@ -264,12 +267,11 @@ const EditorTabItem: Component<EditorTabItemProps> = (props) => {
   const tabStyle = (): JSX.CSSProperties => ({
     display: "flex",
     "align-items": "center",
-    gap: "6px",
-    height: "36px",
-    padding: "10px 16px",
+    gap: "4px",
+    height: "32px",
+    padding: "8px",
     background: props.isActive ? "var(--cortex-bg-elevated)" : "transparent",
-    "border-top-left-radius": "8px",
-    "border-top-right-radius": "8px",
+    "border-radius": "8px",
     cursor: "pointer",
     transition: "background 100ms ease",
     "flex-shrink": "0",
@@ -277,10 +279,10 @@ const EditorTabItem: Component<EditorTabItemProps> = (props) => {
   });
 
   const nameStyle = (): JSX.CSSProperties => ({
-    "font-family": "'Figtree', sans-serif",
+    "font-family": "var(--cortex-font-sans, 'Figtree', sans-serif)",
     "font-size": "14px",
-    "font-weight": "400",
-    "line-height": "1em",
+    "font-weight": "500",
+    "line-height": "115%",
     color: props.isActive ? "var(--cortex-text-primary)" : "var(--cortex-text-secondary)",
     "white-space": "nowrap",
     "font-style": props.tab.isPreview ? "italic" : "normal",
@@ -351,7 +353,7 @@ const EditorTabItem: Component<EditorTabItemProps> = (props) => {
           <CortexIcon
             name="xmark"
             size={12}
-            color="var(--cortex-text-muted, #8C8D8F)"
+            color="var(--cortex-text-secondary, #8C8D8F)"
           />
         </button>
       </Show>
