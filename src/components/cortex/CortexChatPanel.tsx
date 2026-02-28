@@ -10,7 +10,7 @@
  */
 
 import { Component, JSX, splitProps, Show, For } from "solid-js";
-import { CortexPromptInput, CortexButton } from "./primitives";
+import { CortexPromptInput } from "./primitives";
 import { ChatMessageBubble } from "./CortexChatMessageBubble";
 
 export type ChatPanelState = "home" | "minimized" | "expanded";
@@ -90,16 +90,7 @@ const PromptInputBlock: Component<InputProps & { style?: JSX.CSSProperties }> = 
   />
 );
 
-const AnimatedLogo: Component<{ size?: number }> = (props) => (
-  <img
-    src="/assets/claude-logo.svg"
-    alt="Claude"
-    style={{ width: `${props.size || 120}px`, height: `${props.size || 120}px` }}
-  />
-);
-
 const FONT = "var(--cortex-font-sans, 'Figtree', sans-serif)";
-const ICON_16: JSX.CSSProperties = { width: "16px", height: "16px" };
 
 export const CortexChatPanel: Component<CortexChatPanelProps> = (props) => {
   const [local] = splitProps(props, [
@@ -138,76 +129,34 @@ const HomeChat: Component<Omit<CortexChatPanelProps, "state" | "messages">> = (p
     width: "100%",
     height: "100%",
     background: "var(--cortex-bg-primary)",
-    gap: "24px",
-    padding: "48px",
     position: "relative",
     overflow: "hidden",
     ...props.style,
   }}>
-    <AnimatedLogo size={120} />
-
-    {/* Title Container: Figma layout_BJ5RLN - column, center, gap 8px */}
+    {/* Container: Figma 1239:21710 - column, center, gap 28px, width 922px */}
     <div style={{
       display: "flex",
       "flex-direction": "column",
       "align-items": "center",
-      gap: "8px",
+      "justify-content": "center",
+      width: "922px",
+      "max-width": "100%",
+      gap: "28px",
     }}>
-      {/* Title: Figtree 56px weight 500, lineHeight 1.14em */}
+      {/* Title: Figma 1239:21711 - Figtree 32px Medium, lineHeight 40px (125%), centered */}
       <h1 style={{
         "font-family": FONT,
-        "font-size": "56px",
+        "font-size": "32px",
         "font-weight": "500",
         color: "var(--cortex-text-primary)",
         "text-align": "center",
-        "line-height": "1.14em",
+        "line-height": "40px",
         "letter-spacing": "0px",
         margin: "0",
-      }}>What would you like to build</h1>
+        width: "100%",
+      }}>Hey, start building or open your project.</h1>
 
-      {/* Subtitle: Figtree 20px weight 500, lineHeight 1.2em */}
-      <p style={{
-        "font-family": FONT,
-        "font-size": "20px",
-        "font-weight": "500",
-        color: "var(--cortex-text-secondary)",
-        "text-align": "center",
-        "line-height": "1.2em",
-        margin: "0",
-      }}>Start a conversation or open a project</p>
-    </div>
-
-    {/* Prompt + Import Options: Figma layout_NRGR04 - column, gap 12px */}
-    <div style={{
-      display: "flex",
-      "flex-direction": "column",
-      gap: "12px",
-    }}>
       <PromptInputBlock {...props} />
-
-      {/* Import Options: Figma layout_L2GHFF - row, justify end, gap 16px, padding 0 16px, width 802px */}
-      <div style={{
-        display: "flex",
-        "align-items": "center",
-        "justify-content": "flex-end",
-        gap: "16px",
-        padding: "0 16px",
-        width: "802px",
-        "max-width": "100%",
-      }}>
-        <CortexButton variant="secondary" size="xs" onClick={props.onImportDesignClick}>
-          <img src="/assets/palette.svg" alt="" style={ICON_16} />
-          Import Design
-        </CortexButton>
-        <CortexButton variant="secondary" size="xs" onClick={props.onImportCodeClick}>
-          <img src="/assets/code.svg" alt="" style={ICON_16} />
-          Import Code
-        </CortexButton>
-        <CortexButton variant="secondary" size="xs" onClick={props.onBuildClick}>
-          <img src="/assets/brackets-square.svg" alt="" style={ICON_16} />
-          Build
-        </CortexButton>
-      </div>
     </div>
   </div>
 );

@@ -217,26 +217,27 @@ export const CortexPromptInput: Component<CortexPromptInputProps> = (props) => {
     display: "flex",
     "flex-direction": "column",
     width: "100%",
-    "max-width": "802px",
+    "max-width": "680px",
     "min-width": "345px",
-    padding: "16px",
     background: "var(--cortex-bg-secondary)",
-    "border-radius": "var(--cortex-sidebar-radius, 12px)",
+    "border-radius": "16px",
     border: isFocused()
       ? "1px solid var(--cortex-accent-primary)"
-      : "1px solid var(--cortex-border-accent)",
-    gap: "16px",
+      : "1px solid var(--cortex-border-default)",
     transition: "border-color var(--cortex-transition-normal, 150ms ease)",
     ...local.style,
   });
 
-  const inputRowStyle: JSX.CSSProperties = {
+  /* Figma: type area - padding 16px, gap 8px, height 48px */
+  const typeAreaStyle: JSX.CSSProperties = {
     display: "flex",
-    "justify-content": "space-between",
     "align-items": "center",
-    gap: "12px",
+    padding: "16px",
+    gap: "8px",
+    height: "48px",
   };
 
+  /* Figma: placeholder text - Figtree 14px Regular, color #8C8D8F */
   const inputStyle: JSX.CSSProperties = {
     flex: "1",
     background: "transparent",
@@ -244,78 +245,77 @@ export const CortexPromptInput: Component<CortexPromptInputProps> = (props) => {
     outline: "none",
     color: "var(--cortex-text-primary)",
     "font-family": "var(--cortex-font-sans, 'Figtree', sans-serif)",
-    "font-size": "18px",
-    "font-weight": "500",
-    "line-height": "1.33em",
+    "font-size": "14px",
+    "font-weight": "400",
+    "line-height": "16px",
   };
 
-  const sendButtonStyle = (): JSX.CSSProperties => ({
-    width: "32px",
-    height: "32px",
-    display: "flex",
-    "align-items": "center",
-    "justify-content": "center",
-    background: local.isProcessing
-      ? "var(--cortex-error)"
-      : "var(--cortex-accent-primary)",
-    "border-radius": "16px",
-    border: "none",
-    cursor: "pointer",
-    "flex-shrink": "0",
-    transition: "background var(--cortex-transition-fast, 100ms ease)",
-    opacity: !local.value && !local.isProcessing ? "0.5" : "1",
-    padding: "8px",
-  });
-
+  /* Figma: action area - padding 16px left/right, 16px bottom, space-between */
   const actionBarStyle: JSX.CSSProperties = {
     display: "flex",
     "align-items": "center",
     "justify-content": "space-between",
+    padding: "0 16px 16px",
   };
 
-  const leftActionsStyle: JSX.CSSProperties = {
-    display: "flex",
-    "align-items": "center",
-    gap: "12px",
-  };
-
-  const actionButtonStyle: JSX.CSSProperties = {
-    width: "20px",
-    height: "20px",
+  /* Figma: attach button - 28×28px, bg var(--cortex-bg-secondary), radius 8px */
+  const attachButtonStyle: JSX.CSSProperties = {
+    width: "28px",
+    height: "28px",
     display: "flex",
     "align-items": "center",
     "justify-content": "center",
-    background: "transparent",
+    background: "var(--cortex-bg-secondary)",
     border: "none",
+    "border-radius": "8px",
     cursor: "pointer",
-    color: "var(--cortex-text-inactive)",
-    transition: "color var(--cortex-transition-fast, 100ms ease)",
+    "flex-shrink": "0",
     padding: "0",
   };
 
   const rightActionsStyle: JSX.CSSProperties = {
     display: "flex",
     "align-items": "center",
-    gap: "8px",
+    gap: "12px",
   };
 
+  /* Figma: model selector buttons - 28px height, radius 8px, gap 4px */
   const modelSelectorStyle: JSX.CSSProperties = {
     display: "flex",
     "align-items": "center",
-    gap: "8px",
-    padding: "8px 8px 8px 12px",
-    background: "var(--cortex-model-selector-bg)",
-    border: "1px solid var(--cortex-model-selector-border)",
-    "border-radius": "var(--cortex-radius-md, 8px)",
+    gap: "4px",
+    padding: "6px",
+    background: "transparent",
+    border: "none",
+    "border-radius": "8px",
     cursor: "pointer",
     color: "var(--cortex-text-primary)",
     "font-family": "var(--cortex-font-sans, 'Figtree', sans-serif)",
     "font-size": "14px",
     "font-weight": "500",
-    "line-height": "1em",
-    "letter-spacing": "-0.015em",
-    height: "32px",
+    "line-height": "16px",
+    height: "28px",
   };
+
+  /* Figma: send button - 28×28px, bg #4C4D4F (disabled) or accent, rounded full */
+  const sendButtonStyle = (): JSX.CSSProperties => ({
+    width: "28px",
+    height: "28px",
+    display: "flex",
+    "align-items": "center",
+    "justify-content": "center",
+    background: local.isProcessing
+      ? "var(--cortex-error)"
+      : !local.value
+        ? "var(--cortex-border-strong)"
+        : "var(--cortex-accent-primary)",
+    "border-radius": "999px",
+    border: "none",
+    cursor: "pointer",
+    "flex-shrink": "0",
+    transition: "background var(--cortex-transition-fast, 100ms ease)",
+    padding: "0",
+  });
 
   const handleSubmit = () => {
     if (local.isProcessing) {
@@ -334,8 +334,8 @@ export const CortexPromptInput: Component<CortexPromptInputProps> = (props) => {
 
   return (
     <div class={local.class} style={containerStyle()} {...others}>
-      {/* Input Row */}
-      <div style={inputRowStyle}>
+      {/* Type Area: Figma I1289:26136;862:17575 */}
+      <div style={typeAreaStyle}>
         <input
           type="text"
           value={local.value || ""}
@@ -346,37 +346,13 @@ export const CortexPromptInput: Component<CortexPromptInputProps> = (props) => {
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
         />
-        <button style={sendButtonStyle()} onClick={handleSubmit}>
-          <Show
-            when={local.isProcessing}
-            fallback={
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M14.5 1.5L7.5 8.5M14.5 1.5L10 14.5L7.5 8.5M14.5 1.5L1.5 6L7.5 8.5"
-                  stroke="var(--cortex-accent-dark-bg)"
-                  stroke-width="1.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  fill="none"
-                />
-              </svg>
-            }
-          >
-            <CortexIcon name="stop" size={16} color="var(--cortex-text-primary)" />
-          </Show>
-        </button>
       </div>
 
-      {/* Action Bar */}
+      {/* Action Bar: Figma I1289:26136;862:17574 */}
       <div style={actionBarStyle}>
-        <div style={leftActionsStyle}>
-          <button style={actionButtonStyle} onClick={local.onPlusClick}>
-            <CortexIcon name="plus" size={20} color="var(--cortex-text-inactive)" />
-          </button>
-          <button style={actionButtonStyle} onClick={local.onUploadClick}>
-            <CortexIcon name="upload" size={20} color="var(--cortex-text-inactive)" />
-          </button>
-        </div>
+        <button style={attachButtonStyle} onClick={local.onUploadClick}>
+          <CortexIcon name="attach" size={16} color="var(--cortex-text-inactive)" />
+        </button>
 
         <div style={rightActionsStyle}>
           <button style={modelSelectorStyle} onClick={local.onModelClick}>
@@ -389,6 +365,25 @@ export const CortexPromptInput: Component<CortexPromptInputProps> = (props) => {
             </Show>
             <span>{local.modelName || "Claude 3.5 Sonnet"}</span>
             <CortexIcon name="chevron-down" size={16} color="var(--cortex-text-inactive)" />
+          </button>
+          <button style={sendButtonStyle()} onClick={handleSubmit}>
+            <Show
+              when={local.isProcessing}
+              fallback={
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    d="M14.5 1.5L7.5 8.5M14.5 1.5L10 14.5L7.5 8.5M14.5 1.5L1.5 6L7.5 8.5"
+                    stroke="var(--cortex-accent-dark-bg)"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    fill="none"
+                  />
+                </svg>
+              }
+            >
+              <CortexIcon name="stop" size={16} color="var(--cortex-text-primary)" />
+            </Show>
           </button>
         </div>
       </div>
