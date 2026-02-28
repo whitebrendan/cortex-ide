@@ -4,6 +4,7 @@ import { useCommands } from "@/context/CommandContext";
 import { CortexPromptInput } from "@/components/cortex/primitives/CortexInput";
 import { CortexOpenProjectDropdown } from "@/components/cortex/primitives/CortexOpenProjectDropdown";
 import { WelcomeRecentFiles } from "@/components/cortex/WelcomeRecentFiles";
+import { WelcomeLoginModal } from "@/components/cortex/WelcomeLoginModal";
 import { safeGetItem, safeSetItem } from "@/utils/safeStorage";
 
 const STORAGE_KEYS = {
@@ -27,6 +28,7 @@ export function WelcomePage(props: WelcomePageProps) {
   );
   const [promptValue, setPromptValue] = createSignal("");
   const [dropdownOpen, setDropdownOpen] = createSignal(false);
+  const [loginOpen, setLoginOpen] = createSignal(false);
 
   createEffect(() => {
     safeSetItem(STORAGE_KEYS.showOnStartup, showOnStartup().toString());
@@ -41,11 +43,14 @@ export function WelcomePage(props: WelcomePageProps) {
     });
 
     const handleShowWelcome = () => setIsVisible(true);
+    const handleShowLogin = () => setLoginOpen(true);
     window.addEventListener("welcome:show", handleShowWelcome);
+    window.addEventListener("welcome:login", handleShowLogin);
 
     onCleanup(() => {
       unregisterCommand("welcome.show");
       window.removeEventListener("welcome:show", handleShowWelcome);
+      window.removeEventListener("welcome:login", handleShowLogin);
     });
   });
 
@@ -115,25 +120,26 @@ export function WelcomePage(props: WelcomePageProps) {
           display: "flex",
           "flex-direction": "column",
           "align-items": "center",
-          "max-width": "560px",
+          "max-width": "680px",
           width: "100%",
           padding: "40px 24px",
-          gap: "32px",
+          gap: "28px",
         }}>
-          <img
-            src="/assets/abstract-design.svg"
-            alt=""
-            style={{
-              width: "100%",
-              "max-width": "465px",
-              height: "auto",
-              opacity: "0.6",
-            }}
-          />
+          <h1 style={{
+            "font-size": "32px",
+            "font-weight": "500",
+            color: "#FCFCFC",
+            margin: "0",
+            "line-height": "40px",
+            "text-align": "center",
+            width: "100%",
+            "font-family": "'Figtree', var(--cortex-font-sans)",
+          }}>
+            Hey, start building or open your project.
+          </h1>
 
           <div style={{
             width: "100%",
-            "max-width": "480px",
           }}>
             <CortexPromptInput
               value={promptValue()}
@@ -197,6 +203,19 @@ export function WelcomePage(props: WelcomePageProps) {
             Show on startup
           </label>
         </div>
+
+        <WelcomeLoginModal
+          isOpen={loginOpen()}
+          onClose={() => setLoginOpen(false)}
+          onGoogleLogin={() => {
+            setLoginOpen(false);
+            window.dispatchEvent(new CustomEvent("auth:google"));
+          }}
+          onGitHubLogin={() => {
+            setLoginOpen(false);
+            window.dispatchEvent(new CustomEvent("auth:github"));
+          }}
+        />
       </div>
     </Show>
   );

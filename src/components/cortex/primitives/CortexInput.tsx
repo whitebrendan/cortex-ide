@@ -305,8 +305,8 @@ export const CortexPromptInput: Component<CortexPromptInputProps> = (props) => {
     background: local.isProcessing
       ? "var(--cortex-error)"
       : !local.value
-        ? "var(--cortex-border-strong)"
-        : "var(--cortex-accent-primary)",
+        ? "#4C4C4D"
+        : "#FCFCFC",
     "border-radius": "999px",
     border: "none",
     cursor: "pointer",
@@ -371,7 +371,7 @@ export const CortexPromptInput: Component<CortexPromptInputProps> = (props) => {
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path
                     d="M14.5 1.5L7.5 8.5M14.5 1.5L10 14.5L7.5 8.5M14.5 1.5L1.5 6L7.5 8.5"
-                    stroke="var(--cortex-accent-dark-bg)"
+                    stroke="#0D0D0E"
                     stroke-width="1.5"
                     stroke-linecap="round"
                     stroke-linejoin="round"
