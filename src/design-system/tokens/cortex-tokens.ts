@@ -205,7 +205,7 @@ export const CortexRawValues = {
     xs: 12,
     sm: 14,
     base: 16,
-    lg: 17,
+    lg: 18,
     xl: 20,
     '2xl': 24,
     '3xl': 32,
@@ -278,7 +278,7 @@ export const CortexRawValues = {
       lg: 48,
     },
     tab: 44,
-    titlebar: 40,
+    titlebar: 48,
     statusbar: 24,
     navbar: 56,
     sidebar: {
