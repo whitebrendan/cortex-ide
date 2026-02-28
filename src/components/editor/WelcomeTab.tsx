@@ -7,15 +7,16 @@
  *   - 1125:18513 (start screen no sidebar)
  *   - 1239:21482 (compact option)
  *
- * Layout: centered container with title text + AI prompt input
- * Typography: Figtree 32px/40px weight 500 for title
+ * Layout: centered container with Cortex logo, title text + AI prompt input
+ * Typography: Figtree 32px/40px weight 500 for title, 20px/600 for heading
  * Input: bg #1C1C1D, border 1px #2E2F31, border-radius 16px
+ * Quick actions: accent #B2FF22 on hover
  *
  * Includes CortexOpenProjectDropdown with folder/file/clone actions
  * and WelcomeRecentFiles (conditional, when recent projects exist).
  */
 
-import { type JSX, createSignal, Show } from "solid-js";
+import { type JSX, createSignal, Show, For } from "solid-js";
 import { CortexOpenProjectDropdown } from "@/components/cortex/primitives/CortexOpenProjectDropdown";
 import { WelcomeRecentFiles } from "@/components/cortex/WelcomeRecentFiles";
 import { useRecentProjects, type RecentProject } from "@/context/RecentProjectsContext";
@@ -24,6 +25,65 @@ export interface WelcomeTabProps {
   class?: string;
   style?: JSX.CSSProperties;
   compact?: boolean;
+  onOpenFile?: () => void;
+  onOpenFolder?: () => void;
+  onCloneRepository?: () => void;
+  onNewFile?: () => void;
+}
+
+interface QuickAction {
+  label: string;
+  icon: JSX.Element;
+  action: () => void;
+  shortcut?: string;
+}
+
+function FolderIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M14.5 3H7.71l-2-2H1.5A1.5 1.5 0 0 0 0 2.5v11A1.5 1.5 0 0 0 1.5 15h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 3z" fill="currentColor"/>
+    </svg>
+  );
+}
+
+function FileIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M13.85 4.44l-3.29-3.29A1.5 1.5 0 0 0 9.5.75H3.5A1.5 1.5 0 0 0 2 2.25v11.5a1.5 1.5 0 0 0 1.5 1.5h9a1.5 1.5 0 0 0 1.5-1.5V5.5a1.5 1.5 0 0 0-.15-1.06z" fill="currentColor"/>
+    </svg>
+  );
+}
+
+function GitBranchIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M11.75 5a1.25 1.25 0 1 0-1.5 1.22V7.5a.5.5 0 0 1-.5.5H6.25a.5.5 0 0 1-.5-.5V6.22a1.25 1.25 0 1 0-1 0v3.56a1.25 1.25 0 1 0 1 0V8.5a.5.5 0 0 1 .5-.5h3.5a1.5 1.5 0 0 0 1.5-1.5V6.22A1.25 1.25 0 0 0 11.75 5z" fill="currentColor"/>
+    </svg>
+  );
+}
+
+function FilePlusIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M13.85 4.44l-3.29-3.29A1.5 1.5 0 0 0 9.5.75H3.5A1.5 1.5 0 0 0 2 2.25v11.5a1.5 1.5 0 0 0 1.5 1.5h9a1.5 1.5 0 0 0 1.5-1.5V5.5a1.5 1.5 0 0 0-.15-1.06z" fill="currentColor"/>
+      <path d="M8 5v6M5 8h6" stroke="var(--cortex-bg-primary, #141415)" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+  );
+}
+
+function CortexLogoInline() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M14.5293 5.416L18.9454 5.4167L24.0016 14.1533H19.5855L14.5293 5.416Z" fill="#FCFCFC"/>
+      <path d="M11.2225 9.5391L13.4295 5.7241L18.4863 14.4613L16.2786 18.2764L11.2225 9.5391Z" fill="#FCFCFC"/>
+      <path d="M11.2225 19.3857L13.4316 15.5707L15.6386 19.3843L13.4309 23.1993L11.2225 19.3857Z" fill="#FCFCFC"/>
+      <path d="M18.6635 23.997L23.7203 15.2598H19.3049L14.248 23.997H18.6635Z" fill="#FCFCFC"/>
+      <path d="M0.00781 9.8477H4.42181L9.47868 18.5849L5.06262 18.5842L0.00781 9.8477Z" fill="#FCFCFC"/>
+      <path d="M5.51953 9.5403L7.72722 5.7246L12.7834 14.4619L10.575 18.2769L5.51953 9.5403Z" fill="#FCFCFC"/>
+      <path d="M8.36914 4.6178L10.5768 0.802734L12.7853 4.6164L10.5776 8.4314L8.36914 4.6178Z" fill="#FCFCFC"/>
+      <path d="M5.34258 0.00195L0.287109 8.7399L4.70114 8.7385L9.75797 0.00195H5.34258Z" fill="#FCFCFC"/>
+    </svg>
+  );
 }
 
 export function WelcomeTab(props: WelcomeTabProps) {
@@ -57,17 +117,37 @@ export function WelcomeTab(props: WelcomeTabProps) {
 
   const handleOpenFolder = () => {
     setDropdownOpen(false);
-    window.dispatchEvent(new CustomEvent("folder:open"));
+    if (props.onOpenFolder) {
+      props.onOpenFolder();
+    } else {
+      window.dispatchEvent(new CustomEvent("folder:open"));
+    }
   };
 
   const handleNewFile = () => {
     setDropdownOpen(false);
-    window.dispatchEvent(new CustomEvent("file:new"));
+    if (props.onNewFile) {
+      props.onNewFile();
+    } else {
+      window.dispatchEvent(new CustomEvent("file:new"));
+    }
   };
 
   const handleCloneRepo = () => {
     setDropdownOpen(false);
-    window.dispatchEvent(new CustomEvent("git:clone"));
+    if (props.onCloneRepository) {
+      props.onCloneRepository();
+    } else {
+      window.dispatchEvent(new CustomEvent("git:clone"));
+    }
+  };
+
+  const handleOpenFile = () => {
+    if (props.onOpenFile) {
+      props.onOpenFile();
+    } else {
+      window.dispatchEvent(new CustomEvent("file:open"));
+    }
   };
 
   const handleOpenProject = (project: RecentProject) => {
@@ -79,6 +159,13 @@ export function WelcomeTab(props: WelcomeTabProps) {
     const unpinned = recentProjects.unpinnedProjects();
     return [...pinned, ...unpinned];
   };
+
+  const quickActions: QuickAction[] = [
+    { label: "Open File", icon: <FileIcon />, action: handleOpenFile, shortcut: "Ctrl+O" },
+    { label: "Open Folder", icon: <FolderIcon />, action: handleOpenFolder },
+    { label: "Clone Repository", icon: <GitBranchIcon />, action: handleCloneRepo },
+    { label: "New File", icon: <FilePlusIcon />, action: handleNewFile, shortcut: "Ctrl+N" },
+  ];
 
   const workspaceStyle = (): JSX.CSSProperties => ({
     display: "flex",
@@ -220,12 +307,29 @@ export function WelcomeTab(props: WelcomeTabProps) {
   return (
     <div class={props.class} style={workspaceStyle()}>
       <div style={containerStyle()}>
+        <div style={{
+          display: "flex",
+          "flex-direction": "column",
+          "align-items": "center",
+          gap: "12px",
+        }}>
+          <div style={{
+            width: "48px",
+            height: "48px",
+            display: "flex",
+            "align-items": "center",
+            "justify-content": "center",
+            opacity: "0.7",
+          }}>
+            <CortexLogoInline />
+          </div>
+        </div>
+
         <h2 style={titleStyle}>
           Hey, start building or open your project.
         </h2>
 
         <div style={inputContainerStyle()}>
-          {/* Type area */}
           <div style={typeAreaStyle}>
             <input
               type="text"
@@ -239,7 +343,6 @@ export function WelcomeTab(props: WelcomeTabProps) {
             />
           </div>
 
-          {/* Action area */}
           <div style={actionAreaStyle}>
             <button style={attachButtonStyle} aria-label="Attach file">
               <svg
@@ -363,6 +466,18 @@ export function WelcomeTab(props: WelcomeTabProps) {
           </CortexOpenProjectDropdown>
         </div>
 
+        <div style={{
+          display: "flex",
+          "flex-direction": "column",
+          gap: "6px",
+          "max-width": "260px",
+          width: "100%",
+        }}>
+          <For each={quickActions}>
+            {(action) => <QuickActionButton action={action} />}
+          </For>
+        </div>
+
         <Show when={sortedProjects().length > 0}>
           <WelcomeRecentFiles
             projects={sortedProjects()}
@@ -438,6 +553,58 @@ function DropdownItem(itemProps: { label: string; icon: string; onClick: () => v
         </Show>
       </svg>
       {itemProps.label}
+    </button>
+  );
+}
+
+function QuickActionButton(props: { action: QuickAction }) {
+  const [hovered, setHovered] = createSignal(false);
+
+  return (
+    <button
+      onClick={() => props.action.action()}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex",
+        "align-items": "center",
+        gap: "10px",
+        padding: "8px 12px",
+        background: hovered() ? "var(--cortex-bg-hover, #252628)" : "transparent",
+        border: "none",
+        "border-radius": "var(--cortex-radius-sm, 6px)",
+        cursor: "pointer",
+        width: "100%",
+        "text-align": "left",
+        color: hovered()
+          ? "var(--cortex-accent-primary, #B2FF22)"
+          : "var(--cortex-text-secondary, #8C8D8F)",
+        "font-size": "14px",
+        "font-weight": "400",
+        "font-family": "var(--cortex-font-sans, 'Figtree', sans-serif)",
+        transition: "all 150ms ease",
+      }}
+    >
+      <span style={{
+        display: "flex",
+        "align-items": "center",
+        "flex-shrink": "0",
+        width: "16px",
+        height: "16px",
+      }}>
+        {props.action.icon}
+      </span>
+      <span style={{ flex: "1" }}>{props.action.label}</span>
+      <Show when={props.action.shortcut}>
+        <kbd style={{
+          "font-size": "11px",
+          color: "var(--cortex-text-tertiary, #666666)",
+          "font-family": "var(--cortex-font-mono, 'JetBrains Mono', monospace)",
+          opacity: "0.7",
+        }}>
+          {props.action.shortcut}
+        </kbd>
+      </Show>
     </button>
   );
 }

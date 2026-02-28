@@ -169,7 +169,7 @@ const EditorPlaceholder: Component = () => {
   return (
     <div style={containerStyle()}>
       <CortexIcon name="file-code" size={48} />
-      <span style={{ "font-size": "14px", "font-family": "'Figtree', sans-serif" }}>No file selected</span>
+      <span style={{ "font-size": "14px", "font-family": "var(--cortex-font-sans, 'Figtree', sans-serif)" }}>No file selected</span>
     </div>
   );
 };
