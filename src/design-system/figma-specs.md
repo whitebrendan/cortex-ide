@@ -219,31 +219,26 @@ Each control button (`Frame 2147230383/382/381`):
 | Justify Content | `space-between`          |
 | Align Items     | `center`                 |
 | Gap             | `40px`                   |
-| Padding         | `8px 24px`               |
-| Width            | `1543px` (fixed)         |
+| Padding         | `8px`                    |
+| Sizing H        | `fill`                   |
 | Sizing V        | `hug`                    |
 
-### Left Section — Status Icons (`Frame 2147230597`)
+### Left Section — Icon Buttons (`footer-buttons`)
 
 | Property    | Value    |
 |-------------|----------|
 | Layout Mode | `row`    |
 | Align Items | `center` |
-| Gap         | `20px`   |
+| Gap         | `4px`    |
 | Sizing      | `hug` / `hug` |
 
-**Icon Buttons (×4):** Each `20×20px` (Icons Hover component `43:1009`)
+**Icon Buttons (×4):** Each `32×32px`, padding `8px`, border-radius `8px`
 
-**Default variant icon instances:**
+- **Active state:** bg `#1C1C1D`, border `1px solid #2E2E31`, icon `#FCFCFC`
+- **Default state:** transparent bg, no border, icon `#8C8D8F`
+- **Hover state:** bg `rgba(255,255,255,0.06)`, icon `#FCFCFC`
 
-| Icon            | Component ID | Fill      |
-|-----------------|-------------|-----------|
-| Sidebar toggle  | `43:908`    | `#FFFFFF` |
-| Terminal        | `43:907`    | `#FFFFFF` |
-| Git             | `43:906`    | `#FFFFFF` |
-| Info            | `43:905`    | `#FFFFFF` |
-
-Inner icon size: `16×16px` (offset `2px, 2px` inside `20×20` container)
+Inner icon size: `16×16px` (centered inside `32×32` container)
 
 ### Center Section — Breadcrumbs (Active variant only)
 
@@ -278,10 +273,12 @@ Chevron icon: `16×16px`
 | Property        | Value       |
 |-----------------|-------------|
 | Layout Mode     | `row`       |
-| Justify Content | `flex-end`  |
+| Justify Content | `center`    |
 | Align Items     | `center`    |
 | Gap             | `4px`       |
-| Height          | `26px` (fixed) |
+| Padding         | `8px`       |
+| Height          | `32px` (hug)|
+| Border Radius   | `8px`       |
 | Sizing H        | `hug`       |
 
 | Element              | Font         | Color     |
@@ -372,7 +369,7 @@ Chevron icon: `16×16px`
 | Align Items     | `center`           |
 | Align Self      | `stretch`          |
 | Gap             | `40px`             |
-| Padding         | `8px 24px`         |
+| Padding         | `8px`              |
 | Sizing H        | `fill`             |
 | Sizing V        | `hug`              |
 
@@ -892,7 +889,7 @@ Terminal inner sections divider: `1px 0px 0px` top `#4E4F54`
 | Align Items     | `center`           |
 | Align Self      | `stretch`          |
 | Gap             | `40px`             |
-| Padding         | `8px 24px`         |
+| Padding         | `8px`              |
 | Sizing H        | `fill`             |
 | Sizing V        | `hug`              |
 
@@ -941,12 +938,12 @@ Terminal inner sections divider: `1px 0px 0px` top `#4E4F54`
 |--------|----------------------------------------------|
 | `2px`  | Breadcrumb gap, toggle inner padding         |
 | `4px`  | Sidebar container padding, toggle gap, badge padding |
-| `8px`  | Sidebar gap, header gap, chat padding/gap, footer padding-y |
+| `4px`  | Footer icon button gap                       |
+| `8px`  | Sidebar gap, header gap, chat padding/gap, footer padding |
 | `10px` | File explorer gap, toggle set padding        |
 | `12px` | Header left gap, content area gap, chat container padding, editor padding |
 | `16px` | Chat inner gap, workspace list padding, sidebar header padding, terminal padding |
-| `20px` | Footer icon gap, right section gap           |
-| `24px` | Footer padding-x, content column gap         |
+| `24px` | Content column gap                           |
 | `32px` | Chat bubble gap, sub-item indent padding     |
 | `40px` | Footer gap                                   |
 | `44px` | Header gap                                   |
