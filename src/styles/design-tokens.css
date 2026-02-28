@@ -129,9 +129,9 @@
      RAYONS DE BORDURE
      @deprecated — Use --cortex-radius-*
      =========================================================================== */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 12px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
   --radius-full: 9999px;
 
   /* ===========================================================================
@@ -158,11 +158,11 @@
   
   --text-xs: 11px;
   --text-sm: 12px;
-  --text-base: 13px;
-  --text-lg: 14px;
-  --text-xl: 16px;
-  --text-2xl: 18px;
-  --text-3xl: 24px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 32px;
   
   --font-normal: 400;
   --font-medium: 500;
@@ -300,8 +300,8 @@
      COMPOSANT: SCROLLBAR
      @deprecated — Use --cortex-scrollbar-*
      =========================================================================== */
-  --scrollbar-thumb: var(--palette-gray-600);
-  --scrollbar-thumb-hover: var(--palette-gray-500);
+  --scrollbar-thumb: #3C3D40;
+  --scrollbar-thumb-hover: #4C4C4D;
   --scrollbar-track: transparent;
   --scrollbar-width: 8px;
 

@@ -192,9 +192,9 @@
      TYPOGRAPHY
      =========================================================================== */
   
-  /* Font Families (Inter, JetBrains Mono, Habibi) */
-  --cortex-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --cortex-font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Font Families (Figma: Inter primary, Figtree fallback, Geist display) */
+  --cortex-font-sans: 'Inter', 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --cortex-font-display: 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --cortex-font-mono: 'JetBrains Mono', 'Source Code Pro', 'Fira Code', 'SF Mono', 'Consolas', monospace;
   --cortex-font-serif: 'Habibi', Georgia, serif;
   
@@ -493,8 +493,8 @@
      COMPONENT TOKENS: SCROLLBAR
      =========================================================================== */
   --cortex-scrollbar-track: transparent;
-  --cortex-scrollbar-thumb: rgba(252, 252, 252, 0.12);
-  --cortex-scrollbar-thumb-hover: rgba(252, 252, 252, 0.24);
+  --cortex-scrollbar-thumb: #3C3D40;
+  --cortex-scrollbar-thumb-hover: #4C4C4D;
   --cortex-scrollbar-width: 8px;
   --cortex-scrollbar-radius: var(--cortex-radius-full);
   
