@@ -280,7 +280,7 @@ export const CortexRawValues = {
     tab: 44,
     titlebar: 48,
     statusbar: 24,
-    navbar: 56,
+    navbar: 48,
     sidebar: {
       sm: 220,
       md: 280,
