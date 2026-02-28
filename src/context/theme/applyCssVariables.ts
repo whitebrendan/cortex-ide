@@ -62,13 +62,11 @@ export function applyCssVariables(
   root.style.setProperty("--border-subtle", uiColors.border);
   root.style.setProperty("--border-focused", uiColors.primary);
 
-  // Text
-  root.style.setProperty("--cortex-text-primary", uiColors.foreground);
-  root.style.setProperty("--cortex-text-secondary", uiColors.foreground);
+  // Text — cortex-text-primary and cortex-text-secondary are defined in
+  // cortex-tokens.css with Figma-exact values (#FCFCFC / #8C8D8F).
+  // Do NOT override them here; only set legacy aliases.
   root.style.setProperty("--cortex-text-muted", uiColors.foregroundMuted);
   root.style.setProperty("--cortex-text-disabled", uiColors.foregroundMuted);
-  root.style.setProperty("--text-strong", uiColors.foreground);
-  root.style.setProperty("--text-base", uiColors.foreground);
   root.style.setProperty("--text-weak", uiColors.foregroundMuted);
   root.style.setProperty("--text-weaker", uiColors.foregroundMuted);
 
