@@ -310,7 +310,7 @@ export function CortexDesktopLayout(props: ParentProps) {
         onProjectDropdownClick={() => window.dispatchEvent(new CustomEvent("folder:open"))}
       />
 
-      <main style={{ display: "flex", flex: "1", overflow: "hidden", position: "relative", padding: "0 8px", gap: "8px" }}>
+      <main style={{ display: "flex", flex: "1", overflow: "hidden", position: "relative" }}>
         <CortexModeCarousel
           mode={mode()}
           vibeContent={() =>
