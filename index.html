@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="/fonts/dm-sans.css">
     <link rel="stylesheet" href="/fonts/inter.css">
     
-    <!-- Critical CSS - Inline for instant first paint (Figma Design System) -->
+    <!-- Critical CSS - Inline for instant first paint (Figma-aligned) -->
     <style>
       :root {
         --background: #141415;
@@ -45,9 +45,9 @@
         padding: 0;
         background: var(--background) !important;
         color: var(--foreground) !important;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        font-size: 14px;
-        line-height: 1.5;
+        font-family: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        line-height: 1.4;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         overflow: hidden;
@@ -103,10 +103,10 @@
         background-color: #141415;
       }
       
-      /* Scrollbar styling (Figma custom scrollbar) */
+      /* Scrollbar styling - Figma spec: 6px, dark track, subtle thumb */
       ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+        width: 6px;
+        height: 6px;
       }
       
       ::-webkit-scrollbar-track {
@@ -114,12 +114,12 @@
       }
       
       ::-webkit-scrollbar-thumb {
-        background: #3C3D40;
+        background: #2E2F31;
         border-radius: 4px;
       }
       
       ::-webkit-scrollbar-thumb:hover {
-        background: #4C4C4D;
+        background: #8C8D8F;
       }
       
       ::-webkit-scrollbar-corner {

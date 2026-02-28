@@ -187,12 +187,7 @@ export const CortexTitleBar: Component<CortexTitleBarProps> = (props) => {
         width: "100%",
         height: "48px",
         "min-height": "48px",
-<<<<<<< HEAD
         background: "var(--cortex-bg-primary)",
-=======
-        padding: "0 0 0 8px",
-        background: "transparent",
->>>>>>> 99dade2 (fix: pixel-perfect IDE editor layout to match Figma design)
         position: "relative",
         "-webkit-app-region": "drag",
         "user-select": "none",

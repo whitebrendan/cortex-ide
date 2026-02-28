@@ -72,13 +72,8 @@ export const CortexStatusBar: Component<CortexStatusBarProps> = (props) => {
     "align-items": "center",
     "justify-content": "space-between",
     gap: "40px",
-<<<<<<< HEAD
     height: "var(--cortex-height-statusbar, 24px)",
     padding: "0 24px",
-=======
-    padding: "8px 8px",
-    height: "48px",
->>>>>>> 99dade2 (fix: pixel-perfect IDE editor layout to match Figma design)
     "flex-shrink": "0",
     "font-family": "var(--cortex-font-sans)",
     "font-size": "12px",
