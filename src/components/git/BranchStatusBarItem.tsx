@@ -105,6 +105,7 @@ export const BranchStatusBarItem: Component<BranchStatusBarItemProps> = (
           background: "transparent",
           cursor: activeRepo() ? "pointer" : "default",
           height: "32px",
+          "box-sizing": "border-box",
           "font-family": "var(--cortex-font-sans)",
           "font-size": "14px",
           "font-weight": "500",
