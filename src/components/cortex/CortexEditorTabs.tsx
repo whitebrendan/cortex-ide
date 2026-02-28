@@ -1,16 +1,16 @@
 /**
  * CortexEditorTabs - Pixel-perfect editor tab bar matching Figma design
  *
- * Figma specs (node 1156:23692 tabs instance):
- * - Tab bar height: 40px, bg #1C1C1D, border-bottom 1px solid, padding 4px 8px 4px 4px
- * - Active tab: bg #252528, text #E9E9EA, border-radius 8px, height 32px
- * - Inactive tab: transparent bg, text #8C8C8F
- * - Tab structure: file icon (16×16) + filename (14px Figtree w500) + close button (16×16)
- * - Tab padding: 8px, gap 6px
- * - Close button: visible on hover/active, x-close icon
+ * Figma specs (node 1156:23697, file 4hKtI49khKHjribAGpFUkW):
+ * - Tab bar height: 40px, bg #1C1C1D, padding 4px 8px 4px 4px
+ * - No bottom border (strokes overridden to empty; parent code frame provides border)
+ * - Active tab: bg #252528, text #E9E9EA, border-radius 8px
+ * - Inactive tab: transparent bg, text #8C8D8F
+ * - Tab height: 32px, padding 8px, gap 4px between elements
+ * - Tab structure: file icon (16×16) + filename (Figtree Medium 14px/115%) + close (16×16)
+ * - Close button: visible on hover/active, hidden (opacity 0) on inactive
  * - Modified dot: 8px circle indicator
  * - Horizontal scrolling when tabs overflow, 4px gap between tabs
- * - Tab separator: 1px vertical divider between inactive tabs
  * - Drag-to-reorder tabs
  * - Right-click context menu (Close, Close Others, Close All, Copy Path)
  */
@@ -64,11 +64,9 @@ export const CortexEditorTabs: Component<CortexEditorTabsProps> = (props) => {
   const containerStyle = (): JSX.CSSProperties => ({
     display: "flex",
     "align-items": "center",
-    "align-self": "stretch",
     height: "40px",
+    background: "var(--cortex-bg-secondary, #1C1C1D)",
     padding: "4px 8px 4px 4px",
-    background: "var(--cortex-bg-secondary)",
-    "border-bottom": "1px solid var(--cortex-border-default)",
     overflow: "hidden",
     "flex-shrink": "0",
     position: "relative",
@@ -78,7 +76,7 @@ export const CortexEditorTabs: Component<CortexEditorTabsProps> = (props) => {
   const scrollContainerStyle = (): JSX.CSSProperties => ({
     display: "flex",
     "align-items": "center",
-    gap: "0px",
+    gap: "4px",
     "overflow-x": "auto",
     "overflow-y": "hidden",
     flex: "1",
@@ -93,59 +91,39 @@ export const CortexEditorTabs: Component<CortexEditorTabsProps> = (props) => {
         class="cortex-editor-tabs-scroll"
       >
         <For each={props.tabs}>
-          {(tab, index) => {
-            const isActive = () => props.activeTabId === tab.id;
-            const nextTab = () => props.tabs[index() + 1];
-            const isNextActive = () => nextTab() && props.activeTabId === nextTab()?.id;
-            const isLast = () => index() === props.tabs.length - 1;
-            const showSeparator = () => !isActive() && !isNextActive() && !isLast();
-
-            return (
-              <>
-                <EditorTabItem
-                  tab={tab}
-                  isActive={isActive()}
-                  onSelect={() => props.onTabSelect?.(tab.id)}
-                  onClose={() => props.onTabClose?.(tab.id)}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setContextMenuState({
-                      visible: true,
-                      x: e.clientX,
-                      y: e.clientY,
-                      tabId: tab.id,
-                      tabPath: tab.path,
-                    });
-                  }}
-                  onDragStart={(e) => {
-                    e.dataTransfer?.setData("text/plain", tab.id);
-                    if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
-                  }}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const sourceId = e.dataTransfer?.getData("text/plain");
-                    if (sourceId && sourceId !== tab.id) {
-                      props.onTabReorder?.(sourceId, tab.id);
-                    }
-                  }}
-                />
-                <Show when={showSeparator()}>
-                  <div
-                    style={{
-                      width: "1px",
-                      height: "16px",
-                      background: "var(--cortex-border-default, #2E2F31)",
-                      "flex-shrink": "0",
-                    }}
-                  />
-                </Show>
-              </>
-            );
-          }}
+          {(tab) => (
+            <EditorTabItem
+              tab={tab}
+              isActive={props.activeTabId === tab.id}
+              onSelect={() => props.onTabSelect?.(tab.id)}
+              onClose={() => props.onTabClose?.(tab.id)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setContextMenuState({
+                  visible: true,
+                  x: e.clientX,
+                  y: e.clientY,
+                  tabId: tab.id,
+                  tabPath: tab.path,
+                });
+              }}
+              onDragStart={(e) => {
+                e.dataTransfer?.setData("text/plain", tab.id);
+                if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                const sourceId = e.dataTransfer?.getData("text/plain");
+                if (sourceId && sourceId !== tab.id) {
+                  props.onTabReorder?.(sourceId, tab.id);
+                }
+              }}
+            />
+          )}
         </For>
       </div>
 
@@ -287,10 +265,10 @@ const EditorTabItem: Component<EditorTabItemProps> = (props) => {
   const tabStyle = (): JSX.CSSProperties => ({
     display: "flex",
     "align-items": "center",
-    gap: "6px",
+    gap: "4px",
     height: "32px",
     padding: "8px",
-    background: props.isActive ? "var(--cortex-bg-elevated)" : "transparent",
+    background: props.isActive ? "var(--cortex-bg-elevated, #252528)" : "transparent",
     "border-radius": "8px",
     cursor: "pointer",
     transition: "background 100ms ease",
@@ -299,11 +277,11 @@ const EditorTabItem: Component<EditorTabItemProps> = (props) => {
   });
 
   const nameStyle = (): JSX.CSSProperties => ({
-    "font-family": "'Figtree', sans-serif",
+    "font-family": "var(--cortex-font-sans, 'Figtree', sans-serif)",
     "font-size": "14px",
     "font-weight": "500",
-    "line-height": "1em",
-    color: props.isActive ? "#E9E9EA" : "#8C8C8F",
+    "line-height": "115%",
+    color: props.isActive ? "#E9E9EA" : "var(--cortex-text-secondary, #8C8D8F)",
     "white-space": "nowrap",
     "font-style": props.tab.isPreview ? "italic" : "normal",
   });

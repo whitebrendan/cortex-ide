@@ -147,8 +147,8 @@ describe("CortexEditorTabs", () => {
       ));
 
       const activeTab = container.querySelector('[role="tab"]') as HTMLElement;
-      // Active tab uses CSS variable for bg and 8px border-radius on all corners
-      expect(activeTab?.style.background).toContain("var(--cortex-bg-elevated)");
+      // Active tab uses CSS variable for bg and 8px border-radius on all corners per Figma
+      expect(activeTab?.style.background).toContain("var(--cortex-bg-elevated");
       expect(activeTab?.style.borderRadius).toBe("8px");
     });
 
