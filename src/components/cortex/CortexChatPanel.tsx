@@ -13,40 +13,18 @@ import { Component, JSX, splitProps, Show, For } from "solid-js";
 import { CortexPromptInput } from "./primitives";
 import { ChatMessageBubble } from "./CortexChatMessageBubble";
 
-export type ChatPanelState = "home" | "minimized" | "expanded";
+export type {
+  ChatPanelState,
+  ChatMessage,
+  ChatAction,
+  ChatProgress,
+  ChatToolCall,
+} from "./cortexChatTypes";
 
-export interface ChatMessage {
-  id: string;
-  type: "user" | "agent";
-  content: string;
-  timestamp?: Date;
-  actions?: ChatAction[];
-  isThinking?: boolean;
-  progress?: ChatProgress[];
-  toolCalls?: ChatToolCall[];
-  codeBlocks?: { language: string; code: string }[];
-}
-
-export interface ChatAction {
-  id: string;
-  label: string;
-  icon?: string;
-  onClick?: () => void;
-}
-
-export interface ChatProgress {
-  id: string;
-  label: string;
-  status: "pending" | "running" | "completed" | "error";
-}
-
-export interface ChatToolCall {
-  name: string;
-  status: "running" | "completed" | "error";
-  filesEdited?: number;
-  onUndo?: () => void;
-  onReview?: () => void;
-}
+import type {
+  ChatPanelState,
+  ChatMessage,
+} from "./cortexChatTypes";
 
 export interface CortexChatPanelProps {
   state?: ChatPanelState;

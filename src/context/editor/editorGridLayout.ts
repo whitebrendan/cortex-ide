@@ -1,7 +1,7 @@
 import { batch } from "solid-js";
 import type { SetStoreFunction } from "solid-js/store";
 import type { EditorGroup, EditorSplit } from "../../types";
-import type { EditorUIState } from "./EditorUIContext";
+import type { EditorUIState } from "./editorUITypes";
 import { generateId } from "./languageDetection";
 
 export function createGridLayoutOps(

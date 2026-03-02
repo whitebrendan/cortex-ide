@@ -2,7 +2,7 @@ import { createContext, useContext, ParentProps, onMount, onCleanup } from "soli
 import { createStore, produce } from "solid-js/store";
 import { WebviewWindow, getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { emit } from "@tauri-apps/api/event";
-import { useTauriListeners } from "../hooks";
+import { useTauriListeners } from "../hooks/useTauriListen";
 
 // ============================================================================
 // Types

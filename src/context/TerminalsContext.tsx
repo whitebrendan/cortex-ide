@@ -3,7 +3,7 @@ import { createStore, produce } from "solid-js/store";
 import { invoke } from "@tauri-apps/api/core";
 import { terminalLogger } from "../utils/logger";
 import { useToast } from "./ToastContext";
-import { useTauriListen } from "../hooks";
+import { useTauriListen } from "../hooks/useTauriListen";
 
 // Shell integration utilities
 import {

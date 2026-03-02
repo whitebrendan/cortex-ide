@@ -11,7 +11,7 @@
 
 import { Component, JSX, Show, For, createSignal, createResource } from "solid-js";
 import { CortexIcon } from "./primitives";
-import type { ChatMessage } from "./CortexChatPanel";
+import type { ChatMessage } from "./cortexChatTypes";
 
 export interface ChatMessageBubbleProps {
   message: ChatMessage;

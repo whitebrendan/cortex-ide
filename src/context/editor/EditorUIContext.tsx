@@ -25,12 +25,8 @@ export type { SplitDirection, EditorGroup, EditorSplit, EditorLayout };
 // State
 // ============================================================================
 
-export interface EditorUIState {
-  activeGroupId: string;
-  groups: EditorGroup[];
-  splits: EditorSplit[];
-  maximizedGroupId: string | null;
-}
+import type { EditorUIState } from "./editorUITypes";
+export type { EditorUIState } from "./editorUITypes";
 
 const DEFAULT_GROUP_ID = "group-default";
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, fireEvent, cleanup } from "@solidjs/testing-library";
 import { ChatMessageBubble } from "../CortexChatMessageBubble";
-import type { ChatMessage } from "../CortexChatPanel";
+import type { ChatMessage } from "../cortexChatTypes";
 
 vi.mock("../primitives", () => ({
   CortexIcon: (props: { name: string; size?: number; color?: string }) => (
