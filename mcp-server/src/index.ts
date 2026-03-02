@@ -34,34 +34,33 @@ const DEFAULT_TRUNCATION: TruncationConfig = {
 };
 
 function truncateText(text: string, config: TruncationConfig = DEFAULT_TRUNCATION): string {
-  if (!config.enabled) {
+  if (!config.enabled || !text) {
     return text;
   }
 
   let result = text;
+  const suffix = config.truncateMessage ?? "";
 
-  if (config.maxLines && config.maxLines > 0) {
+  if (config.maxLines != null && config.maxLines > 0) {
     const lines = result.split('\n');
     if (lines.length > config.maxLines) {
       result = lines.slice(0, config.maxLines).join('\n');
-      if (config.truncateMessage) {
-        result += '\n' + config.truncateMessage;
+      if (suffix) {
+        result += '\n' + suffix;
       }
     }
   }
 
-  if (config.maxLength && config.maxLength > 0 && result.length > config.maxLength) {
-    result = result.substring(0, config.maxLength);
-    if (config.truncateMessage) {
-      result += config.truncateMessage;
-    }
+  if (config.maxLength != null && config.maxLength > 0 && result.length > config.maxLength) {
+    const cutAt = Math.max(0, config.maxLength - suffix.length);
+    result = result.substring(0, cutAt) + suffix;
   }
 
   return result;
 }
 
-// Workspace root from environment or cwd
-const WORKSPACE_ROOT = process.env.CORTEX_WORKSPACE_ROOT || process.cwd();
+// Workspace root from environment or cwd — normalized without trailing separator
+const WORKSPACE_ROOT = path.resolve(process.env.CORTEX_WORKSPACE_ROOT || process.cwd());
 
 // Create MCP server instance
 const server = new McpServer({
@@ -69,17 +68,10 @@ const server = new McpServer({
   version: "1.0.0",
 });
 
-const truncationSchema = z.object({
-  enabled: z.boolean().optional().default(true).describe("Enable truncation (default: true)"),
-  maxLength: z.number().optional().default(2000).describe("Maximum character length (default: 2000)"),
-  maxLines: z.number().optional().default(100).describe("Maximum number of lines (default: 100)"),
-  truncateMessage: z.string().optional().default("... [truncated]").describe("Message to append when truncated (default: '... [truncated]')"),
-}).optional();
-
 // Helper: resolve a path relative to workspace root, preventing path traversal
 function resolveSafePath(inputPath: string): string {
   const resolved = path.resolve(WORKSPACE_ROOT, inputPath);
-  if (!resolved.startsWith(WORKSPACE_ROOT)) {
+  if (resolved !== WORKSPACE_ROOT && !resolved.startsWith(WORKSPACE_ROOT + path.sep)) {
     throw new Error(`Path traversal denied: ${inputPath}`);
   }
   return resolved;
@@ -87,6 +79,7 @@ function resolveSafePath(inputPath: string): string {
 
 // Helper: detect MIME type from file extension
 function mimeFromExt(filePath: string): string {
+  if (!filePath) return "text/plain";
   const ext = path.extname(filePath).toLowerCase();
   const mimeMap: Record<string, string> = {
     ".ts": "text/typescript", ".tsx": "text/typescript",
@@ -104,7 +97,12 @@ function mimeFromExt(filePath: string): string {
     ".sql": "text/x-sql",
     ".txt": "text/plain",
   };
-  return mimeMap[ext] || "text/plain";
+  return mimeMap[ext] ?? "text/plain";
+}
+
+// Helper: format a caught error for tool responses
+function errorText(e: unknown): string {
+  return e instanceof Error ? e.message : String(e);
 }
 
 // Register workspace resource templates
@@ -113,16 +111,29 @@ function registerResources() {
     "workspace-file",
     new ResourceTemplate("cortex://workspace/{+filepath}", { list: undefined }),
     async (uri, params) => {
-      const filepath = params.filepath as string;
-      const safePath = resolveSafePath(filepath);
-      const content = await fs.readFile(safePath, "utf-8");
-      return {
-        contents: [{
-          uri: uri.href,
-          mimeType: mimeFromExt(safePath),
-          text: content,
-        }],
-      };
+      try {
+        const filepath = params.filepath;
+        if (typeof filepath !== "string" || !filepath) {
+          throw new Error("Invalid filepath parameter");
+        }
+        const safePath = resolveSafePath(filepath);
+        const content = await fs.readFile(safePath, "utf-8");
+        return {
+          contents: [{
+            uri: uri.href,
+            mimeType: mimeFromExt(safePath),
+            text: content,
+          }],
+        };
+      } catch (e) {
+        return {
+          contents: [{
+            uri: uri.href,
+            mimeType: "text/plain",
+            text: `Error reading resource: ${errorText(e)}`,
+          }],
+        };
+      }
     }
   );
 }
@@ -135,10 +146,17 @@ function registerTools() {
     "Test connectivity to Cortex Desktop",
     {},
     async () => {
-      const response = await socketClient.sendCommand("ping", {});
-      return {
-        content: [{ type: "text", text: JSON.stringify(response.data, null, 2) }],
-      };
+      try {
+        const response = await socketClient.sendCommand("ping", {});
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(response.data, null, 2) }],
+        };
+      } catch (e) {
+        return {
+          content: [{ type: "text" as const, text: `Error: ${errorText(e)}. Is Cortex Desktop running?` }],
+          isError: true,
+        };
+      }
     }
   );
 
@@ -152,33 +170,40 @@ function registerTools() {
       maxWidth: z.number().optional().describe("Maximum width in pixels. Images larger than this will be resized proportionally"),
     },
     async (args) => {
-      const response = await socketClient.sendCommand("takeScreenshot", {
-        windowLabel: args.windowLabel || "main",
-        quality: args.quality,
-        maxWidth: args.maxWidth,
-      });
+      try {
+        const response = await socketClient.sendCommand("takeScreenshot", {
+          windowLabel: args.windowLabel || "main",
+          quality: args.quality,
+          maxWidth: args.maxWidth,
+        });
 
-      if (!response.success) {
+        if (!response.success) {
+          return {
+            content: [{ type: "text" as const, text: `Error: ${response.error}` }],
+            isError: true,
+          };
+        }
+
+        const data = response.data as { data: string; width: number; height: number };
         return {
-          content: [{ type: "text", text: `Error: ${response.error}` }],
+          content: [
+            {
+              type: "image" as const,
+              data: data.data.replace(/^data:image\/\w+;base64,/, ""),
+              mimeType: "image/jpeg",
+            },
+            {
+              type: "text" as const,
+              text: `Screenshot captured: ${data.width}x${data.height}`,
+            },
+          ],
+        };
+      } catch (e) {
+        return {
+          content: [{ type: "text" as const, text: `Error: ${errorText(e)}. Is Cortex Desktop running?` }],
           isError: true,
         };
       }
-
-      const data = response.data as { data: string; width: number; height: number };
-      return {
-        content: [
-          {
-            type: "image",
-            data: data.data.replace(/^data:image\/\w+;base64,/, ""),
-            mimeType: "image/jpeg",
-          },
-          {
-            type: "text",
-            text: `Screenshot captured: ${data.width}x${data.height}`,
-          },
-        ],
-      };
     }
   );
 
@@ -191,21 +216,28 @@ function registerTools() {
       selector: z.string().optional().describe("CSS selector to get specific element (optional)"),
     },
     async (args) => {
-      const response = await socketClient.sendCommand("getDom", {
-        windowLabel: args.windowLabel || "main",
-        selector: args.selector,
-      });
+      try {
+        const response = await socketClient.sendCommand("getDom", {
+          windowLabel: args.windowLabel || "main",
+          selector: args.selector,
+        });
 
-      if (!response.success) {
+        if (!response.success) {
+          return {
+            content: [{ type: "text" as const, text: `Error: ${response.error}` }],
+            isError: true,
+          };
+        }
+
         return {
-          content: [{ type: "text", text: `Error: ${response.error}` }],
+          content: [{ type: "text" as const, text: JSON.stringify(response.data, null, 2) }],
+        };
+      } catch (e) {
+        return {
+          content: [{ type: "text" as const, text: `Error: ${errorText(e)}. Is Cortex Desktop running?` }],
           isError: true,
         };
       }
-
-      return {
-        content: [{ type: "text", text: JSON.stringify(response.data, null, 2) }],
-      };
     }
   );
 
@@ -218,21 +250,28 @@ function registerTools() {
       windowLabel: z.string().optional().default("main").describe("Window label (default: 'main')"),
     },
     async (args) => {
-      const response = await socketClient.sendCommand("executeJs", {
-        windowLabel: args.windowLabel || "main",
-        script: args.script,
-      });
+      try {
+        const response = await socketClient.sendCommand("executeJs", {
+          windowLabel: args.windowLabel || "main",
+          script: args.script,
+        });
 
-      if (!response.success) {
+        if (!response.success) {
+          return {
+            content: [{ type: "text" as const, text: `Error: ${response.error}` }],
+            isError: true,
+          };
+        }
+
         return {
-          content: [{ type: "text", text: `Error: ${response.error}` }],
+          content: [{ type: "text" as const, text: JSON.stringify(response.data, null, 2) }],
+        };
+      } catch (e) {
+        return {
+          content: [{ type: "text" as const, text: `Error: ${errorText(e)}. Is Cortex Desktop running?` }],
           isError: true,
         };
       }
-
-      return {
-        content: [{ type: "text", text: JSON.stringify(response.data, null, 2) }],
-      };
     }
   );
 
@@ -249,25 +288,32 @@ function registerTools() {
       height: z.number().optional().describe("Height (for setSize)"),
     },
     async (args) => {
-      const response = await socketClient.sendCommand("manageWindow", {
-        windowLabel: args.windowLabel || "main",
-        operation: args.operation,
-        x: args.x,
-        y: args.y,
-        width: args.width,
-        height: args.height,
-      });
+      try {
+        const response = await socketClient.sendCommand("manageWindow", {
+          windowLabel: args.windowLabel || "main",
+          operation: args.operation,
+          x: args.x,
+          y: args.y,
+          width: args.width,
+          height: args.height,
+        });
 
-      if (!response.success) {
+        if (!response.success) {
+          return {
+            content: [{ type: "text" as const, text: `Error: ${response.error}` }],
+            isError: true,
+          };
+        }
+
         return {
-          content: [{ type: "text", text: `Error: ${response.error}` }],
+          content: [{ type: "text" as const, text: `Window operation '${args.operation}' completed` }],
+        };
+      } catch (e) {
+        return {
+          content: [{ type: "text" as const, text: `Error: ${errorText(e)}. Is Cortex Desktop running?` }],
           isError: true,
         };
       }
-
-      return {
-        content: [{ type: "text", text: `Window operation '${args.operation}' completed` }],
-      };
     }
   );
 
@@ -280,21 +326,28 @@ function registerTools() {
       delayMs: z.number().optional().default(20).describe("Delay between keystrokes in milliseconds (default: 20)"),
     },
     async (args) => {
-      const response = await socketClient.sendCommand("textInput", {
-        text: args.text,
-        delayMs: args.delayMs || 20,
-      });
+      try {
+        const response = await socketClient.sendCommand("textInput", {
+          text: args.text,
+          delayMs: args.delayMs || 20,
+        });
 
-      if (!response.success) {
+        if (!response.success) {
+          return {
+            content: [{ type: "text" as const, text: `Error: ${response.error}` }],
+            isError: true,
+          };
+        }
+
         return {
-          content: [{ type: "text", text: `Error: ${response.error}` }],
+          content: [{ type: "text" as const, text: `Typed ${args.text.length} characters` }],
+        };
+      } catch (e) {
+        return {
+          content: [{ type: "text" as const, text: `Error: ${errorText(e)}. Is Cortex Desktop running?` }],
           isError: true,
         };
       }
-
-      return {
-        content: [{ type: "text", text: `Typed ${args.text.length} characters` }],
-      };
     }
   );
 
@@ -310,24 +363,31 @@ function registerTools() {
       scrollY: z.number().optional().describe("Vertical scroll amount"),
     },
     async (args) => {
-      const response = await socketClient.sendCommand("mouseMovement", {
-        action: args.action,
-        x: args.x,
-        y: args.y,
-        scrollX: args.scrollX,
-        scrollY: args.scrollY,
-      });
+      try {
+        const response = await socketClient.sendCommand("mouseMovement", {
+          action: args.action,
+          x: args.x,
+          y: args.y,
+          scrollX: args.scrollX,
+          scrollY: args.scrollY,
+        });
 
-      if (!response.success) {
+        if (!response.success) {
+          return {
+            content: [{ type: "text" as const, text: `Error: ${response.error}` }],
+            isError: true,
+          };
+        }
+
         return {
-          content: [{ type: "text", text: `Error: ${response.error}` }],
+          content: [{ type: "text" as const, text: `Mouse action '${args.action}' completed` }],
+        };
+      } catch (e) {
+        return {
+          content: [{ type: "text" as const, text: `Error: ${errorText(e)}. Is Cortex Desktop running?` }],
           isError: true,
         };
       }
-
-      return {
-        content: [{ type: "text", text: `Mouse action '${args.action}' completed` }],
-      };
     }
   );
 
@@ -342,23 +402,30 @@ function registerTools() {
       windowLabel: z.string().optional().default("main").describe("Window label (default: 'main')"),
     },
     async (args) => {
-      const response = await socketClient.sendCommand("manageLocalStorage", {
-        windowLabel: args.windowLabel || "main",
-        operation: args.operation,
-        key: args.key,
-        value: args.value,
-      });
+      try {
+        const response = await socketClient.sendCommand("manageLocalStorage", {
+          windowLabel: args.windowLabel || "main",
+          operation: args.operation,
+          key: args.key,
+          value: args.value,
+        });
 
-      if (!response.success) {
+        if (!response.success) {
+          return {
+            content: [{ type: "text" as const, text: `Error: ${response.error}` }],
+            isError: true,
+          };
+        }
+
         return {
-          content: [{ type: "text", text: `Error: ${response.error}` }],
+          content: [{ type: "text" as const, text: JSON.stringify(response.data, null, 2) }],
+        };
+      } catch (e) {
+        return {
+          content: [{ type: "text" as const, text: `Error: ${errorText(e)}. Is Cortex Desktop running?` }],
           isError: true,
         };
       }
-
-      return {
-        content: [{ type: "text", text: JSON.stringify(response.data, null, 2) }],
-      };
     }
   );
 
@@ -371,21 +438,28 @@ function registerTools() {
       windowLabel: z.string().optional().default("main").describe("Window label (default: 'main')"),
     },
     async (args) => {
-      const response = await socketClient.sendCommand("getElementPosition", {
-        windowLabel: args.windowLabel || "main",
-        selector: args.selector,
-      });
+      try {
+        const response = await socketClient.sendCommand("getElementPosition", {
+          windowLabel: args.windowLabel || "main",
+          selector: args.selector,
+        });
 
-      if (!response.success) {
+        if (!response.success) {
+          return {
+            content: [{ type: "text" as const, text: `Error: ${response.error}` }],
+            isError: true,
+          };
+        }
+
         return {
-          content: [{ type: "text", text: `Error: ${response.error}` }],
+          content: [{ type: "text" as const, text: JSON.stringify(response.data, null, 2) }],
+        };
+      } catch (e) {
+        return {
+          content: [{ type: "text" as const, text: `Error: ${errorText(e)}. Is Cortex Desktop running?` }],
           isError: true,
         };
       }
-
-      return {
-        content: [{ type: "text", text: JSON.stringify(response.data, null, 2) }],
-      };
     }
   );
 
@@ -399,22 +473,29 @@ function registerTools() {
       windowLabel: z.string().optional().default("main").describe("Window label (default: 'main')"),
     },
     async (args) => {
-      const response = await socketClient.sendCommand("sendTextToElement", {
-        windowLabel: args.windowLabel || "main",
-        selector: args.selector,
-        text: args.text,
-      });
+      try {
+        const response = await socketClient.sendCommand("sendTextToElement", {
+          windowLabel: args.windowLabel || "main",
+          selector: args.selector,
+          text: args.text,
+        });
 
-      if (!response.success) {
+        if (!response.success) {
+          return {
+            content: [{ type: "text" as const, text: `Error: ${response.error}` }],
+            isError: true,
+          };
+        }
+
         return {
-          content: [{ type: "text", text: `Error: ${response.error}` }],
+          content: [{ type: "text" as const, text: `Text sent to element '${args.selector}'` }],
+        };
+      } catch (e) {
+        return {
+          content: [{ type: "text" as const, text: `Error: ${errorText(e)}. Is Cortex Desktop running?` }],
           isError: true,
         };
       }
-
-      return {
-        content: [{ type: "text", text: `Text sent to element '${args.selector}'` }],
-      };
     }
   );
 
@@ -424,18 +505,25 @@ function registerTools() {
     "List all available windows in Cortex Desktop",
     {},
     async () => {
-      const response = await socketClient.sendCommand("listWindows", {});
+      try {
+        const response = await socketClient.sendCommand("listWindows", {});
 
-      if (!response.success) {
+        if (!response.success) {
+          return {
+            content: [{ type: "text" as const, text: `Error: ${response.error}` }],
+            isError: true,
+          };
+        }
+
         return {
-          content: [{ type: "text", text: `Error: ${response.error}` }],
+          content: [{ type: "text" as const, text: JSON.stringify(response.data, null, 2) }],
+        };
+      } catch (e) {
+        return {
+          content: [{ type: "text" as const, text: `Error: ${errorText(e)}. Is Cortex Desktop running?` }],
           isError: true,
         };
       }
-
-      return {
-        content: [{ type: "text", text: JSON.stringify(response.data, null, 2) }],
-      };
     }
   );
 
@@ -464,11 +552,11 @@ function registerTools() {
         const numbered = selected.map((line, i) => `${start + i + 1}: ${line}`);
         const text = truncateText(numbered.join("\n"), { enabled: true, maxLength: 50000, maxLines: 500, truncateMessage: "... [truncated]" });
         return {
-          content: [{ type: "text", text }],
+          content: [{ type: "text" as const, text }],
         };
       } catch (e) {
         return {
-          content: [{ type: "text", text: `Error reading file: ${e instanceof Error ? e.message : String(e)}` }],
+          content: [{ type: "text" as const, text: `Error reading file: ${errorText(e)}` }],
           isError: true,
         };
       }
@@ -490,11 +578,11 @@ function registerTools() {
         await fs.mkdir(dir, { recursive: true });
         await fs.writeFile(safePath, args.content, "utf-8");
         return {
-          content: [{ type: "text", text: `Wrote ${args.content.length} bytes to ${args.path}` }],
+          content: [{ type: "text" as const, text: `Wrote ${args.content.length} bytes to ${args.path}` }],
         };
       } catch (e) {
         return {
-          content: [{ type: "text", text: `Error writing file: ${e instanceof Error ? e.message : String(e)}` }],
+          content: [{ type: "text" as const, text: `Error writing file: ${errorText(e)}` }],
           isError: true,
         };
       }
@@ -527,11 +615,11 @@ function registerTools() {
           return a.name.localeCompare(b.name);
         });
         return {
-          content: [{ type: "text", text: JSON.stringify({ entries: results }, null, 2) }],
+          content: [{ type: "text" as const, text: JSON.stringify({ entries: results }, null, 2) }],
         };
       } catch (e) {
         return {
-          content: [{ type: "text", text: `Error listing directory: ${e instanceof Error ? e.message : String(e)}` }],
+          content: [{ type: "text" as const, text: `Error listing directory: ${errorText(e)}` }],
           isError: true,
         };
       }
@@ -584,11 +672,11 @@ function registerTools() {
         }
 
         return {
-          content: [{ type: "text", text: JSON.stringify({ results, total: results.length }, null, 2) }],
+          content: [{ type: "text" as const, text: JSON.stringify({ results, total: results.length }, null, 2) }],
         };
       } catch (e) {
         return {
-          content: [{ type: "text", text: `Error searching code: ${e instanceof Error ? e.message : String(e)}` }],
+          content: [{ type: "text" as const, text: `Error searching code: ${errorText(e)}` }],
           isError: true,
         };
       }
@@ -643,11 +731,11 @@ function registerTools() {
         );
 
         return {
-          content: [{ type: "text", text: output }],
+          content: [{ type: "text" as const, text: output }],
         };
       } catch (e) {
         return {
-          content: [{ type: "text", text: `Error running command: ${e instanceof Error ? e.message : String(e)}` }],
+          content: [{ type: "text" as const, text: `Error running command: ${errorText(e)}` }],
           isError: true,
         };
       }
@@ -662,7 +750,7 @@ function registerTools() {
       file_path: z.string().optional().describe("Filter diagnostics by file path (optional)"),
       severity: z.enum(["error", "warning", "information", "hint"]).optional().describe("Filter by severity (optional)"),
     },
-    async (args) => {
+    async () => {
       try {
         const response = await socketClient.sendCommand("executeJs", {
           windowLabel: "main",
@@ -681,7 +769,7 @@ function registerTools() {
 
         if (!response.success) {
           return {
-            content: [{ type: "text", text: `Error: ${response.error || "Failed to get diagnostics. Is Cortex Desktop running?"}` }],
+            content: [{ type: "text" as const, text: `Error: ${response.error || "Failed to get diagnostics. Is Cortex Desktop running?"}` }],
             isError: true,
           };
         }
@@ -692,11 +780,11 @@ function registerTools() {
         }
 
         return {
-          content: [{ type: "text", text: truncateText(JSON.stringify(diagnostics, null, 2)) }],
+          content: [{ type: "text" as const, text: truncateText(JSON.stringify(diagnostics, null, 2)) }],
         };
       } catch (e) {
         return {
-          content: [{ type: "text", text: `Error getting diagnostics: ${e instanceof Error ? e.message : String(e)}. Is Cortex Desktop running?` }],
+          content: [{ type: "text" as const, text: `Error getting diagnostics: ${errorText(e)}. Is Cortex Desktop running?` }],
           isError: true,
         };
       }
@@ -727,7 +815,7 @@ function registerTools() {
 
         if (!response.success) {
           return {
-            content: [{ type: "text", text: `Error: ${response.error || "Failed to get open files. Is Cortex Desktop running?"}` }],
+            content: [{ type: "text" as const, text: `Error: ${response.error || "Failed to get open files. Is Cortex Desktop running?"}` }],
             isError: true,
           };
         }
@@ -738,11 +826,11 @@ function registerTools() {
         }
 
         return {
-          content: [{ type: "text", text: JSON.stringify(openFiles, null, 2) }],
+          content: [{ type: "text" as const, text: JSON.stringify(openFiles, null, 2) }],
         };
       } catch (e) {
         return {
-          content: [{ type: "text", text: `Error getting open files: ${e instanceof Error ? e.message : String(e)}. Is Cortex Desktop running?` }],
+          content: [{ type: "text" as const, text: `Error getting open files: ${errorText(e)}. Is Cortex Desktop running?` }],
           isError: true,
         };
       }
@@ -752,18 +840,28 @@ function registerTools() {
 
 // Main entry point
 async function main() {
-  // Register resources and tools FIRST (before connecting transport)
   registerResources();
   registerTools();
 
-  // Create and connect stdio transport
   const transport = new StdioServerTransport();
   await server.connect(transport);
 
-  // Connect to Cortex Desktop socket in background (don't block MCP initialization)
-  socketClient.connect().catch(() => {
-    // Silent fail - Cortex Desktop may not be running
+  socketClient.connect().catch((err) => {
+    console.error(`[MCP Server] Could not connect to Cortex Desktop: ${errorText(err)}`);
   });
+
+  const shutdown = () => {
+    console.error("[MCP Server] Shutting down...");
+    socketClient.disconnect();
+    process.exit(0);
+  };
+
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
 }
 
-main();
+main().catch((err) => {
+  console.error(`[MCP Server] Fatal error: ${errorText(err)}`);
+  socketClient.disconnect();
+  process.exit(1);
+});
