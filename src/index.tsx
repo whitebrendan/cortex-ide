@@ -86,6 +86,12 @@ const Welcome = lazy(() => import("./pages/Welcome"));
 // Uses dynamic import with explicit chunk name for better caching
 const Session = lazy(() => import("./pages/Session"));
 
+// Admin page - only loaded when navigating to admin routes
+const AdminSessions = lazy(() => import("./pages/admin/AdminSessions"));
+
+// Share page - only loaded when viewing a shared session
+const SharedSession = lazy(() => import("./pages/share/SharedSession"));
+
 // Layout component - Figma pixel-perfect design (replaces old Layout.tsx)
 const Layout = lazy(() => import("@/components/cortex/CortexDesktopLayout").then(m => ({ default: m.CortexDesktopLayout })));
 
@@ -176,6 +182,8 @@ render(
         <Route path="/index.html" component={Home} />
         <Route path="/welcome" component={Welcome} />
         <Route path="/session/:id?" component={Session} />
+        <Route path="/admin/sessions" component={AdminSessions} />
+        <Route path="/share/:token" component={SharedSession} />
       </Route>
     </Router>
   ),

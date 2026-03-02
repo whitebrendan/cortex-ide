@@ -12,9 +12,13 @@ let executeJsUnlisten: (() => void) | null = null;
 let getDomUnlisten: (() => void) | null = null;
 
 /**
- * Set up MCP event listeners for the current window
+ * Set up MCP event listeners for the current window.
+ * Idempotent: cleans up any existing listeners before registering new ones
+ * to prevent duplicate handlers on HMR / hot-reload.
  */
 export async function setupMcpListeners() {
+  cleanupMcpListeners();
+
   const currentWindow = getCurrentWebviewWindow();
   
   // Listen for JavaScript execution requests

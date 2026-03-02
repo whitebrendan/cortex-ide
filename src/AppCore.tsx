@@ -153,23 +153,34 @@ const StepInTargetsMenuGlobal = lazy(() => import("@/components/debugger/StepInT
 const DebugKeyboardHandler = lazy(() => import("@/components/debugger/DebugKeyboardHandler").then(m => ({ default: m.DebugKeyboardHandler })));
 
 // ============================================================================
-// Deep Link Types
+// Deep Link Types — must match Rust DeepLinkAction in src-tauri/src/deep_link.rs
 // ============================================================================
 interface DeepLinkOpenFile { type: "OpenFile"; payload: { path: string }; }
-interface DeepLinkOpenFolder { type: "OpenFolder"; payload: { path: string }; }
+interface DeepLinkOpenFolder { type: "OpenFolder"; payload: { path: string; new_window: boolean }; }
+interface DeepLinkOpenGoto { type: "OpenGoto"; payload: { path: string; line: number; column: number | null }; }
+interface DeepLinkOpenDiff { type: "OpenDiff"; payload: { left: string; right: string }; }
+interface DeepLinkAddFolder { type: "AddFolder"; payload: { path: string }; }
 interface DeepLinkOpenSettings { type: "OpenSettings"; payload: { section: string }; }
 interface DeepLinkUnknown { type: "Unknown"; payload: { raw_url: string }; }
-type DeepLinkAction = DeepLinkOpenFile | DeepLinkOpenFolder | DeepLinkOpenSettings | DeepLinkUnknown;
+type DeepLinkAction = DeepLinkOpenFile | DeepLinkOpenFolder | DeepLinkOpenGoto | DeepLinkOpenDiff | DeepLinkAddFolder | DeepLinkOpenSettings | DeepLinkUnknown;
 
 // ============================================================================
 // MCP Listeners - Deferred initialization
 // ============================================================================
 let mcpCleanup: (() => void) | null = null;
+let mcpInitialized = false;
 
 async function initMcpListeners() {
-  const { setupMcpListeners, cleanupMcpListeners } = await import("@/utils/mcp-listeners");
-  await setupMcpListeners();
-  mcpCleanup = cleanupMcpListeners;
+  if (mcpInitialized) return;
+  mcpInitialized = true;
+  try {
+    const { setupMcpListeners, cleanupMcpListeners } = await import("@/utils/mcp-listeners");
+    await setupMcpListeners();
+    mcpCleanup = cleanupMcpListeners;
+  } catch (err) {
+    mcpInitialized = false;
+    console.error("[MCP] Failed to initialize listeners:", err);
+  }
 }
 
 // ============================================================================
@@ -232,6 +243,7 @@ function ExtensionNotificationListener(): null {
 function DeepLinkHandler(): null {
   const toast = useToast();
   const editor = useEditor();
+  const workspace = useWorkspace();
   let unlisten: (() => void) | undefined;
 
   onCleanup(() => unlisten?.());
@@ -259,8 +271,37 @@ function DeepLinkHandler(): null {
           setTimeout(() => window.location.reload(), 100);
           break;
         }
+        case "OpenGoto": {
+          try {
+            await editor.openFile(action.payload.path);
+            window.dispatchEvent(new CustomEvent("editor:goto-line", {
+              detail: { line: action.payload.line, column: action.payload.column ?? 1 },
+            }));
+            toast.info(`Opened: ${action.payload.path.split(/[\\/]/).pop()} at line ${action.payload.line}`);
+          } catch (err) {
+            toast.error(`Failed to open: ${action.payload.path}`);
+          }
+          break;
+        }
+        case "OpenDiff": {
+          window.dispatchEvent(new CustomEvent("diff:open", {
+            detail: { left: action.payload.left, right: action.payload.right },
+          }));
+          break;
+        }
+        case "AddFolder": {
+          try {
+            await workspace.addFolder(action.payload.path);
+            toast.info(`Added folder: ${action.payload.path.split(/[\\/]/).pop()}`);
+          } catch (err) {
+            toast.error(`Failed to add folder: ${action.payload.path}`);
+          }
+          break;
+        }
         case "OpenSettings": {
-          window.dispatchEvent(new CustomEvent("settings:open-tab"));
+          window.dispatchEvent(new CustomEvent("settings:open-tab", {
+            detail: { section: action.payload.section },
+          }));
           break;
         }
         case "Unknown": {
@@ -533,7 +574,7 @@ function AppContent(props: ParentProps) {
     window.removeEventListener("bookmarks:open", handleBookmarksOpen);
     window.removeEventListener("debug:start", handleDebugStart);
     window.removeEventListener("dev:inspector", handleDevInspector);
-    if (mcpCleanup) mcpCleanup();
+    if (mcpCleanup) { mcpCleanup(); mcpCleanup = null; mcpInitialized = false; }
     if (cleanupErrorHandler) cleanupErrorHandler();
     document.documentElement.style.removeProperty("font-family");
     document.documentElement.style.removeProperty("font-size");
