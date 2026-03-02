@@ -174,6 +174,9 @@ export function createEditorInstance(props: {
       const modelStart = performance.now();
 
       if (currentFilePath && currentFilePath !== file?.path) {
+        if (editorRef) {
+          monacoManager.saveViewState(currentFilePath, editorRef);
+        }
         monacoManager.scheduleModelDisposal(currentFilePath);
       }
 
@@ -363,6 +366,9 @@ export function createEditorInstance(props: {
           monacoLanguage,
         );
         editorRef.setModel(model);
+
+        monacoManager.restoreViewState(file.path, editorRef);
+
         console.debug(
           `[CodeEditor] Model swap: ${(performance.now() - modelStart).toFixed(1)}ms`,
         );
@@ -396,6 +402,9 @@ export function createEditorInstance(props: {
           monacoLanguage,
         );
         editorRef.setModel(model);
+
+        monacoManager.restoreViewState(file.path, editorRef);
+
         console.debug(
           `[CodeEditor] Editor creation: ${(performance.now() - modelStart).toFixed(1)}ms`,
         );
@@ -494,6 +503,9 @@ export function createEditorInstance(props: {
     }
 
     if (currentFilePath) {
+      if (editorRef) {
+        monacoManager.saveViewState(currentFilePath, editorRef);
+      }
       monacoManager.scheduleModelDisposal(currentFilePath);
     }
 

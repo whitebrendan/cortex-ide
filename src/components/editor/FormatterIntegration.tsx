@@ -419,7 +419,11 @@ export function useFormatterIntegration(props: UseFormatterIntegrationProps): vo
       cleanup = null;
     }
 
-    const { editor, monaco, filePath, language, workingDirectory } = props;
+    const editor = props.editor;
+    const monaco = props.monaco;
+    const filePath = props.filePath;
+    const language = props.language;
+    const workingDirectory = props.workingDirectory;
 
     if (!editor || !monaco || !filePath || !language) {
       return;

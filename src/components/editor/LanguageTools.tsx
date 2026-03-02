@@ -483,7 +483,8 @@ export function LanguageTools(props: LanguageToolsProps) {
 
   /** Apply a workspace edit */
   async function applyWorkspaceEdit(edit: WorkspaceEdit): Promise<void> {
-    const { editor, monaco } = props;
+    const editor = props.editor;
+    const monaco = props.monaco;
     if (!editor || !monaco) return;
 
     // Handle changes map
@@ -575,7 +576,8 @@ export function LanguageTools(props: LanguageToolsProps) {
 
   /** Open the code actions menu */
   async function openMenu(): Promise<void> {
-    const { editor, monaco } = props;
+    const editor = props.editor;
+    const monaco = props.monaco;
     if (!editor || !monaco) return;
 
     const selection = editor.getSelection();
@@ -704,7 +706,8 @@ export function LanguageTools(props: LanguageToolsProps) {
 
   /** Update lightbulb position */
   async function updateLightbulb(): Promise<void> {
-    const { editor, monaco } = props;
+    const editor = props.editor;
+    const monaco = props.monaco;
     if (!editor || !monaco) {
       setState("lightbulbPosition", null);
       return;
@@ -761,7 +764,8 @@ export function LanguageTools(props: LanguageToolsProps) {
 
   /** Extract selected code to a new function/method */
   async function extractFunction(): Promise<void> {
-    const { editor, monaco } = props;
+    const editor = props.editor;
+    const monaco = props.monaco;
     if (!editor || !monaco) return;
 
     const selection = editor.getSelection();
@@ -797,7 +801,8 @@ export function LanguageTools(props: LanguageToolsProps) {
 
   /** Extract selected code to a new variable */
   async function extractVariable(): Promise<void> {
-    const { editor, monaco } = props;
+    const editor = props.editor;
+    const monaco = props.monaco;
     if (!editor || !monaco) return;
 
     const selection = editor.getSelection();
@@ -854,7 +859,8 @@ export function LanguageTools(props: LanguageToolsProps) {
     }
 
     // Fallback: basic import sorting
-    const { editor, monaco } = props;
+    const editor = props.editor;
+    const monaco = props.monaco;
     if (!editor || !monaco) return;
 
     const model = editor.getModel();
@@ -1025,7 +1031,8 @@ export function LanguageTools(props: LanguageToolsProps) {
 
   // Setup editor event listeners
   createEffect(() => {
-    const { editor, monaco } = props;
+    const editor = props.editor;
+    const monaco = props.monaco;
     if (!editor || !monaco) return;
     
     // Prevent redundant setup for same editor

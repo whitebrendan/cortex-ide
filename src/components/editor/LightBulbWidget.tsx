@@ -103,7 +103,9 @@ export function LightBulbWidget(props: LightBulbWidgetProps) {
    * Fetch code actions from LSP for the current cursor position.
    */
   const fetchCodeActions = async (line: number, column: number): Promise<LSPCodeAction[]> => {
-    const { editor, monaco, uri } = props;
+    const editor = props.editor;
+    const monaco = props.monaco;
+    const uri = props.uri;
     if (!editor || !monaco || !uri) return [];
     
     const model = editor.getModel();
@@ -174,7 +176,8 @@ export function LightBulbWidget(props: LightBulbWidgetProps) {
    * Update the light bulb visibility based on available code actions.
    */
   const updateLightBulb = async () => {
-    const { editor, monaco } = props;
+    const editor = props.editor;
+    const monaco = props.monaco;
     if (!editor || !monaco) {
       setState(prev => ({ ...prev, visible: false }));
       return;
@@ -228,7 +231,8 @@ export function LightBulbWidget(props: LightBulbWidgetProps) {
    * Trigger code actions menu (called on click or Ctrl+.)
    */
   const triggerCodeActions = () => {
-    const { editor, monaco } = props;
+    const editor = props.editor;
+    const monaco = props.monaco;
     if (!editor || !monaco) return;
     
     // Trigger Monaco's built-in quick fix menu
@@ -256,7 +260,8 @@ export function LightBulbWidget(props: LightBulbWidgetProps) {
    * Handle scroll events to update position.
    */
   const handleScroll = () => {
-    const { editor, monaco } = props;
+    const editor = props.editor;
+    const monaco = props.monaco;
     if (!editor || !monaco || !state().visible) return;
     
     const position = editor.getPosition();
@@ -277,7 +282,7 @@ export function LightBulbWidget(props: LightBulbWidgetProps) {
    */
   const handleContentChange = (e: Monaco.editor.IModelContentChangedEvent) => {
     // Invalidate cache for affected lines
-    const { uri } = props;
+    const uri = props.uri;
     if (!uri) return;
     
     for (const change of e.changes) {
@@ -306,7 +311,8 @@ export function LightBulbWidget(props: LightBulbWidgetProps) {
   
   // Setup editor event listeners
   createEffect(() => {
-    const { editor, monaco } = props;
+    const editor = props.editor;
+    const monaco = props.monaco;
     if (!editor || !monaco) return;
     
     // Clean up previous disposables

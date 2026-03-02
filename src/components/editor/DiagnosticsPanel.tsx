@@ -688,7 +688,7 @@ function DiagnosticItem(props: DiagnosticItemProps) {
   const color = () => SEVERITY_COLORS[severity()];
 
   const location = () => {
-    const { start } = props.item.range;
+    const start = props.item.range.start;
     return `Ln ${start.line + 1}, Col ${start.character + 1}`;
   };
 
