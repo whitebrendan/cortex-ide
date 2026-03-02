@@ -13,6 +13,12 @@ const host = process.env.TAURI_DEV_HOST;
  * Manual chunk configuration for optimal code splitting.
  * Separates large dependencies into individual chunks for better caching
  * and parallel loading.
+ *
+ * Chunk strategy:
+ * - Heavy vendor libs (monaco, xterm, shiki) get their own chunks for lazy loading
+ * - Framework code (solid, tauri) is split for long-term caching
+ * - App source contexts are split so they load after first paint
+ * - Small remaining node_modules fall into vendor-common
  */
 function createManualChunks(id: string): string | undefined {
   // ===========================================================================
@@ -48,7 +54,8 @@ function createManualChunks(id: string): string | undefined {
   // VENDOR SPLITTING - External dependencies
   // ===========================================================================
   
-  // Monaco Editor - Large library, separate chunk for lazy loading
+  // Monaco Editor - Large library (~2.6MB), separate chunk for on-demand loading
+  // Loaded lazily via dynamic import() in monacoManager.ts
   if (id.includes("monaco-editor") || id.includes("@monaco-editor")) {
     return "vendor-monaco";
   }
@@ -99,14 +106,14 @@ function createManualChunks(id: string): string | undefined {
     return "vendor-shiki-core";
   }
 
+  // Emmet abbreviation engine (~1.1MB source) - only needed when editing HTML/JSX
+  if (id.includes("node_modules/emmet") || id.includes("node_modules/@emmetio")) {
+    return "vendor-emmet";
+  }
+
   // Marked markdown parser
   if (id.includes("marked")) {
     return "vendor-marked";
-  }
-
-  // Kobalte UI components
-  if (id.includes("@kobalte")) {
-    return "vendor-kobalte";
   }
 
   // Solid.js ecosystem (core + router + primitives)
@@ -116,6 +123,15 @@ function createManualChunks(id: string): string | undefined {
     id.includes("@solid-primitives")
   ) {
     return "vendor-solid";
+  }
+
+  // Zustand state management + Immer
+  if (
+    id.includes("node_modules/zustand") ||
+    id.includes("node_modules/solid-zustand") ||
+    id.includes("node_modules/immer")
+  ) {
+    return "vendor-zustand";
   }
 
   // Tauri plugins - Group all Tauri-related code
@@ -136,246 +152,227 @@ function createManualChunks(id: string): string | undefined {
   return undefined;
 }
 
-export default defineConfig(async (): Promise<UserConfig> => ({
-  plugins: [
-    solid({
-      hot: true,
-      include: [
-        /\.tsx$/,
-        /\.jsx$/,
-      ],
-    }),
-    tailwindcss(),
-    // Bundle analyzer - only in analyze mode
-    isAnalyze && visualizer({
-      open: true,
-      filename: "dist/bundle-stats.html",
-      gzipSize: true,
-      brotliSize: true,
-      template: "treemap",
-    }),
-  ].filter(Boolean),
+export default defineConfig(async ({ command }): Promise<UserConfig> => {
+  const isProd = command === "build";
 
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
-    // Optimize module resolution
-    dedupe: ["solid-js", "@solidjs/router"],
-  },
-
-  // Dependency optimization for dev server
-  optimizeDeps: {
-    include: [
-      "solid-js",
-      "solid-js/store",
-      "solid-js/web",
-      "@tauri-apps/api/core",
-      "@tauri-apps/api/event",
-      "@solidjs/router",
-      "@tauri-apps/plugin-dialog",
-      "@tauri-apps/plugin-clipboard-manager",
-      "@tauri-apps/plugin-shell",
-      "@tauri-apps/plugin-os",
-      "marked",
-      "diff",
-    ],
-    esbuildOptions: {
-      target: "es2021",
-      treeShaking: true,
-      // Minify pre-bundled deps for faster parsing
-      minify: true,
-      // Keep names for debugging
-      keepNames: true,
-    },
-    // Don't wait for first request - prebundle immediately
-    noDiscovery: false,
-    // Hold until deps are optimized
-    holdUntilCrawlEnd: true,
-  },
-
-  // Build configuration
-  build: {
-    // Use esbuild for faster minification (default in Vite 5+, but explicit)
-    minify: "esbuild",
-    target: "es2021",
-    // Enable source maps for production debugging (optional, remove for smaller builds)
-    sourcemap: false,
-    // CSS code splitting
-    cssCodeSplit: true,
-    // Increase chunk size warning limit (Monaco is large)
-    chunkSizeWarningLimit: 1000,
-    // CRITICAL: Disable modulepreload polyfill to prevent heavy chunks from being preloaded
-    // This allows lazy chunks (AppCore, contexts) to load AFTER first paint
-    modulePreload: {
-      // Only preload essential entry chunks, not lazy-loaded ones
-      resolveDependencies: (filename, deps) => {
-        // Don't preload heavy app chunks - they should load lazily
-        const heavyChunks = [
-          'app-context-debug',
-          'app-context-tasks', 
-          'app-context-terminals',
-          'app-context-testing',
-          'app-context-lsp',
-          'app-context-extensions',
-          'app-extension-host',
-          'AppCore',
-          'vendor-monaco',
-          'vendor-shiki',
-          'vendor-xterm',
-        ];
-        return deps.filter(dep => 
-          !heavyChunks.some(chunk => dep.includes(chunk))
-        );
-      },
-    },
-    // Rollup-specific options
-    rollupOptions: {
-      output: {
-        // Manual chunk splitting for optimal caching
-        manualChunks: createManualChunks,
-        // Use content hashing for cache busting
-        entryFileNames: "assets/[name]-[hash].js",
-        chunkFileNames: "assets/[name]-[hash].js",
-        assetFileNames: "assets/[name]-[hash][extname]",
-        // Optimize chunk loading
-        compact: true,
-        // Preserve module structure for better tree-shaking
-        preserveModules: false,
-        // Minimize side effects
-        hoistTransitiveImports: true,
-      },
-      // Tree-shake unused exports
-      treeshake: {
-        // Aggressive tree-shaking
-        moduleSideEffects: (id) => {
-          // CSS files have side effects
-          if (id.endsWith(".css")) return true;
-          // Tauri plugins may have side effects
-          if (id.includes("@tauri-apps")) return true;
-          // Everything else is tree-shakeable
-          return false;
+  return {
+    plugins: [
+      solid({
+        hot: true,
+        ssr: false,
+        include: [
+          /\.tsx$/,
+          /\.jsx$/,
+        ],
+        solid: {
+          omitNestedClosingTags: true,
+          delegateEvents: true,
+          wrapConditionals: true,
+          generate: "dom",
+          hydratable: false,
         },
-        // Remove unused property reads
-        propertyReadSideEffects: false,
-        // Remove annotations from output
-        annotations: true,
+      }),
+      tailwindcss(),
+      // Bundle analyzer - only in analyze mode
+      isAnalyze && visualizer({
+        open: true,
+        filename: "dist/bundle-stats.html",
+        gzipSize: true,
+        brotliSize: true,
+        template: "treemap",
+      }),
+    ].filter(Boolean),
+
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
       },
+      // Optimize module resolution
+      dedupe: ["solid-js", "@solidjs/router"],
     },
-    reportCompressedSize: false,
-  },
 
-  // CSS configuration
-  css: {
-    // CSS modules configuration
-    modules: {
-      // Generate scoped class names in production
-      generateScopedName: "[hash:base64:8]",
-      // Local scope by default
-      scopeBehaviour: "local",
-    },
-    // PostCSS/preprocessor options
-    devSourcemap: true,
-  },
-
-  // Esbuild configuration
-  esbuild: {
-    // Remove console.log and debugger in production
-    drop: process.env.NODE_ENV === "production" ? ["console", "debugger"] : [],
-    target: "es2021",
-    // Enable tree-shaking
-    treeShaking: true,
-    // Legal comments handling
-    legalComments: "none",
-  },
-
-  // Clear screen disabled for Tauri integration
-  clearScreen: false,
-
-  // Development server configuration
-  server: {
-    port: 1420,
-    strictPort: true,
-    host: host || false,
-    hmr: host
-      ? {
-          protocol: "ws",
-          host,
-          port: 1421,
-        }
-      : undefined,
-    watch: {
-      ignored: ["**/src-tauri/**"],
-    },
-    // Warm up ALL critical files for instant navigation
-    warmup: {
-      // Pre-transform critical entry points and frequently used modules
-      clientFiles: [
-        // Entry points
-        "./src/index.tsx",
-        "./src/AppShell.tsx",
-        "./src/AppCore.tsx",
-        // Pages
-        "./src/pages/Home.tsx",
-        "./src/pages/Session.tsx",
-        // Core layout
-        "./src/components/MenuBar.tsx",
-        "./src/components/cortex/CortexDesktopLayout.tsx",
-        // All providers (critical for startup)
-        "./src/context/OptimizedProviders.tsx",
-        // Tier 1 providers
-        "./src/context/I18nContext.tsx",
-        "./src/context/ThemeContext.tsx",
-        "./src/context/CortexColorThemeContext.tsx",
-        "./src/context/ToastContext.tsx",
-        "./src/context/SettingsContext.tsx",
-        "./src/context/WindowsContext.tsx",
-        "./src/context/LayoutContext.tsx",
-        // Tier 2+ providers
-        "./src/context/SDKContext.tsx",
-        "./src/context/SessionContext.tsx",
-        "./src/context/EditorContext.tsx",
-        "./src/context/WorkspaceContext.tsx",
-        "./src/context/CommandContext.tsx",
-        "./src/context/KeymapContext.tsx",
-        // Design system
-        "./src/design-system/tokens/index.ts",
-        "./src/design-system/primitives/Flex.tsx",
+    // Dependency optimization for dev server
+    optimizeDeps: {
+      include: [
+        // SolidJS core
+        "solid-js",
+        "solid-js/store",
+        "solid-js/web",
+        "@solidjs/router",
+        // Tauri IPC (used on every page)
+        "@tauri-apps/api/core",
+        "@tauri-apps/api/event",
+        "@tauri-apps/plugin-dialog",
+        "@tauri-apps/plugin-clipboard-manager",
+        "@tauri-apps/plugin-shell",
+        "@tauri-apps/plugin-os",
+        // Large libs that benefit from pre-bundling (many internal modules)
+        "monaco-editor",
+        "shiki",
+        "emmet",
+        "@xterm/xterm",
+        // Utilities
+        "marked",
+        "diff",
       ],
+      esbuildOptions: {
+        target: "es2022",
+        treeShaking: true,
+        minify: true,
+        keepNames: true,
+      },
+      noDiscovery: false,
+      holdUntilCrawlEnd: true,
     },
-    // Pre-warm dependencies
-    preTransformRequests: true,
-  },
 
-  // Preview server (for testing production builds)
-  preview: {
-    port: 1421,
-    strictPort: true,
-    host: host || false,
-  },
+    // Build configuration
+    build: {
+      minify: "esbuild",
+      // Tauri v2 WebViews: macOS Safari 15+, Windows Edge/Chromium 91+, Linux WebKitGTK 2.36+
+      target: "es2022",
+      // Source maps only during development builds; disabled for production
+      sourcemap: isProd ? false : "inline",
+      cssCodeSplit: true,
+      // Monaco + workers are inherently large; suppress noise
+      chunkSizeWarningLimit: 1500,
+      // Prevent heavy lazy chunks from being preloaded before first paint
+      modulePreload: {
+        resolveDependencies: (_filename, deps) => {
+          const heavyChunks = [
+            'app-context-debug',
+            'app-context-tasks', 
+            'app-context-terminals',
+            'app-context-testing',
+            'app-context-lsp',
+            'app-context-extensions',
+            'app-extension-host',
+            'AppCore',
+            'EditorPanel',
+            'vendor-monaco',
+            'vendor-emmet',
+            'vendor-shiki',
+            'vendor-xterm',
+          ];
+          return deps.filter(dep => 
+            !heavyChunks.some(chunk => dep.includes(chunk))
+          );
+        },
+      },
+      rollupOptions: {
+        output: {
+          manualChunks: createManualChunks,
+          entryFileNames: "assets/[name]-[hash].js",
+          chunkFileNames: "assets/[name]-[hash].js",
+          assetFileNames: "assets/[name]-[hash][extname]",
+          compact: true,
+          preserveModules: false,
+          hoistTransitiveImports: true,
+        },
+        treeshake: {
+          moduleSideEffects: (id) => {
+            if (id.endsWith(".css")) return true;
+            if (id.includes("@tauri-apps")) return true;
+            return false;
+          },
+          propertyReadSideEffects: false,
+          annotations: true,
+        },
+      },
+      reportCompressedSize: false,
+    },
 
-  // Worker configuration for web workers
-  worker: {
-    format: "es",
-    rollupOptions: {
-      output: {
-        entryFileNames: "assets/worker-[name]-[hash].js",
+    // CSS configuration
+    css: {
+      modules: {
+        generateScopedName: "[hash:base64:8]",
+        scopeBehaviour: "local",
+      },
+      devSourcemap: true,
+    },
+
+    // Esbuild configuration
+    esbuild: {
+      drop: isProd ? ["console", "debugger"] : [],
+      target: "es2022",
+      treeShaking: true,
+      legalComments: "none",
+    },
+
+    clearScreen: false,
+
+    // Development server configuration
+    server: {
+      port: 1420,
+      strictPort: true,
+      host: host || false,
+      hmr: host
+        ? {
+            protocol: "ws",
+            host,
+            port: 1421,
+          }
+        : undefined,
+      watch: {
+        ignored: ["**/src-tauri/**"],
+      },
+      warmup: {
+        clientFiles: [
+          "./src/index.tsx",
+          "./src/AppShell.tsx",
+          "./src/AppCore.tsx",
+          "./src/pages/Home.tsx",
+          "./src/pages/Session.tsx",
+          "./src/components/MenuBar.tsx",
+          "./src/components/cortex/CortexDesktopLayout.tsx",
+          "./src/context/OptimizedProviders.tsx",
+          "./src/context/I18nContext.tsx",
+          "./src/context/ThemeContext.tsx",
+          "./src/context/CortexColorThemeContext.tsx",
+          "./src/context/ToastContext.tsx",
+          "./src/context/SettingsContext.tsx",
+          "./src/context/WindowsContext.tsx",
+          "./src/context/LayoutContext.tsx",
+          "./src/context/SDKContext.tsx",
+          "./src/context/SessionContext.tsx",
+          "./src/context/EditorContext.tsx",
+          "./src/context/WorkspaceContext.tsx",
+          "./src/context/CommandContext.tsx",
+          "./src/context/KeymapContext.tsx",
+          "./src/design-system/tokens/index.ts",
+          "./src/design-system/primitives/Flex.tsx",
+        ],
+      },
+      preTransformRequests: true,
+    },
+
+    // Preview server (for testing production builds)
+    preview: {
+      port: 1421,
+      strictPort: true,
+      host: host || false,
+    },
+
+    // Worker configuration for web workers
+    worker: {
+      format: "es",
+      rollupOptions: {
+        output: {
+          entryFileNames: "assets/worker-[name]-[hash].js",
+        },
       },
     },
-  },
 
-  // JSON handling optimization
-  json: {
-    // Enable named exports for tree-shaking JSON imports
-    namedExports: true,
-    // Stringify JSON for smaller bundles
-    stringify: true,
-  },
+    // JSON handling optimization
+    json: {
+      namedExports: true,
+      stringify: true,
+    },
 
-  // Define global constants (dead code elimination)
-  define: {
-    __DEV__: JSON.stringify(process.env.NODE_ENV !== "production"),
-    __VERSION__: JSON.stringify(process.env.npm_package_version || "0.1.0"),
-  },
-}));
+    // Define global constants (dead code elimination)
+    define: {
+      __DEV__: JSON.stringify(!isProd),
+      __VERSION__: JSON.stringify(process.env.npm_package_version || "0.1.0"),
+    },
+  };
+});
 
