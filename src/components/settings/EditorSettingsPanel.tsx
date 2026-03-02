@@ -498,7 +498,7 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
               min={1}
               max={500}
               value={editor().wordWrapColumn ?? 80}
-              onChange={(e) => updateSetting("wordWrapColumn", parseInt(e.currentTarget.value) || 80)}
+              onInput={(e) => updateSetting("wordWrapColumn", parseInt(e.currentTarget.value) || 80)}
               style={getInputStyle(hasOverride("wordWrapColumn"))}
               onFocus={(e) => e.currentTarget.style.borderColor = "var(--jb-border-focus)"}
               onBlur={(e) => e.currentTarget.style.borderColor = hasOverride("wordWrapColumn") ? "var(--jb-border-focus)" : "var(--jb-border-default)"}
@@ -641,7 +641,7 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
               min="1"
               max="300"
               value={editor().minimapMaxColumn}
-              onChange={(e) => updateSetting("minimapMaxColumn", parseInt(e.currentTarget.value) || 80)}
+              onInput={(e) => updateSetting("minimapMaxColumn", parseInt(e.currentTarget.value) || 80)}
               style={{ ...getInputStyle(hasOverride("minimapMaxColumn")), width: "80px" }}
               onFocus={(e) => e.currentTarget.style.borderColor = "var(--jb-border-focus)"}
               onBlur={(e) => e.currentTarget.style.borderColor = hasOverride("minimapMaxColumn") ? "var(--jb-border-focus)" : "var(--jb-border-default)"}
@@ -1137,7 +1137,7 @@ export function EditorSettingsPanel(props: EditorSettingsPanelProps) {
             max="100000"
             step="1000"
             value={editor().maxTokenizationLineLength}
-            onChange={(e) => updateSetting("maxTokenizationLineLength", parseInt(e.currentTarget.value) || 20000)}
+            onInput={(e) => updateSetting("maxTokenizationLineLength", parseInt(e.currentTarget.value) || 20000)}
             style={{ ...getInputStyle(hasOverride("maxTokenizationLineLength")), width: "96px" }}
             onFocus={(e) => e.currentTarget.style.borderColor = "var(--jb-border-focus)"}
             onBlur={(e) => e.currentTarget.style.borderColor = hasOverride("maxTokenizationLineLength") ? "var(--jb-border-focus)" : "var(--jb-border-default)"}

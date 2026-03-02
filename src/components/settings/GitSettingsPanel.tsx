@@ -151,7 +151,7 @@ function FolderPickerRow(props: {
             type="text"
             value={props.value}
             placeholder="Select a folder..."
-            onChange={(e) => props.onChange(e.currentTarget.value)}
+            onInput={(e) => props.onChange(e.currentTarget.value)}
             class={`flex-1 rounded border border-border bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none ${
               props.hasOverride ? "ring-1 ring-purple-500/50" : ""
             }`}
@@ -383,7 +383,7 @@ export function GitSettingsPanel(props: GitSettingsPanelProps) {
                 max="3600"
                 step="30"
                 value={git().autofetchPeriod}
-                onChange={(e) => updateSetting("autofetchPeriod", parseInt(e.currentTarget.value) || 180)}
+                onInput={(e) => updateSetting("autofetchPeriod", parseInt(e.currentTarget.value) || 180)}
                 class={`settings-inline-input w-24 ${hasOverride("autofetchPeriod") ? "ring-1 ring-purple-500/50" : ""}`}
               />
               <span class="text-xs text-foreground-muted">seconds</span>

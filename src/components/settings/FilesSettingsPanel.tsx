@@ -606,7 +606,7 @@ export function FilesSettingsPanel(props: FilesSettingsPanelProps) {
               max="60000"
               step="100"
               value={files().autoSaveDelay}
-              onChange={(e) => updateSetting("autoSaveDelay", parseInt(e.currentTarget.value))}
+              onInput={(e) => updateSetting("autoSaveDelay", parseInt(e.currentTarget.value))}
               class={`settings-inline-input w-24 ${hasOverride("autoSaveDelay") ? "ring-1 ring-purple-500/50" : ""}`}
             />
           </SettingRowWithOverride>

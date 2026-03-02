@@ -614,7 +614,7 @@ export function TimelineView(props: TimelineViewProps) {
                 <input
                   type="date"
                   value={formatDateForInput(filters().dateRange.start)}
-                  onChange={(e) => updateDateRange("start", e.currentTarget.value)}
+                  onInput={(e) => updateDateRange("start", e.currentTarget.value)}
                   class="w-full px-2 py-1 text-xs bg-background border border-border rounded focus:outline-none focus:border-primary"
                   placeholder="Start date"
                 />
@@ -624,7 +624,7 @@ export function TimelineView(props: TimelineViewProps) {
                 <input
                   type="date"
                   value={formatDateForInput(filters().dateRange.end)}
-                  onChange={(e) => updateDateRange("end", e.currentTarget.value)}
+                  onInput={(e) => updateDateRange("end", e.currentTarget.value)}
                   class="w-full px-2 py-1 text-xs bg-background border border-border rounded focus:outline-none focus:border-primary"
                   placeholder="End date"
                 />

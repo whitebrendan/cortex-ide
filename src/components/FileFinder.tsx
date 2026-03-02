@@ -920,7 +920,7 @@ export function FileFinder() {
               "font-weight": "500",
             }}>
               Go to line {parsedQuery().line}
-              {parsedQuery().column && <span>, column {parsedQuery().column}</span>}
+              <Show when={parsedQuery().column}><span>, column {parsedQuery().column}</span></Show>
             </span>
             <Show when={editorState.activeFileId}>
               <span style={{ 
@@ -1408,7 +1408,7 @@ export function FileFinder() {
             <span>
               {filteredFiles().length} file{filteredFiles().length !== 1 ? "s" : ""} 
               {searchQuery() && ` matching "${searchQuery()}"`}
-              {parsedQuery().line && <span style={{ color: "var(--jb-border-focus)" }}> → line {parsedQuery().line}{parsedQuery().column && `:${parsedQuery().column}`}</span>}
+              <Show when={parsedQuery().line}><span style={{ color: "var(--jb-border-focus)" }}> → line {parsedQuery().line}<Show when={parsedQuery().column}>{`:${parsedQuery().column}`}</Show></span></Show>
             </span>
           </Show>
         </div>

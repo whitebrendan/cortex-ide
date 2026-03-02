@@ -159,7 +159,7 @@ export function NetworkSettingsPanel(props: NetworkSettingsPanelProps) {
             type="text"
             value={http().proxy}
             placeholder="http://proxy.example.com:8080"
-            onChange={(e) => updateSetting("proxy", e.currentTarget.value)}
+            onInput={(e) => updateSetting("proxy", e.currentTarget.value)}
             class={`settings-inline-input w-full ${hasOverride("proxy") ? "ring-1 ring-purple-500/50" : ""}`}
           />
         </SettingRowColumnWithOverride>
@@ -208,7 +208,7 @@ export function NetworkSettingsPanel(props: NetworkSettingsPanelProps) {
             type="password"
             value={http().proxyAuthorization || ""}
             placeholder="Basic username:password (base64 encoded)"
-            onChange={(e) => updateSetting("proxyAuthorization", e.currentTarget.value || null)}
+            onInput={(e) => updateSetting("proxyAuthorization", e.currentTarget.value || null)}
             class={`settings-inline-input w-full ${hasOverride("proxyAuthorization") ? "ring-1 ring-purple-500/50" : ""}`}
           />
         </SettingRowColumnWithOverride>

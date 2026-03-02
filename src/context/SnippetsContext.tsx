@@ -1080,27 +1080,43 @@ function getDefaultSnippets(): SnippetFile[] {
           ],
           description: "Create an async arrow function",
         },
-        "useState Hook": {
-          name: "useState Hook",
+        "createSignal Hook": {
+          name: "createSignal Hook",
           prefix: "ust",
           body: [
-            "const [${1:state}, set${1/(.*)/${1:/capitalize}/}] = useState<${2:type}>(${3:initialValue});",
+            "const [${1:value}, set${1/(.*)/${1:/capitalize}/}] = createSignal<${2:type}>(${3:initialValue});",
           ],
-          description: "React useState hook",
+          description: "SolidJS createSignal hook",
         },
-        "useEffect Hook": {
-          name: "useEffect Hook",
+        "createEffect Hook": {
+          name: "createEffect Hook",
           prefix: "uef",
           body: [
-            "useEffect(() => {",
+            "createEffect(() => {",
             "\t$0",
-            "", 
-            "\treturn () => {",
-            "\t\t// cleanup",
-            "\t};",
-            "}, [${1:deps}]);",
+            "});",
           ],
-          description: "React useEffect hook",
+          description: "SolidJS createEffect hook",
+        },
+        "onMount Hook": {
+          name: "onMount Hook",
+          prefix: "omnt",
+          body: [
+            "onMount(() => {",
+            "\t$0",
+            "});",
+          ],
+          description: "SolidJS onMount lifecycle",
+        },
+        "onCleanup Hook": {
+          name: "onCleanup Hook",
+          prefix: "ocln",
+          body: [
+            "onCleanup(() => {",
+            "\t$0",
+            "});",
+          ],
+          description: "SolidJS onCleanup lifecycle",
         },
         "createSignal": {
           name: "createSignal",

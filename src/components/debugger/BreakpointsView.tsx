@@ -1834,7 +1834,7 @@ export function BreakpointsView() {
                               </Text>
                               <Text variant="muted" size="xs" as="div">
                                 Line {bp.line}{bp.column !== undefined ? `:${bp.column}` : ""}
-                                {bp.condition && <Text style={{ "margin-left": "0.25rem", color: "var(--cortex-warning)" }}>• conditional</Text>}
+                                <Show when={bp.condition}><Text style={{ "margin-left": "0.25rem", color: "var(--cortex-warning)" }}>• conditional</Text></Show>
                               </Text>
                             </div>
                           </Button>

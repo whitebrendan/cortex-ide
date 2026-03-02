@@ -615,7 +615,7 @@ src/auth/
               <Input
                 label="Include patterns:"
                 value={settings().includePatterns}
-                onChange={(e) => updateSetting("includePatterns", e.currentTarget.value)}
+                onInput={(e) => updateSetting("includePatterns", e.currentTarget.value)}
                 placeholder="src/**, lib/**"
               />
             </div>
@@ -623,7 +623,7 @@ src/auth/
               <Input
                 label="Exclude patterns:"
                 value={settings().excludePatterns}
-                onChange={(e) => updateSetting("excludePatterns", e.currentTarget.value)}
+                onInput={(e) => updateSetting("excludePatterns", e.currentTarget.value)}
                 placeholder="node_modules, dist"
               />
             </div>

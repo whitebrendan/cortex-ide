@@ -1,4 +1,4 @@
-import { Component, For, JSX } from "solid-js";
+import { Component, For, JSX, Show } from "solid-js";
 
 export interface VibeTab {
   id: string;
@@ -63,22 +63,22 @@ export const VibeTabBar: Component<VibeTabBarProps> = (props) => {
         <For each={props.tabs}>
           {(tab, i) => (
             <>
-              {i() > 0 && <div style={dividerStyle} />}
+              <Show when={i() > 0}><div style={dividerStyle} /></Show>
               <button
                 style={tabStyle(props.activeId === tab.id)}
                 onClick={() => props.onTabChange(tab.id)}
               >
-                {tab.icon && (
+                <Show when={tab.icon}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style={{ "flex-shrink": "0" }}>
-                    {tab.icon === "clock" && <><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></>}
-                    {tab.icon === "file" && <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /></>}
+                    <Show when={tab.icon === "clock"}><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></Show>
+                    <Show when={tab.icon === "file"}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /></Show>
                   </svg>
-                )}
+                </Show>
                 {tab.label}
-                {tab.count !== undefined && (
+                <Show when={tab.count !== undefined}>
                   <span style={{ color: "var(--cortex-text-secondary)", "font-size": "var(--cortex-text-sm)" }}>{tab.count}</span>
-                )}
-                {props.activeId === tab.id && <div style={indicatorStyle} />}
+                </Show>
+                <Show when={props.activeId === tab.id}><div style={indicatorStyle} /></Show>
               </button>
             </>
           )}

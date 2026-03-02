@@ -510,7 +510,7 @@ export function CommitGraph(props: CommitGraphProps) {
         class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium whitespace-nowrap"
         style={style}
       >
-        {iconName && <Icon name={iconName} class="w-3 h-3" />}
+        <Show when={iconName}><Icon name={iconName!} class="w-3 h-3" /></Show>
         {ref.name}
       </span>
     );

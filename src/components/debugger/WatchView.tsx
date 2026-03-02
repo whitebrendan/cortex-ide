@@ -223,7 +223,7 @@ export function WatchView() {
                         </span>
                       }>
                         <Show when={watch.result !== undefined} fallback="<not evaluated>">
-                          {watch.type && <span class="opacity-60">[{watch.type}] </span>}
+                          <Show when={watch.type}><span class="opacity-60">[{watch.type}] </span></Show>
                           {watch.result}
                         </Show>
                       </Show>

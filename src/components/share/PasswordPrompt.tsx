@@ -1,4 +1,4 @@
-import { JSX, createSignal } from "solid-js";
+import { JSX, createSignal, Show } from "solid-js";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Icon } from "@/components/ui/Icon";
@@ -95,7 +95,7 @@ export function PasswordPrompt(props: PasswordPromptProps) {
             disabled={props.loading}
             error={props.error}
           />
-          {props.error && <p style={errorStyle}>{props.error}</p>}
+          <Show when={props.error}><p style={errorStyle}>{props.error}</p></Show>
           <Button
             type="submit"
             variant="primary"

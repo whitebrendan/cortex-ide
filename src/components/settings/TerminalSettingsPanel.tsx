@@ -210,7 +210,7 @@ export function TerminalSettingsPanel(props: TerminalSettingsPanelProps) {
             type="text"
             value={terminal().shellPath || defaultShell()}
             placeholder={defaultShell() || "Default shell"}
-            onChange={(e) => updateSetting("shellPath", e.currentTarget.value)}
+            onInput={(e) => updateSetting("shellPath", e.currentTarget.value)}
             class={`settings-inline-input flex-1 ${hasOverride("shellPath") ? "ring-1 ring-purple-500/50" : ""}`}
           />
         </SettingRowWithOverride>
@@ -225,7 +225,7 @@ export function TerminalSettingsPanel(props: TerminalSettingsPanelProps) {
             type="text"
             value={terminal().shellArgs.join(" ")}
             placeholder="e.g., -l -i"
-            onChange={(e) => updateSetting("shellArgs", e.currentTarget.value.split(" ").filter(Boolean))}
+            onInput={(e) => updateSetting("shellArgs", e.currentTarget.value.split(" ").filter(Boolean))}
             class={`settings-inline-input w-full ${hasOverride("shellArgs") ? "ring-1 ring-purple-500/50" : ""}`}
           />
         </SettingRowColumnWithOverride>
@@ -240,7 +240,7 @@ export function TerminalSettingsPanel(props: TerminalSettingsPanelProps) {
             type="text"
             value={terminal().cwd}
             placeholder="Default: workspace root"
-            onChange={(e) => updateSetting("cwd", e.currentTarget.value)}
+            onInput={(e) => updateSetting("cwd", e.currentTarget.value)}
             class={`settings-inline-input w-full ${hasOverride("cwd") ? "ring-1 ring-purple-500/50" : ""}`}
           />
         </SettingRowColumnWithOverride>
@@ -430,7 +430,7 @@ export function TerminalSettingsPanel(props: TerminalSettingsPanelProps) {
             type="text"
             value={terminal().wordSeparators}
             placeholder={" ()[]{}',\"'─''"}
-            onChange={(e) => updateSetting("wordSeparators", e.currentTarget.value)}
+            onInput={(e) => updateSetting("wordSeparators", e.currentTarget.value)}
             class={`settings-inline-input w-full font-mono ${hasOverride("wordSeparators") ? "ring-1 ring-purple-500/50" : ""}`}
           />
         </SettingRowColumnWithOverride>
