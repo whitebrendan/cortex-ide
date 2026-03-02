@@ -14,7 +14,8 @@ use tracing::{info, warn};
 
 use crate::fs::security::{validate_path_for_delete, validate_path_for_write};
 use crate::fs::types::{
-    BATCH_SIZE, CortexProject, DirectoryCache, FileEntry, FileMetadata, IoSemaphore,
+    BATCH_SIZE, CortexProject, DirectoryCache, FileContentCache, FileEntry, FileMetadata,
+    IoSemaphore,
 };
 use crate::fs::utils::{
     get_extension, is_hidden, parallel_sort_entries, should_ignore, system_time_to_unix,
@@ -476,12 +477,14 @@ pub async fn fs_prefetch_directory(
     Ok(())
 }
 
-/// Clear the directory cache
+/// Clear the directory cache and file content cache
 #[tauri::command]
 pub async fn fs_clear_cache(app: AppHandle) -> Result<(), String> {
     let cache = app.state::<Arc<DirectoryCache>>();
     cache.clear();
-    info!("Directory cache cleared");
+    let content_cache = app.state::<Arc<FileContentCache>>();
+    content_cache.clear();
+    info!("Directory and file content caches cleared");
     Ok(())
 }
 
