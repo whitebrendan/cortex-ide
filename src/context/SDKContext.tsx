@@ -1,7 +1,7 @@
 import { createContext, useContext, ParentProps, onCleanup, onMount, batch } from "solid-js";
 import { createStore, produce } from "solid-js/store";
 import { invoke } from "@tauri-apps/api/core";
-import { useTauriListen } from "../hooks";
+import { useTauriListen } from "../hooks/useTauriListen";
 import { type ServerInfo } from "@/utils/tauri";
 import { API_BASE_URL } from "../utils/config";
 import { getWindowLabel } from "@/utils/windowStorage";

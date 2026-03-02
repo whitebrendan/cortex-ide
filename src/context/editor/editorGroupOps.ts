@@ -1,7 +1,7 @@
 import { batch } from "solid-js";
 import { produce, type SetStoreFunction } from "solid-js/store";
 import type { SplitDirection, EditorGroup, EditorSplit } from "../../types";
-import type { EditorUIState } from "./EditorUIContext";
+import type { EditorUIState } from "./editorUITypes";
 import { generateId } from "./languageDetection";
 
 export function createGroupOps(
