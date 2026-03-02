@@ -14,10 +14,13 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use tauri::{AppHandle, Manager};
-use tracing::info;
+use tracing::{debug, info};
 
 use crate::fs::security::{validate_path_for_delete, validate_path_for_read};
-use crate::fs::types::{DirectoryCache, ENCODING_SAMPLE_SIZE, MAX_TEXT_FILE_SIZE};
+use crate::fs::types::{
+    DirectoryCache, ENCODING_SAMPLE_SIZE, FileContentCache, MAX_CACHEABLE_FILE_SIZE,
+    MAX_TEXT_FILE_SIZE, MMAP_THRESHOLD,
+};
 use crate::models::FileContent;
 
 /// Read a file and return its content with encoding metadata.
@@ -25,8 +28,10 @@ use crate::models::FileContent;
 /// Uses `chardetng` + `encoding_rs` to detect the file encoding and decode
 /// the content accordingly. Returns a `FileContent` struct containing the
 /// decoded text, detected encoding name, file size, and path.
+/// Results for files ≤ `MAX_CACHEABLE_FILE_SIZE` are cached in-memory.
 #[tauri::command]
-pub async fn read_file(path: String) -> Result<FileContent, String> {
+pub async fn read_file(app: AppHandle, path: String) -> Result<FileContent, String> {
+    let start = std::time::Instant::now();
     let file_path = PathBuf::from(&path);
     let validated_path = validate_path_for_read(&file_path)?;
 
@@ -52,9 +57,51 @@ pub async fn read_file(path: String) -> Result<FileContent, String> {
         ));
     }
 
-    let bytes = tokio::fs::read(&validated_path)
+    let mtime = metadata
+        .modified()
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+
+    // Check content cache first
+    let content_cache = app.state::<Arc<FileContentCache>>();
+    if let Some(cached) = content_cache.get(&path, mtime) {
+        debug!(
+            "read_file cache hit: {} ({:.1} KB, {:.1}ms)",
+            path,
+            size as f64 / 1024.0,
+            start.elapsed().as_secs_f64() * 1000.0
+        );
+        // For cached content, detect encoding from the cached string
+        // (it was already decoded, so it's effectively UTF-8)
+        return Ok(FileContent {
+            content: cached,
+            encoding: "UTF-8".to_string(),
+            size,
+            path,
+        });
+    }
+
+    // Read the file — use mmap for large files, tokio::fs for small ones
+    let bytes = if size >= MMAP_THRESHOLD {
+        let p = validated_path.clone();
+        tokio::task::spawn_blocking(move || {
+            let file =
+                std::fs::File::open(&p).map_err(|e| format!("Failed to open file: {}", e))?;
+            #[allow(unsafe_code)]
+            let mmap = unsafe {
+                memmap2::Mmap::map(&file).map_err(|e| format!("Failed to mmap file: {}", e))?
+            };
+            Ok::<Vec<u8>, String>(mmap.to_vec())
+        })
         .await
-        .map_err(|e| format!("Failed to read file: {}", e))?;
+        .map_err(|e| format!("Task join error: {}", e))??
+    } else {
+        tokio::fs::read(&validated_path)
+            .await
+            .map_err(|e| format!("Failed to read file: {}", e))?
+    };
 
     // Detect encoding via BOM first, then chardetng (using sample for detection)
     let (encoding, content) = if let Some((enc, _bom_len)) = encoding_rs::Encoding::for_bom(&bytes)
@@ -69,6 +116,19 @@ pub async fn read_file(path: String) -> Result<FileContent, String> {
         let (decoded, _, _) = enc.decode(&bytes);
         (enc.name().to_string(), decoded.into_owned())
     };
+
+    // Cache the decoded content if within cacheable size
+    if size <= MAX_CACHEABLE_FILE_SIZE {
+        content_cache.insert(path.clone(), content.clone(), mtime);
+    }
+
+    debug!(
+        "read_file read: {} ({:.1} KB, mmap={}, {:.1}ms)",
+        path,
+        size as f64 / 1024.0,
+        size >= MMAP_THRESHOLD,
+        start.elapsed().as_secs_f64() * 1000.0
+    );
 
     Ok(FileContent {
         content,

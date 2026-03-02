@@ -33,7 +33,7 @@ pub mod watcher;
 pub mod workspace_edit;
 
 // Re-export types for public use
-pub use types::{DirectoryCache, FileWatcherState, IoSemaphore};
+pub use types::{DirectoryCache, FileContentCache, FileWatcherState, IoSemaphore};
 
 // Re-export everything from submodules for Tauri command registration
 // Note: Tauri's #[tauri::command] macro generates internal items that need to be accessible

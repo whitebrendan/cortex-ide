@@ -790,6 +790,7 @@ dependencies = [
  "landlock",
  "libc",
  "lru",
+ "memmap2",
  "notify",
  "once_cell",
  "open",

@@ -94,6 +94,9 @@ wasmtime = { version = "29", features = ["cranelift"], optional = true }
 encoding_rs = "0.8"
 chardetng = "0.1"
 
+# Memory-mapped files for large file read-only access
+memmap2 = "0.9"
+
 # Real-time collaboration (deps already declared above)
 
 # Unix utilities

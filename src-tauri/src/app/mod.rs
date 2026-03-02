@@ -430,6 +430,7 @@ pub fn register_state(
         .manage(crate::settings_sync::SettingsSyncState::new())
         .manage(Arc::new(crate::fs::FileWatcherState::new()))
         .manage(Arc::new(crate::fs::DirectoryCache::new()))
+        .manage(Arc::new(crate::fs::FileContentCache::new()))
         .manage(Arc::new(crate::fs::IoSemaphore::new()))
         .manage(Arc::new(crate::batch::BatchCacheState::new()))
         .manage(crate::mcp::McpState::<tauri::Wry>::new(

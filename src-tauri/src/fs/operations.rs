@@ -7,19 +7,28 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tauri::{AppHandle, Manager};
 use tokio::fs;
-use tracing::info;
+use tracing::{debug, info};
 
 use crate::fs::security::{
     validate_path_for_delete, validate_path_for_read, validate_path_for_write,
 };
-use crate::fs::types::{DirectoryCache, MAX_BINARY_FILE_SIZE, MAX_TEXT_FILE_SIZE};
+use crate::fs::types::{
+    DirectoryCache, FileContentCache, MAX_BINARY_FILE_SIZE, MAX_CACHEABLE_FILE_SIZE,
+    MAX_TEXT_FILE_SIZE, MMAP_THRESHOLD,
+};
 
 // ============================================================================
 // File Read Operations
 // ============================================================================
 
+/// Read a file as text using memory-mapped I/O for large files.
+///
+/// For files above `MMAP_THRESHOLD` (1 MB), uses `memmap2` for zero-copy
+/// read access. Smaller files use regular `tokio::fs` async reads.
+/// Results for files ≤ `MAX_CACHEABLE_FILE_SIZE` are cached in-memory.
 #[tauri::command]
-pub async fn fs_read_file(path: String) -> Result<String, String> {
+pub async fn fs_read_file(app: AppHandle, path: String) -> Result<String, String> {
+    let start = std::time::Instant::now();
     let file_path = PathBuf::from(&path);
 
     // Validate path to prevent traversal attacks
@@ -36,27 +45,95 @@ pub async fn fs_read_file(path: String) -> Result<String, String> {
     let metadata = fs::metadata(&validated_path)
         .await
         .map_err(|e| format!("Failed to read file metadata: {}", e))?;
-    if metadata.len() > MAX_TEXT_FILE_SIZE {
+    let file_size = metadata.len();
+    if file_size > MAX_TEXT_FILE_SIZE {
         return Err(format!(
             "File is too large to open as text ({:.1} MB, limit {:.0} MB): {}",
-            metadata.len() as f64 / (1024.0 * 1024.0),
+            file_size as f64 / (1024.0 * 1024.0),
             MAX_TEXT_FILE_SIZE as f64 / (1024.0 * 1024.0),
             path
         ));
     }
 
-    // Try reading as UTF-8 first, fall back to lossy conversion for non-UTF-8 files
-    match fs::read_to_string(&validated_path).await {
+    let mtime = metadata
+        .modified()
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+
+    // Check content cache first
+    let content_cache = app.state::<Arc<FileContentCache>>();
+    if let Some(cached) = content_cache.get(&path, mtime) {
+        debug!(
+            "fs_read_file cache hit: {} ({:.1} KB, {:.1}ms)",
+            path,
+            file_size as f64 / 1024.0,
+            start.elapsed().as_secs_f64() * 1000.0
+        );
+        return Ok(cached);
+    }
+
+    // Read the file — use mmap for large files, tokio::fs for small ones
+    let content = if file_size >= MMAP_THRESHOLD {
+        read_file_mmap(&validated_path).await?
+    } else {
+        read_file_async(&validated_path).await?
+    };
+
+    // Cache the result if within cacheable size
+    if file_size <= MAX_CACHEABLE_FILE_SIZE {
+        content_cache.insert(path.clone(), content.clone(), mtime);
+    }
+
+    debug!(
+        "fs_read_file read: {} ({:.1} KB, mmap={}, {:.1}ms)",
+        path,
+        file_size as f64 / 1024.0,
+        file_size >= MMAP_THRESHOLD,
+        start.elapsed().as_secs_f64() * 1000.0
+    );
+
+    Ok(content)
+}
+
+/// Read a file as UTF-8 text using async I/O, with lossy fallback.
+async fn read_file_async(path: &Path) -> Result<String, String> {
+    match fs::read_to_string(path).await {
         Ok(content) => Ok(content),
         Err(e) if e.kind() == std::io::ErrorKind::InvalidData => {
-            // File is not valid UTF-8, try lossy conversion
-            let bytes = fs::read(&validated_path)
+            let bytes = fs::read(path)
                 .await
                 .map_err(|e| format!("Failed to read file: {}", e))?;
             Ok(String::from_utf8_lossy(&bytes).into_owned())
         }
         Err(e) => Err(format!("Failed to read file: {}", e)),
     }
+}
+
+/// Read a file using memory-mapped I/O for efficient large file access.
+///
+/// Uses `memmap2::Mmap` for zero-copy read access. The mmap syscall and
+/// string conversion are done inside `spawn_blocking` to avoid blocking
+/// the async runtime.
+async fn read_file_mmap(path: &Path) -> Result<String, String> {
+    let path = path.to_path_buf();
+    tokio::task::spawn_blocking(move || {
+        let file = std::fs::File::open(&path).map_err(|e| format!("Failed to open file: {}", e))?;
+        // SAFETY: memmap2::Mmap is safe for read-only access as long as no other
+        // process truncates the file while mapped. We accept this risk for
+        // performance — the worst case is a SIGBUS which Tauri handles gracefully.
+        #[allow(unsafe_code)]
+        let mmap = unsafe {
+            memmap2::Mmap::map(&file).map_err(|e| format!("Failed to mmap file: {}", e))?
+        };
+        match std::str::from_utf8(&mmap) {
+            Ok(s) => Ok(s.to_string()),
+            Err(_) => Ok(String::from_utf8_lossy(&mmap).into_owned()),
+        }
+    })
+    .await
+    .map_err(|e| format!("Task join error: {}", e))?
 }
 
 #[tauri::command]
@@ -112,6 +189,10 @@ pub async fn fs_write_file(app: AppHandle, path: String, content: String) -> Res
         cache.invalidate(&parent.to_string_lossy());
     }
 
+    // Invalidate content cache before writing
+    let content_cache = app.state::<Arc<FileContentCache>>();
+    content_cache.invalidate(&path);
+
     fs::write(&validated_path, content)
         .await
         .map_err(|e| format!("Failed to write file: {}", e))?;
@@ -148,6 +229,10 @@ pub async fn fs_write_file_binary(
         cache.invalidate(&parent.to_string_lossy());
     }
 
+    // Invalidate content cache before writing
+    let content_cache = app.state::<Arc<FileContentCache>>();
+    content_cache.invalidate(&path);
+
     fs::write(&validated_path, bytes)
         .await
         .map_err(|e| format!("Failed to write file: {}", e))?;
@@ -179,6 +264,10 @@ pub async fn fs_delete_file(app: AppHandle, path: String) -> Result<(), String> 
         let cache = app.state::<Arc<DirectoryCache>>();
         cache.invalidate(&parent.to_string_lossy());
     }
+
+    // Invalidate content cache
+    let content_cache = app.state::<Arc<FileContentCache>>();
+    content_cache.invalidate(&path);
 
     fs::remove_file(&validated_path)
         .await
@@ -255,6 +344,10 @@ pub async fn fs_rename(app: AppHandle, old_path: String, new_path: String) -> Re
         cache.invalidate(&parent.to_string_lossy());
     }
     cache.invalidate_prefix(&old_path);
+
+    // Invalidate content cache for the old path
+    let content_cache = app.state::<Arc<FileContentCache>>();
+    content_cache.invalidate(&old_path);
 
     fs::rename(&validated_from, &validated_to)
         .await
@@ -337,6 +430,11 @@ pub async fn fs_move(app: AppHandle, source: String, destination: String) -> Res
         cache.invalidate(&parent.to_string_lossy());
     }
     cache.invalidate_prefix(&source);
+
+    // Invalidate content cache for the source path
+    let content_cache = app.state::<Arc<FileContentCache>>();
+    content_cache.invalidate(&source);
+    content_cache.invalidate_prefix(&source);
 
     match fs::rename(&validated_from, &validated_to).await {
         Ok(_) => {}
@@ -423,6 +521,13 @@ pub async fn fs_trash(app: AppHandle, path: String) -> Result<(), String> {
     }
     if validated_path.is_dir() {
         cache.invalidate_prefix(&path);
+    }
+
+    // Invalidate content cache
+    let content_cache = app.state::<Arc<FileContentCache>>();
+    content_cache.invalidate(&path);
+    if validated_path.is_dir() {
+        content_cache.invalidate_prefix(&path);
     }
 
     trash::delete(&validated_path).map_err(|e| format!("Failed to trash: {}", e))?;

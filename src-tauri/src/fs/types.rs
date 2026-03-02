@@ -38,6 +38,18 @@ pub const MAX_BINARY_FILE_SIZE: u64 = 512 * 1024 * 1024;
 /// Sample size for encoding detection on large files (64 KB)
 pub const ENCODING_SAMPLE_SIZE: usize = 64 * 1024;
 
+/// Maximum total size of the file content cache (100 MB)
+pub const MAX_CONTENT_CACHE_SIZE: usize = 100 * 1024 * 1024;
+
+/// Maximum individual file size eligible for content caching (5 MB)
+pub const MAX_CACHEABLE_FILE_SIZE: u64 = 5 * 1024 * 1024;
+
+/// TTL for cached file content in seconds
+pub const CONTENT_CACHE_TTL_SECS: u64 = 5;
+
+/// File size threshold above which mmap is used instead of regular read (1 MB)
+pub const MMAP_THRESHOLD: u64 = 1024 * 1024;
+
 // ============================================================================
 // Core Types
 // ============================================================================
@@ -309,6 +321,145 @@ impl IoSemaphore {
 }
 
 impl Default for IoSemaphore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+// ============================================================================
+// File Content Cache
+// ============================================================================
+
+/// Cached file content with metadata for staleness detection
+#[derive(Debug, Clone)]
+pub struct CachedFileContent {
+    pub content: String,
+    pub size: usize,
+    pub mtime: u64,
+    pub timestamp: Instant,
+}
+
+/// Thread-safe file content cache with size-based eviction.
+///
+/// Caches recently read file contents to avoid repeated disk I/O for
+/// files that are accessed multiple times (common in IDE workflows).
+/// Uses DashMap for concurrent access and evicts entries when total
+/// cached size exceeds `MAX_CONTENT_CACHE_SIZE`.
+pub struct FileContentCache {
+    cache: DashMap<String, CachedFileContent>,
+    total_size: std::sync::atomic::AtomicUsize,
+    ttl: Duration,
+}
+
+impl FileContentCache {
+    pub fn new() -> Self {
+        Self {
+            cache: DashMap::new(),
+            total_size: std::sync::atomic::AtomicUsize::new(0),
+            ttl: Duration::from_secs(CONTENT_CACHE_TTL_SECS),
+        }
+    }
+
+    /// Get cached content if it exists, is not expired, and mtime matches.
+    pub fn get(&self, path: &str, current_mtime: u64) -> Option<String> {
+        if let Some(entry) = self.cache.get(path) {
+            if entry.timestamp.elapsed() < self.ttl && entry.mtime == current_mtime {
+                return Some(entry.content.clone());
+            }
+            // Stale entry — drop the ref before removing
+            drop(entry);
+            self.remove(path);
+        }
+        None
+    }
+
+    /// Insert file content into the cache. Only caches files within size limits.
+    pub fn insert(&self, path: String, content: String, mtime: u64) {
+        let size = content.len();
+        if size as u64 > MAX_CACHEABLE_FILE_SIZE {
+            return;
+        }
+
+        // Evict entries if we'd exceed the total size budget
+        while self.total_size.load(std::sync::atomic::Ordering::Relaxed) + size
+            > MAX_CONTENT_CACHE_SIZE
+        {
+            if !self.evict_oldest() {
+                break;
+            }
+        }
+
+        // If replacing an existing entry, subtract its old size
+        if let Some(old) = self.cache.get(path.as_str()) {
+            self.total_size
+                .fetch_sub(old.size, std::sync::atomic::Ordering::Relaxed);
+        }
+
+        self.cache.insert(
+            path,
+            CachedFileContent {
+                content,
+                size,
+                mtime,
+                timestamp: Instant::now(),
+            },
+        );
+        self.total_size
+            .fetch_add(size, std::sync::atomic::Ordering::Relaxed);
+    }
+
+    /// Invalidate a specific path.
+    pub fn invalidate(&self, path: &str) {
+        self.remove(path);
+    }
+
+    /// Invalidate all paths starting with the given prefix.
+    pub fn invalidate_prefix(&self, prefix: &str) {
+        let keys_to_remove: Vec<String> = self
+            .cache
+            .iter()
+            .filter(|entry| entry.key().starts_with(prefix))
+            .map(|entry| entry.key().clone())
+            .collect();
+
+        for key in keys_to_remove {
+            self.remove(&key);
+        }
+    }
+
+    /// Clear all cached content.
+    pub fn clear(&self) {
+        self.cache.clear();
+        self.total_size
+            .store(0, std::sync::atomic::Ordering::Relaxed);
+    }
+
+    /// Remove a single entry and update total size.
+    fn remove(&self, path: &str) {
+        if let Some((_, entry)) = self.cache.remove(path) {
+            self.total_size
+                .fetch_sub(entry.size, std::sync::atomic::Ordering::Relaxed);
+        }
+    }
+
+    /// Evict the oldest (by timestamp) entry. Returns true if an entry was evicted.
+    fn evict_oldest(&self) -> bool {
+        let oldest = self
+            .cache
+            .iter()
+            .min_by_key(|entry| entry.timestamp)
+            .map(|entry| entry.key().clone());
+
+        if let Some(key) = oldest {
+            self.remove(&key);
+            true
+        } else {
+            false
+        }
+    }
+}
+
+impl Default for FileContentCache {
     fn default() -> Self {
         Self::new()
     }

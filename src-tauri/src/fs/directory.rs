@@ -546,21 +546,21 @@ pub async fn fs_is_directory(path: String) -> Result<bool, String> {
 // ============================================================================
 
 #[tauri::command]
-pub fn fs_get_home_dir() -> Result<String, String> {
+pub async fn fs_get_home_dir() -> Result<String, String> {
     dirs::home_dir()
         .map(|p| p.to_string_lossy().to_string())
         .ok_or_else(|| "Could not determine home directory".to_string())
 }
 
 #[tauri::command]
-pub fn fs_get_documents_dir() -> Result<String, String> {
+pub async fn fs_get_documents_dir() -> Result<String, String> {
     dirs::document_dir()
         .map(|p| p.to_string_lossy().to_string())
         .ok_or_else(|| "Could not determine documents directory".to_string())
 }
 
 #[tauri::command]
-pub fn fs_get_desktop_dir() -> Result<String, String> {
+pub async fn fs_get_desktop_dir() -> Result<String, String> {
     dirs::desktop_dir()
         .map(|p| p.to_string_lossy().to_string())
         .ok_or_else(|| "Could not determine desktop directory".to_string())
@@ -570,7 +570,7 @@ pub fn fs_get_desktop_dir() -> Result<String, String> {
 /// Windows: Documents\Cortex\Projects
 /// macOS/Linux: ~/Documents/Cortex/Projects (or ~/Cortex/Projects if Documents doesn't exist)
 #[tauri::command]
-pub fn fs_get_default_projects_dir() -> Result<String, String> {
+pub async fn fs_get_default_projects_dir() -> Result<String, String> {
     let base = dirs::document_dir()
         .or_else(dirs::home_dir)
         .ok_or("Could not determine documents directory")?;
@@ -582,9 +582,9 @@ pub fn fs_get_default_projects_dir() -> Result<String, String> {
 /// Create a new project directory in the default Cortex projects folder.
 /// Returns the full path to the created project.
 #[tauri::command]
-pub fn fs_create_project(name: String) -> Result<String, String> {
+pub async fn fs_create_project(name: String) -> Result<String, String> {
     // Validate project name
-    let name = name.trim();
+    let name = name.trim().to_string();
     if name.is_empty() || name.len() > 100 {
         return Err("Project name must be 1-100 characters".to_string());
     }
@@ -604,15 +604,16 @@ pub fn fs_create_project(name: String) -> Result<String, String> {
         .ok_or("Could not determine documents directory")?;
 
     let projects_dir = base.join("Cortex").join("Projects");
-    let project_path = projects_dir.join(name);
+    let project_path = projects_dir.join(&name);
 
     // Check if already exists
     if project_path.exists() {
         return Err(format!("Project '{}' already exists", name));
     }
 
-    // Create directories
-    std::fs::create_dir_all(&project_path)
+    // Create directories using async I/O
+    fs::create_dir_all(&project_path)
+        .await
         .map_err(|e| format!("Failed to create project directory: {}", e))?;
 
     info!("Created new project at: {}", project_path.to_string_lossy());
@@ -621,51 +622,55 @@ pub fn fs_create_project(name: String) -> Result<String, String> {
 
 /// List all projects in the Cortex projects directory.
 #[tauri::command]
-pub fn fs_list_cortex_projects() -> Result<Vec<CortexProject>, String> {
-    let base = dirs::document_dir()
-        .or_else(dirs::home_dir)
-        .ok_or("Could not determine documents directory")?;
+pub async fn fs_list_cortex_projects() -> Result<Vec<CortexProject>, String> {
+    tokio::task::spawn_blocking(move || {
+        let base = dirs::document_dir()
+            .or_else(dirs::home_dir)
+            .ok_or("Could not determine documents directory")?;
 
-    let projects_dir = base.join("Cortex").join("Projects");
+        let projects_dir = base.join("Cortex").join("Projects");
 
-    // If the directory doesn't exist yet, return empty list
-    if !projects_dir.exists() {
-        return Ok(Vec::new());
-    }
-
-    let mut projects = Vec::new();
-
-    let entries = std::fs::read_dir(&projects_dir)
-        .map_err(|e| format!("Failed to read projects dir: {}", e))?;
-
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.is_dir() {
-            let name = path
-                .file_name()
-                .map(|n| n.to_string_lossy().to_string())
-                .unwrap_or_default();
-
-            let modified_at = path
-                .metadata()
-                .and_then(|m| m.modified())
-                .map(|t| {
-                    t.duration_since(std::time::UNIX_EPOCH)
-                        .map(|d| d.as_secs() as i64)
-                        .unwrap_or(0)
-                })
-                .unwrap_or(0);
-
-            projects.push(CortexProject {
-                name,
-                path: path.to_string_lossy().to_string(),
-                modified_at,
-            });
+        // If the directory doesn't exist yet, return empty list
+        if !projects_dir.exists() {
+            return Ok(Vec::new());
         }
-    }
 
-    // Sort by modified_at descending (newest first)
-    projects.sort_by(|a, b| b.modified_at.cmp(&a.modified_at));
+        let mut projects = Vec::new();
 
-    Ok(projects)
+        let entries = std::fs::read_dir(&projects_dir)
+            .map_err(|e| format!("Failed to read projects dir: {}", e))?;
+
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                let name = path
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_default();
+
+                let modified_at = path
+                    .metadata()
+                    .and_then(|m| m.modified())
+                    .map(|t| {
+                        t.duration_since(std::time::UNIX_EPOCH)
+                            .map(|d| d.as_secs() as i64)
+                            .unwrap_or(0)
+                    })
+                    .unwrap_or(0);
+
+                projects.push(CortexProject {
+                    name,
+                    path: path.to_string_lossy().to_string(),
+                    modified_at,
+                });
+            }
+        }
+
+        // Sort by modified_at descending (newest first)
+        projects.sort_by(|a, b| b.modified_at.cmp(&a.modified_at));
+
+        Ok(projects)
+    })
+    .await
+    .map_err(|e| format!("Task join error: {}", e))?
 }

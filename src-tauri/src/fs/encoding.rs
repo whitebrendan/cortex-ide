@@ -8,7 +8,9 @@ use std::sync::Arc;
 use tauri::{AppHandle, Manager};
 use tracing::{info, warn};
 
-use crate::fs::types::{DirectoryCache, ENCODING_SAMPLE_SIZE, MAX_TEXT_FILE_SIZE};
+use crate::fs::types::{
+    DirectoryCache, ENCODING_SAMPLE_SIZE, FileContentCache, MAX_TEXT_FILE_SIZE,
+};
 
 // ============================================================================
 // Line Ending Detection and Conversion
@@ -16,79 +18,99 @@ use crate::fs::types::{DirectoryCache, ENCODING_SAMPLE_SIZE, MAX_TEXT_FILE_SIZE}
 
 /// Detect the line ending style of a file
 #[tauri::command]
-pub fn fs_detect_eol(path: String) -> Result<String, String> {
-    let metadata =
-        std::fs::metadata(&path).map_err(|e| format!("Failed to read file metadata: {}", e))?;
-    if metadata.len() > MAX_TEXT_FILE_SIZE {
-        return Err(format!(
-            "File is too large for EOL detection ({:.1} MB, limit {:.0} MB)",
-            metadata.len() as f64 / (1024.0 * 1024.0),
-            MAX_TEXT_FILE_SIZE as f64 / (1024.0 * 1024.0),
-        ));
-    }
-    let content = std::fs::read_to_string(&path)
-        .map_err(|e| format!("Failed to read file '{path}' for EOL detection: {e}"))?;
+pub async fn fs_detect_eol(path: String) -> Result<String, String> {
+    tokio::task::spawn_blocking(move || {
+        let metadata =
+            std::fs::metadata(&path).map_err(|e| format!("Failed to read file metadata: {}", e))?;
+        if metadata.len() > MAX_TEXT_FILE_SIZE {
+            return Err(format!(
+                "File is too large for EOL detection ({:.1} MB, limit {:.0} MB)",
+                metadata.len() as f64 / (1024.0 * 1024.0),
+                MAX_TEXT_FILE_SIZE as f64 / (1024.0 * 1024.0),
+            ));
+        }
+        let content = std::fs::read_to_string(&path)
+            .map_err(|e| format!("Failed to read file '{path}' for EOL detection: {e}"))?;
 
-    // Count different line ending types
-    let crlf_count = content.matches("\r\n").count();
-    // LF count is total \n minus the ones that are part of \r\n
-    let lf_count = content.matches('\n').count().saturating_sub(crlf_count);
-    // CR count is total \r minus the ones that are part of \r\n
-    let cr_count = content.matches('\r').count().saturating_sub(crlf_count);
+        // Count different line ending types
+        let crlf_count = content.matches("\r\n").count();
+        // LF count is total \n minus the ones that are part of \r\n
+        let lf_count = content.matches('\n').count().saturating_sub(crlf_count);
+        // CR count is total \r minus the ones that are part of \r\n
+        let cr_count = content.matches('\r').count().saturating_sub(crlf_count);
 
-    let eol = if crlf_count > 0 && lf_count == 0 && cr_count == 0 {
-        "CRLF"
-    } else if lf_count > 0 && crlf_count == 0 && cr_count == 0 {
-        "LF"
-    } else if cr_count > 0 && crlf_count == 0 && lf_count == 0 {
-        "CR"
-    } else if crlf_count == 0 && lf_count == 0 && cr_count == 0 {
-        // No line endings found (single line file or empty)
-        // Default to LF on Unix, CRLF on Windows
-        #[cfg(windows)]
-        {
+        let eol = if crlf_count > 0 && lf_count == 0 && cr_count == 0 {
             "CRLF"
-        }
-        #[cfg(not(windows))]
-        {
+        } else if lf_count > 0 && crlf_count == 0 && cr_count == 0 {
             "LF"
-        }
-    } else {
-        "Mixed"
-    };
+        } else if cr_count > 0 && crlf_count == 0 && lf_count == 0 {
+            "CR"
+        } else if crlf_count == 0 && lf_count == 0 && cr_count == 0 {
+            // No line endings found (single line file or empty)
+            // Default to LF on Unix, CRLF on Windows
+            #[cfg(windows)]
+            {
+                "CRLF"
+            }
+            #[cfg(not(windows))]
+            {
+                "LF"
+            }
+        } else {
+            "Mixed"
+        };
 
-    Ok(eol.to_string())
+        Ok(eol.to_string())
+    })
+    .await
+    .map_err(|e| format!("Task join error: {}", e))?
 }
 
 /// Convert line endings of a file to the specified style
 #[tauri::command]
-pub fn fs_convert_eol(path: String, target_eol: String) -> Result<(), String> {
-    let metadata =
-        std::fs::metadata(&path).map_err(|e| format!("Failed to read file metadata: {}", e))?;
-    if metadata.len() > MAX_TEXT_FILE_SIZE {
-        return Err(format!(
-            "File is too large for EOL conversion ({:.1} MB, limit {:.0} MB)",
-            metadata.len() as f64 / (1024.0 * 1024.0),
-            MAX_TEXT_FILE_SIZE as f64 / (1024.0 * 1024.0),
-        ));
-    }
-    let content = std::fs::read_to_string(&path)
-        .map_err(|e| format!("Failed to read file '{path}' for EOL conversion: {e}"))?;
+pub async fn fs_convert_eol(
+    app: AppHandle,
+    path: String,
+    target_eol: String,
+) -> Result<(), String> {
+    // Invalidate content cache since we're modifying the file
+    let content_cache = app.state::<Arc<FileContentCache>>();
+    content_cache.invalidate(&path);
 
-    // Normalize to LF first by replacing all line endings
-    let normalized = content
-        .replace("\r\n", "\n") // CRLF -> LF
-        .replace('\r', "\n"); // CR -> LF
+    let path_clone = path.clone();
+    let target_eol_clone = target_eol.clone();
+    tokio::task::spawn_blocking(move || {
+        let metadata = std::fs::metadata(&path_clone)
+            .map_err(|e| format!("Failed to read file metadata: {}", e))?;
+        if metadata.len() > MAX_TEXT_FILE_SIZE {
+            return Err(format!(
+                "File is too large for EOL conversion ({:.1} MB, limit {:.0} MB)",
+                metadata.len() as f64 / (1024.0 * 1024.0),
+                MAX_TEXT_FILE_SIZE as f64 / (1024.0 * 1024.0),
+            ));
+        }
+        let content = std::fs::read_to_string(&path_clone)
+            .map_err(|e| format!("Failed to read file '{path_clone}' for EOL conversion: {e}"))?;
 
-    // Convert to target line ending
-    let converted = match target_eol.as_str() {
-        "CRLF" => normalized.replace('\n', "\r\n"),
-        "CR" => normalized.replace('\n', "\r"),
-        _ => normalized, // LF (default)
-    };
+        // Normalize to LF first by replacing all line endings
+        let normalized = content
+            .replace("\r\n", "\n") // CRLF -> LF
+            .replace('\r', "\n"); // CR -> LF
 
-    std::fs::write(&path, converted)
-        .map_err(|e| format!("Failed to write converted EOL to '{path}': {e}"))?;
+        // Convert to target line ending
+        let converted = match target_eol_clone.as_str() {
+            "CRLF" => normalized.replace('\n', "\r\n"),
+            "CR" => normalized.replace('\n', "\r"),
+            _ => normalized, // LF (default)
+        };
+
+        std::fs::write(&path_clone, converted)
+            .map_err(|e| format!("Failed to write converted EOL to '{path_clone}': {e}"))?;
+
+        Ok(())
+    })
+    .await
+    .map_err(|e| format!("Task join error: {}", e))??;
 
     info!("Converted line endings of {} to {}", path, target_eol);
     Ok(())
@@ -103,37 +125,41 @@ pub fn fs_convert_eol(path: String, target_eol: String) -> Result<(), String> {
 /// For large files, only reads a sample (first 64 KB) to avoid loading
 /// multi-GB files into memory.
 #[tauri::command]
-pub fn fs_detect_encoding(path: String) -> Result<String, String> {
-    use std::io::Read;
+pub async fn fs_detect_encoding(path: String) -> Result<String, String> {
+    tokio::task::spawn_blocking(move || {
+        use std::io::Read;
 
-    let metadata =
-        std::fs::metadata(&path).map_err(|e| format!("Failed to read file metadata: {}", e))?;
-    let file_size = metadata.len() as usize;
+        let metadata =
+            std::fs::metadata(&path).map_err(|e| format!("Failed to read file metadata: {}", e))?;
+        let file_size = metadata.len() as usize;
 
-    let bytes = if file_size > ENCODING_SAMPLE_SIZE {
-        let mut file =
-            std::fs::File::open(&path).map_err(|e| format!("Failed to open file: {}", e))?;
-        let mut buf = vec![0u8; ENCODING_SAMPLE_SIZE];
-        let n = file
-            .read(&mut buf)
-            .map_err(|e| format!("Failed to read file: {}", e))?;
-        buf.truncate(n);
-        buf
-    } else {
-        std::fs::read(&path).map_err(|e| format!("Failed to read file: {}", e))?
-    };
+        let bytes = if file_size > ENCODING_SAMPLE_SIZE {
+            let mut file =
+                std::fs::File::open(&path).map_err(|e| format!("Failed to open file: {}", e))?;
+            let mut buf = vec![0u8; ENCODING_SAMPLE_SIZE];
+            let n = file
+                .read(&mut buf)
+                .map_err(|e| format!("Failed to read file: {}", e))?;
+            buf.truncate(n);
+            buf
+        } else {
+            std::fs::read(&path).map_err(|e| format!("Failed to read file: {}", e))?
+        };
 
-    // Check for BOM first
-    if let Some((encoding, _)) = encoding_rs::Encoding::for_bom(&bytes) {
-        return Ok(encoding.name().to_string());
-    }
+        // Check for BOM first
+        if let Some((encoding, _)) = encoding_rs::Encoding::for_bom(&bytes) {
+            return Ok(encoding.name().to_string());
+        }
 
-    // Use chardetng for detection if no BOM
-    let mut detector = chardetng::EncodingDetector::new();
-    detector.feed(&bytes, true);
-    let encoding = detector.guess(None, true);
+        // Use chardetng for detection if no BOM
+        let mut detector = chardetng::EncodingDetector::new();
+        detector.feed(&bytes, true);
+        let encoding = detector.guess(None, true);
 
-    Ok(encoding.name().to_string())
+        Ok(encoding.name().to_string())
+    })
+    .await
+    .map_err(|e| format!("Task join error: {}", e))?
 }
 
 /// Read a file with a specific encoding
@@ -188,10 +214,14 @@ pub async fn fs_write_file_with_encoding(
                 .map_err(|e| format!("Failed to create directory: {}", e))?;
         }
 
-        // Invalidate cache
+        // Invalidate directory cache
         let cache = app.state::<Arc<DirectoryCache>>();
         cache.invalidate(&parent.to_string_lossy());
     }
+
+    // Invalidate content cache before writing
+    let content_cache = app.state::<Arc<FileContentCache>>();
+    content_cache.invalidate(&path);
 
     let encoding_type =
         encoding_rs::Encoding::for_label(encoding.as_bytes()).unwrap_or(encoding_rs::UTF_8);
@@ -215,7 +245,7 @@ pub async fn fs_write_file_with_encoding(
 
 /// Get list of supported encodings
 #[tauri::command]
-pub fn fs_get_supported_encodings() -> Result<Vec<String>, String> {
+pub async fn fs_get_supported_encodings() -> Result<Vec<String>, String> {
     Ok(vec![
         "UTF-8".to_string(),
         "UTF-16LE".to_string(),
