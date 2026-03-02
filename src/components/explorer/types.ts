@@ -193,3 +193,7 @@ export const DEBOUNCE_DELAY = 100;
 export const LAZY_LOAD_DEPTH = 1;
 export const TREE_INDENT_SIZE = 26;
 export const TREE_BASE_PADDING = 0;
+
+// Cortex design-system tree constants
+export const CORTEX_ITEM_HEIGHT = 28;
+export const CORTEX_OVERSCAN = 10;

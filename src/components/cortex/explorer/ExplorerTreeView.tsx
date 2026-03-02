@@ -1,17 +1,23 @@
 /**
- * ExplorerTreeView - Section title + project header + scrollable tree view
+ * ExplorerTreeView - Section title + project header + virtualized scrollable tree view
  * Figma: file 4hKtI49khKHjribAGpFUkW, node 1060:33326
  *
  * Section title: "EXPLORER" 11px uppercase, weight 600, color #8C8D8F
  * Heading: 320×20, row, padding 0 16px, gap 62 (space-between)
  * Title: Figtree 16px/600, #E9E9EA, chevron 16×16 beside it, gap 2
  * Actions: row, gap 2, four 20×20 icon buttons (16×16 icons): new file, target, refresh, collapse
- * Tree area: column, gap 4, padding 16px all sides
- * Item height: 24px, item gap: 4px, indent 16px/level
+ * Tree area: virtualized scroll container rendering only visible items + buffer
+ * Item height: 28px (CORTEX_ITEM_HEIGHT), indent 16px/level
  */
 
-import { Component, JSX, createSignal, For } from "solid-js";
+import { Component, JSX, createSignal, createMemo, onCleanup, For, Show } from "solid-js";
 import { CortexIcon, CortexTooltip, CortexTreeItem, TreeItemData } from "../primitives";
+import { CORTEX_ITEM_HEIGHT, CORTEX_OVERSCAN } from "../../explorer/types";
+
+interface FlatTreeMeta {
+  depth: number;
+  isExpanded: boolean;
+}
 
 export interface ExplorerTreeViewProps {
   title?: string;
@@ -64,6 +70,86 @@ const ExplorerActionButton: Component<{
 };
 
 export const ExplorerTreeView: Component<ExplorerTreeViewProps> = (props) => {
+  const [scrollTop, setScrollTop] = createSignal(0);
+  const [containerHeight, setContainerHeight] = createSignal(400);
+  let resizeObserver: ResizeObserver | null = null;
+  let scrollRafId: number | null = null;
+
+  const setContainerRef = (el: HTMLDivElement) => {
+    const rect = el.getBoundingClientRect();
+    if (rect.height > 0) setContainerHeight(rect.height);
+
+    resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.height > 0) {
+          setContainerHeight(entry.contentRect.height);
+        }
+      }
+    });
+    resizeObserver.observe(el);
+  };
+
+  onCleanup(() => {
+    if (resizeObserver) {
+      resizeObserver.disconnect();
+      resizeObserver = null;
+    }
+    if (scrollRafId !== null) {
+      cancelAnimationFrame(scrollRafId);
+    }
+  });
+
+  const handleScroll = (e: Event) => {
+    const target = e.target as HTMLDivElement;
+    const newScrollTop = target.scrollTop;
+    if (scrollRafId !== null) {
+      cancelAnimationFrame(scrollRafId);
+    }
+    scrollRafId = requestAnimationFrame(() => {
+      setScrollTop(newScrollTop);
+      scrollRafId = null;
+    });
+  };
+
+  const flattenedData = createMemo(() => {
+    const items = props.items;
+    const expandedIds = props.expandedIds;
+    const orderedItems: TreeItemData[] = [];
+    const metaMap = new Map<TreeItemData, FlatTreeMeta>();
+
+    const walk = (nodes: TreeItemData[], depth: number) => {
+      for (const node of nodes) {
+        const isExpanded = expandedIds.has(node.id) || (node.isExpanded ?? false);
+        orderedItems.push(node);
+        metaMap.set(node, { depth, isExpanded });
+
+        if (node.type === "folder" && isExpanded && node.children) {
+          walk(node.children, depth + 1);
+        }
+      }
+    };
+
+    walk(items, 0);
+    return { orderedItems, metaMap };
+  });
+
+  const totalHeight = createMemo(() => flattenedData().orderedItems.length * CORTEX_ITEM_HEIGHT);
+
+  const visibleRange = createMemo(() => {
+    const total = flattenedData().orderedItems.length;
+    const start = Math.max(0, Math.floor(scrollTop() / CORTEX_ITEM_HEIGHT) - CORTEX_OVERSCAN);
+    const count = Math.ceil(containerHeight() / CORTEX_ITEM_HEIGHT) + CORTEX_OVERSCAN * 2;
+    const end = Math.min(total, start + count);
+    return { start, end };
+  });
+
+  const visibleItems = createMemo(() => {
+    const { start, end } = visibleRange();
+    return flattenedData().orderedItems.slice(start, end);
+  });
+
+  const offsetY = createMemo(() => visibleRange().start * CORTEX_ITEM_HEIGHT);
+
   const containerStyle = (): JSX.CSSProperties => ({
     display: "flex",
     "flex-direction": "column",
@@ -118,18 +204,6 @@ export const ExplorerTreeView: Component<ExplorerTreeViewProps> = (props) => {
     gap: "2px",
   });
 
-  const treeContainerStyle = (): JSX.CSSProperties => ({
-    display: "flex",
-    "flex-direction": "column",
-    "align-self": "stretch",
-    gap: "4px",
-    padding: "16px",
-    flex: "1",
-    "overflow-y": "auto",
-    "overflow-x": "hidden",
-    "min-height": "0",
-  });
-
   return (
     <div style={containerStyle()}>
       <div style={sectionTitleStyle()}>EXPLORER</div>
@@ -148,23 +222,59 @@ export const ExplorerTreeView: Component<ExplorerTreeViewProps> = (props) => {
         </div>
       </div>
 
-      <div style={treeContainerStyle()}>
-        <For each={props.items}>
-          {(item) => (
-            <CortexTreeItem
-              item={item}
-              level={0}
-              isSelected={props.selectedId === item.id}
-              isExpanded={props.expandedIds.has(item.id)}
-              onSelect={props.onSelect}
-              onToggle={props.onToggle}
-              onContextMenu={props.onContextMenu}
-              selectedId={props.selectedId}
-              expandedIds={props.expandedIds}
-            />
-          )}
-        </For>
-      </div>
+      <Show
+        when={flattenedData().orderedItems.length > 0}
+        fallback={
+          <div style={{
+            padding: "16px",
+            color: "#8C8D8F",
+            "font-size": "13px",
+            "text-align": "center",
+          }}>
+            No files
+          </div>
+        }
+      >
+        <div
+          ref={setContainerRef}
+          style={{
+            flex: "1",
+            "overflow-y": "auto",
+            "overflow-x": "hidden",
+            "min-height": "0",
+            "align-self": "stretch",
+          }}
+          onScroll={handleScroll}
+          role="tree"
+          aria-label="File tree"
+        >
+          <div style={{ height: `${totalHeight()}px`, position: "relative" }}>
+            <div style={{
+              transform: `translateY(${offsetY()}px)`,
+              padding: "0 16px",
+            }}>
+              <For each={visibleItems()}>
+                {(item) => {
+                  const meta = () => flattenedData().metaMap.get(item);
+                  return (
+                    <CortexTreeItem
+                      item={item}
+                      level={meta()?.depth ?? 0}
+                      isSelected={props.selectedId === item.id}
+                      isExpanded={meta()?.isExpanded ?? false}
+                      onSelect={props.onSelect}
+                      onToggle={props.onToggle}
+                      onContextMenu={props.onContextMenu}
+                      selectedId={props.selectedId}
+                      expandedIds={props.expandedIds}
+                    />
+                  );
+                }}
+              </For>
+            </div>
+          </div>
+        </div>
+      </Show>
     </div>
   );
 };

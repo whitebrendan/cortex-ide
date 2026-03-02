@@ -356,12 +356,14 @@ export function useFileTree(props: VirtualizedFileTreeProps) {
   const gitDecorationsMap = createMemo(() => {
     const decorations = new Map<string, GitDecoration>();
     const items = visibleItems();
+    const gitStatusMap = props.gitStatusMap;
+    const gitFolderStatusMap = props.gitFolderStatusMap;
     
     for (const item of items) {
       const normalizedPath = item.entry.path.replace(/\\/g, "/");
       
       if (item.entry.isDir) {
-        const folderStatus = props.gitFolderStatusMap.get(normalizedPath);
+        const folderStatus = gitFolderStatusMap.get(normalizedPath);
         if (folderStatus) {
           decorations.set(item.id, getFolderDecoration(
             folderStatus.hasConflicts,
@@ -372,7 +374,7 @@ export function useFileTree(props: VirtualizedFileTreeProps) {
           decorations.set(item.id, { nameClass: "", status: null } as GitDecoration);
         }
       } else {
-        const status = props.gitStatusMap.get(normalizedPath) || null;
+        const status = gitStatusMap.get(normalizedPath) || null;
         decorations.set(item.id, getGitDecorationForStatus(status));
       }
     }
@@ -676,7 +678,11 @@ export function useFileTree(props: VirtualizedFileTreeProps) {
       loadRootDirectory();
     };
     const handleCollapseAllEvent = () => {
-      setExpandedPaths(new Set<string>());
+      batch(() => {
+        setExpandedPaths(new Set<string>());
+        setExpandedNestedGroups(new Set<string>());
+        setFocusedPath(null);
+      });
     };
 
     window.addEventListener("fileexplorer:toggle-search", handleToggleSearchEvent);

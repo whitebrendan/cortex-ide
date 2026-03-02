@@ -32,7 +32,7 @@ export function VirtualItem(props: VirtualItemProps) {
     props.item.entry.isDir ? undefined : getFileColor(props.item.entry.name)
   );
   
-  const compactedPaths = () => props.item.entry.compactedPaths;
+  const compactedPaths = createMemo(() => props.item.entry.compactedPaths);
   
   createEffect(() => {
     if (isRenaming()) {
@@ -163,11 +163,13 @@ export function VirtualItem(props: VirtualItemProps) {
     props.onDrop(e, props.item.entry);
   };
 
-  const showChevron = () => 
-    props.item.entry.isDir || props.item.isNestedParent;
+  const showChevron = createMemo(() => 
+    props.item.entry.isDir || props.item.isNestedParent
+  );
   
-  const isExpandedOrNestedExpanded = () => 
-    props.item.isNestedParent ? props.item.isNestedExpanded : props.item.isExpanded;
+  const isExpandedOrNestedExpanded = createMemo(() => 
+    props.item.isNestedParent ? props.item.isNestedExpanded : props.item.isExpanded
+  );
 
   const indentGuideDepths = createMemo(() => {
     const depth = props.item.depth;

@@ -15,6 +15,7 @@ import {
   type ExplorerSortOrder,
 } from "../context/SettingsContext";
 import { useMultiRepo, type GitFileStatus } from "../context/MultiRepoContext";
+import { useDebounce } from "@/hooks/useDebounce";
 
 import { tokens } from "@/design-system/tokens";
 import { loadStylesheet } from "@/utils/lazyStyles";
@@ -184,6 +185,7 @@ export function FileExplorer(props: FileExplorerProps) {
 
   const [showHidden, _setShowHidden] = createSignal(false);
   const [filterQuery, setFilterQuery] = createSignal("");
+  const debouncedFilterQuery = useDebounce(filterQuery, 150);
   const [showSearch, setShowSearch] = createSignal(false);
   const [showSortMenu, setShowSortMenu] = createSignal(false);
   const [selectedPaths, setSelectedPaths] = createSignal<string[]>([]);
@@ -565,7 +567,7 @@ export function FileExplorer(props: FileExplorerProps) {
                       selectedPaths={selectedPaths()}
                       onSelectPaths={setSelectedPaths}
                       showHidden={showHidden()}
-                      filterQuery={filterQuery()}
+                      filterQuery={debouncedFilterQuery()}
                       compactFolders={compactFolders()}
                       fileNestingSettings={fileNestingSettings()}
                       confirmDragAndDrop={confirmDragAndDrop()}
