@@ -210,6 +210,11 @@ export function createFileOperations(
     const fileIndex = state.openFiles.findIndex((f) => f.id === fileId);
     if (fileIndex === -1) return;
 
+    const closingFile = state.openFiles[fileIndex];
+    if (closingFile) {
+      preloadCache.delete(closingFile.path);
+    }
+
     const activeGroup = state.groups.find((g) => g.id === state.activeGroupId);
     const fileIdIndexInGroup = activeGroup?.fileIds.indexOf(fileId) ?? -1;
     const remainingFileIds = activeGroup?.fileIds.filter((id) => id !== fileId) || [];

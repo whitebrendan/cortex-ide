@@ -470,6 +470,9 @@ export function createEditorInstance(props: {
     const closingFileId = e.detail?.fileId;
     if (closingFileId && props.file?.()?.id === closingFileId && editorRef) {
       try {
+        if (currentFilePath) {
+          monacoManager.clearViewState(currentFilePath);
+        }
         editorRef.setModel(null);
         editorRef.dispose();
         editorRef = null;
