@@ -972,6 +972,7 @@ pub async fn restore_workspace_state(
     app: AppHandle,
     workspace_id: String,
 ) -> Result<Option<WorkspaceStateData>, String> {
+    let t = std::time::Instant::now();
     let dir = workspace_data_dir(&app)?;
     let state_path = dir.join(format!("{}.json", workspace_id));
 
@@ -983,7 +984,12 @@ pub async fn restore_workspace_state(
                     workspace_id, e
                 )
             })?;
-            info!(target: "workspace", "Restored workspace state: {}", workspace_id);
+            info!(
+                target: "startup",
+                elapsed_ms = format_args!("{:.1}", t.elapsed().as_secs_f64() * 1000.0),
+                editors = state.open_editors.len(),
+                "Restored workspace state: {}", workspace_id
+            );
             Ok(Some(state))
         }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
@@ -1247,6 +1253,7 @@ pub async fn restore_workspace_session(
     app: AppHandle,
     project_path: String,
 ) -> Result<Option<WorkspaceStateData>, String> {
+    let t = std::time::Instant::now();
     let workspace_id = base64_encode_path(&project_path);
     let dir = workspace_data_dir(&app)?;
     let state_path = dir.join(format!("{}.json", workspace_id));
@@ -1259,7 +1266,12 @@ pub async fn restore_workspace_session(
                     project_path, e
                 )
             })?;
-            info!(target: "workspace", "Restored session for: {}", project_path);
+            info!(
+                target: "startup",
+                elapsed_ms = format_args!("{:.1}", t.elapsed().as_secs_f64() * 1000.0),
+                editors = state.open_editors.len(),
+                "Restored session for: {}", project_path
+            );
             Ok(Some(state))
         }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {

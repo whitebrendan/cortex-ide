@@ -206,6 +206,7 @@ pub async fn load_settings_from_disk() -> Result<CortexSettings, String> {
 pub async fn preload_settings(app: &AppHandle) -> Result<(), String> {
     use tauri::Manager;
 
+    let t = std::time::Instant::now();
     let settings_state = app.state::<SettingsState>();
     let settings = load_settings_from_disk().await?;
 
@@ -213,7 +214,11 @@ pub async fn preload_settings(app: &AppHandle) -> Result<(), String> {
         *guard = settings;
     }
 
-    info!("Settings preloaded");
+    info!(
+        target: "startup",
+        elapsed_ms = format_args!("{:.1}", t.elapsed().as_secs_f64() * 1000.0),
+        "Settings preloaded from disk"
+    );
     Ok(())
 }
 

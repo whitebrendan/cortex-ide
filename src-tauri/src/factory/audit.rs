@@ -42,6 +42,7 @@ impl AuditLogger {
 
     /// Initialize with a database path
     pub fn with_database(mut self, db_path: PathBuf) -> Result<Self, String> {
+        let t = std::time::Instant::now();
         // Ensure parent directory exists
         if let Some(parent) = db_path.parent() {
             fs::create_dir_all(parent)
@@ -90,7 +91,13 @@ impl AuditLogger {
         .ok();
 
         self.db_connection = Some(conn);
-        self.db_path = Some(db_path);
+        self.db_path = Some(db_path.clone());
+        tracing::info!(
+            target: "startup",
+            elapsed_ms = format_args!("{:.1}", t.elapsed().as_secs_f64() * 1000.0),
+            path = %db_path.display(),
+            "Audit database initialized"
+        );
         Ok(self)
     }
 

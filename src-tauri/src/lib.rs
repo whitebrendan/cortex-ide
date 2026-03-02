@@ -48,6 +48,7 @@ mod sandbox;
 mod search;
 mod settings;
 mod settings_sync;
+mod startup_timing;
 #[cfg(feature = "remote-ssh")]
 mod ssh_terminal;
 mod system_specs;
@@ -114,8 +115,10 @@ pub fn run() {
         .try_init();
 
     let _startup_span = tracing::info_span!("startup").entered();
+    let startup_timer = startup_timing::StartupTimer::new();
+    startup_timer.log_phase("process_start");
     info!("Starting Cortex Desktop with optimized startup...");
-    let startup_time = std::time::Instant::now();
+    let startup_time = startup_timer.instant();
 
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
@@ -143,10 +146,14 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_deep_link::init());
 
+    startup_timer.log_phase("plugins_registered");
+
     let remote_manager = Arc::new(remote::RemoteManager::new());
 
     let builder = app::register_state(builder, remote_manager);
+    startup_timer.log_phase("state_registered");
 
+    startup_timer.log_phase("invoke_handler_building");
     let app = match builder
         .invoke_handler(app::cortex_commands!())
         .setup(move |tauri_app| app::setup_app(tauri_app, startup_time))
@@ -159,13 +166,17 @@ pub fn run() {
         })
         .build(tauri::generate_context!())
     {
-        Ok(app) => app,
+        Ok(app) => {
+            startup_timer.log_phase("app_built");
+            app
+        }
         Err(e) => {
             error!("Failed to build Tauri application: {}", e);
             std::process::exit(1);
         }
     };
 
+    startup_timer.log_phase("entering_run_loop");
     app.run(|app, event| {
         app::handle_run_event(app, event);
     });
