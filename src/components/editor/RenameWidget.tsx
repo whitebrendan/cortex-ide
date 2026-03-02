@@ -283,7 +283,9 @@ export function RenameWidget(props: RenameWidgetProps) {
    * Calls LSP prepareRename to get the renameable range.
    */
   const show = async () => {
-    const { editor, monaco, serverId } = props;
+    const editor = props.editor;
+    const monaco = props.monaco;
+    const serverId = props.serverId;
     if (!editor || !monaco || !serverId) return;
     
     const model = editor.getModel();
@@ -419,7 +421,7 @@ export function RenameWidget(props: RenameWidgetProps) {
    * Fetch preview of the rename operation (files and occurrences count).
    */
   const fetchPreview = async (newName: string) => {
-    const { serverId } = props;
+    const serverId = props.serverId;
     const currentState = state();
     
     if (!serverId || !currentState.uri || !currentState.position) return;
@@ -461,7 +463,9 @@ export function RenameWidget(props: RenameWidgetProps) {
    * Execute the rename operation.
    */
   const executeRename = async () => {
-    const { editor, monaco, serverId } = props;
+    const editor = props.editor;
+    const monaco = props.monaco;
+    const serverId = props.serverId;
     const currentState = state();
     
     if (!editor || !monaco || !serverId) return;
@@ -596,7 +600,8 @@ export function RenameWidget(props: RenameWidgetProps) {
    * Undo the last rename operation.
    */
   const undoRename = async () => {
-    const { editor, monaco } = props;
+    const editor = props.editor;
+    const monaco = props.monaco;
     if (!editor || !monaco || undoEdits.length === 0) return;
     
     try {
@@ -734,7 +739,7 @@ export function RenameWidget(props: RenameWidgetProps) {
    * Calculate widget position based on cursor location.
    */
   const getWidgetStyle = () => {
-    const { editor } = props;
+    const editor = props.editor;
     const currentState = state();
     
     if (!editor || !currentState.position || !currentState.range) {

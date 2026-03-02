@@ -7,6 +7,68 @@ import type { EditorState } from "./editorTypes";
 import { detectLanguage, generateId } from "./languageDetection";
 import { savePinnedTabs } from "./tabOperations";
 
+/** Content cache for preloaded adjacent tabs */
+const preloadCache = new Map<string, string>();
+
+/** Maximum number of entries in the preload cache */
+const PRELOAD_CACHE_MAX = 10;
+
+/** Preload file content into cache using requestIdleCallback */
+function preloadAdjacentTabs(
+  state: EditorState,
+  currentFileId: string,
+): void {
+  const group = state.groups.find((g) => g.fileIds.includes(currentFileId));
+  if (!group) return;
+
+  const currentIndex = group.fileIds.indexOf(currentFileId);
+  if (currentIndex === -1) return;
+
+  const adjacentIds: string[] = [];
+  if (currentIndex > 0) adjacentIds.push(group.fileIds[currentIndex - 1]);
+  if (currentIndex < group.fileIds.length - 1) adjacentIds.push(group.fileIds[currentIndex + 1]);
+
+  const filesToPreload = adjacentIds
+    .map((id) => state.openFiles.find((f) => f.id === id))
+    .filter((f): f is OpenFile => f !== undefined && !f.path.startsWith("virtual://"))
+    .filter((f) => !preloadCache.has(f.path));
+
+  if (filesToPreload.length === 0) return;
+
+  const schedulePreload = (cb: () => void) => {
+    if ("requestIdleCallback" in window) {
+      (window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number })
+        .requestIdleCallback(cb, { timeout: 3000 });
+    } else {
+      setTimeout(cb, 200);
+    }
+  };
+
+  for (const file of filesToPreload) {
+    schedulePreload(() => {
+      if (preloadCache.has(file.path)) return;
+      invoke<string>("fs_read_file", { path: file.path })
+        .then((content) => {
+          preloadCache.set(file.path, content);
+          if (preloadCache.size > PRELOAD_CACHE_MAX) {
+            const firstKey = preloadCache.keys().next().value;
+            if (firstKey) preloadCache.delete(firstKey);
+          }
+        })
+        .catch(() => {});
+    });
+  }
+}
+
+/** Get content from preload cache, removing it on hit */
+function getPreloadedContent(path: string): string | undefined {
+  const content = preloadCache.get(path);
+  if (content !== undefined) {
+    preloadCache.delete(path);
+  }
+  return content;
+}
+
 export function createFileOperations(
   state: EditorState,
   setState: SetStoreFunction<EditorState>,
@@ -32,14 +94,16 @@ export function createFileOperations(
         );
       });
       console.debug(`[EditorContext] openFile (existing): ${(performance.now() - perfStart).toFixed(1)}ms`);
+      preloadAdjacentTabs(state, existing.id);
       return;
     }
 
     setState("isOpening", true);
     try {
       const readStart = performance.now();
-      const content = await invoke<string>("fs_read_file", { path });
-      console.debug(`[EditorContext] fs_read_file: ${(performance.now() - readStart).toFixed(1)}ms (${(content.length / 1024).toFixed(1)}KB)`);
+      const cached = getPreloadedContent(path);
+      const content = cached ?? await invoke<string>("fs_read_file", { path });
+      console.debug(`[EditorContext] ${cached ? "preload-hit" : "fs_read_file"}: ${(performance.now() - readStart).toFixed(1)}ms (${(content.length / 1024).toFixed(1)}KB)`);
       
       const name = path.split(/[/\\]/).pop() || path;
       const id = `file-${generateId()}`;
@@ -71,6 +135,8 @@ export function createFileOperations(
       });
       console.debug(`[EditorContext] batch setState: ${(performance.now() - batchStart).toFixed(1)}ms`);
       console.debug(`[EditorContext] openFile (new) TOTAL: ${(performance.now() - perfStart).toFixed(1)}ms`);
+
+      preloadAdjacentTabs(state, id);
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : String(e);
       console.error("Failed to open file:", errorMessage);

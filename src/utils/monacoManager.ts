@@ -143,6 +143,9 @@ class MonacoManager {
   /** Registered providers disposables */
   private providerDisposables: Monaco.IDisposable[] = [];
 
+  /** ViewState cache for preserving cursor/scroll/folding per file */
+  private viewStateCache: Map<string, Monaco.editor.ICodeEditorViewState> = new Map();
+
   private constructor(config: MonacoManagerConfig = {}) {
     this.config = {
       poolSize: config.poolSize ?? EDITOR_POOL_SIZE,
@@ -855,6 +858,41 @@ class MonacoManager {
   }
 
   /**
+   * Save the editor's view state (cursor, scroll, folding) for a file
+   */
+  saveViewState(
+    filePath: string,
+    editor: Monaco.editor.IStandaloneCodeEditor,
+  ): void {
+    const viewState = editor.saveViewState();
+    if (viewState) {
+      this.viewStateCache.set(filePath, viewState);
+    }
+  }
+
+  /**
+   * Restore a previously saved view state for a file
+   */
+  restoreViewState(
+    filePath: string,
+    editor: Monaco.editor.IStandaloneCodeEditor,
+  ): boolean {
+    const viewState = this.viewStateCache.get(filePath);
+    if (viewState) {
+      editor.restoreViewState(viewState);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Remove a cached view state
+   */
+  clearViewState(filePath: string): void {
+    this.viewStateCache.delete(filePath);
+  }
+
+  /**
    * Register a provider and track its disposable
    */
   registerProvider(disposable: Monaco.IDisposable): void {
@@ -884,6 +922,9 @@ class MonacoManager {
     });
     this.editorPool = [];
 
+    // Clear view state cache
+    this.viewStateCache.clear();
+
     this.monaco = null;
     this.loadState = "idle";
     this.loadPromise = null;
@@ -898,6 +939,7 @@ class MonacoManager {
     poolSize: number;
     poolInUse: number;
     cachedModels: number;
+    cachedViewStates: number;
     pendingDisposals: number;
   } {
     return {
@@ -905,6 +947,7 @@ class MonacoManager {
       poolSize: this.editorPool.length,
       poolInUse: this.editorPool.filter((p) => p.inUse).length,
       cachedModels: this.modelCache.size,
+      cachedViewStates: this.viewStateCache.size,
       pendingDisposals: Array.from(this.modelCache.values()).filter(
         (c) => c.disposeTimer !== null
       ).length,

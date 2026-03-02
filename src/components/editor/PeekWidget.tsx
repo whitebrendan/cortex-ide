@@ -292,7 +292,8 @@ export function PeekWidget(props: PeekWidgetProps) {
   
   /** Position the widget below the cursor using ViewZone */
   const positionWidget = () => {
-    const { editor, monaco } = props;
+    const editor = props.editor;
+    const monaco = props.monaco;
     const currentState = state();
     
     if (!editor || !monaco || !currentState.originPosition || !widgetContainerRef) return;
@@ -334,7 +335,7 @@ export function PeekWidget(props: PeekWidgetProps) {
   
   /** Remove widget from editor */
   const removeWidgetFromEditor = () => {
-    const { editor } = props;
+    const editor = props.editor;
     
     if (editor && viewZoneId) {
       editor.changeViewZones((accessor) => {
@@ -469,7 +470,7 @@ export function PeekWidget(props: PeekWidgetProps) {
   
   // Update widget position on scroll
   createEffect(() => {
-    const { editor } = props;
+    const editor = props.editor;
     if (!editor || !state().visible) return;
     
     const scrollDisposable = editor.onDidScrollChange(() => {
