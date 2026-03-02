@@ -20,7 +20,9 @@ mod tools;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Manager, Runtime};
-use tracing::{error, info};
+#[cfg(debug_assertions)]
+use tracing::error;
+use tracing::info;
 
 pub use socket_server::SocketServer;
 
