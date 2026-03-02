@@ -116,6 +116,11 @@ function createManualChunks(id: string): string | undefined {
     return "vendor-marked";
   }
 
+  // Kobalte UI components (headless component library)
+  if (id.includes("@kobalte")) {
+    return "vendor-kobalte";
+  }
+
   // Solid.js ecosystem (core + router + primitives)
   if (
     id.includes("solid-js") ||
