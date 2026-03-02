@@ -152,6 +152,7 @@ pub async fn delete_entry(app: AppHandle, path: String) -> Result<(), String> {
     }
 
     let cache = app.state::<Arc<DirectoryCache>>();
+    let content_cache = app.state::<Arc<FileContentCache>>();
 
     if let Some(parent) = validated_path.parent() {
         cache.invalidate(&parent.to_string_lossy());
@@ -159,11 +160,13 @@ pub async fn delete_entry(app: AppHandle, path: String) -> Result<(), String> {
 
     if validated_path.is_dir() {
         cache.invalidate_prefix(&path);
+        content_cache.invalidate_prefix(&path);
         tokio::fs::remove_dir_all(&validated_path)
             .await
             .map_err(|e| format!("Failed to delete directory: {}", e))?;
         info!("Deleted directory: {}", path);
     } else {
+        content_cache.invalidate(&path);
         tokio::fs::remove_file(&validated_path)
             .await
             .map_err(|e| format!("Failed to delete file: {}", e))?;

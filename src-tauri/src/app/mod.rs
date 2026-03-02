@@ -866,7 +866,9 @@ pub fn handle_run_event(app: &AppHandle, event: RunEvent) {
             {
                 let dir_cache = app.state::<Arc<crate::fs::DirectoryCache>>();
                 dir_cache.clear();
-                info!("Directory cache cleared on app exit");
+                let content_cache = app.state::<Arc<crate::fs::FileContentCache>>();
+                content_cache.clear();
+                info!("Directory and file content caches cleared on app exit");
             }
 
             {
