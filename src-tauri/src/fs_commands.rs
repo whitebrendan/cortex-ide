@@ -155,7 +155,7 @@ pub async fn delete_entry(app: AppHandle, path: String) -> Result<(), String> {
     let content_cache = app.state::<Arc<FileContentCache>>();
 
     if let Some(parent) = validated_path.parent() {
-        cache.invalidate(&parent.to_string_lossy());
+        cache.invalidate_dir(&parent.to_string_lossy());
     }
 
     if validated_path.is_dir() {

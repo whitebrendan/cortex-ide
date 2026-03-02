@@ -9,6 +9,7 @@ import {
 } from "solid-js";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import type { FileTreeDeltaPayload } from "@/store/fileTreeCache";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { useFileOperations } from "@/context/FileOperationsContext";
 import { generateUniquePath, basename as getBasename, joinPath } from "@/utils/fileUtils";
@@ -546,6 +547,8 @@ export function useFileTree(props: VirtualizedFileTreeProps) {
       .catch((err) => console.warn("Failed to watch directory:", err));
 
     let listenCancelled = false;
+    let unlistenDeltaFn: UnlistenFn | null = null;
+
     const listenPromise = listen<{ watchId: string; paths: string[]; type: string }>("fs:change", (event) => {
       if (event.payload.watchId === newWatchId) {
         debouncedRefresh.call();
@@ -562,6 +565,66 @@ export function useFileTree(props: VirtualizedFileTreeProps) {
       console.warn("Failed to listen for fs:change events:", err);
     });
 
+    const deltaPromise = listen<FileTreeDeltaPayload>("fs:tree-delta", (event) => {
+      const delta = event.payload;
+      if (delta.watchId !== newWatchId) return;
+
+      batch(() => {
+        if (delta.removed.length > 0) {
+          const removedSet = new Set(delta.removed.map(p => p.replace(/\\/g, "/")));
+          setDirectoryCache(prev => {
+            const next = new Map(prev);
+            for (const dir of delta.affectedDirs) {
+              const normalized = dir.replace(/\\/g, "/");
+              const cached = next.get(normalized);
+              if (cached) {
+                const filtered = cached.filter(e => !removedSet.has(e.path.replace(/\\/g, "/")));
+                if (filtered.length !== cached.length) {
+                  next.set(normalized, filtered);
+                }
+              }
+            }
+            return next;
+          });
+          setExpandedPaths(prev => {
+            const next = new Set(prev);
+            let changed = false;
+            for (const p of removedSet) {
+              if (next.has(p)) {
+                next.delete(p);
+                changed = true;
+              }
+            }
+            return changed ? next : prev;
+          });
+        }
+
+        if (delta.added.length > 0 || delta.modified.length > 0) {
+          for (const dir of delta.affectedDirs) {
+            const normalized = dir.replace(/\\/g, "/");
+            setDirectoryCache(prev => {
+              const next = new Map(prev);
+              next.delete(normalized);
+              return next;
+            });
+            if (expandedPaths().has(normalized)) {
+              loadDirectoryChildren(normalized);
+            }
+          }
+        }
+      });
+    });
+
+    deltaPromise.then((fn) => {
+      if (listenCancelled) {
+        fn();
+      } else {
+        unlistenDeltaFn = fn;
+      }
+    }).catch((err) => {
+      console.warn("Failed to listen for fs:tree-delta events:", err);
+    });
+
     onCleanup(() => {
       listenCancelled = true;
       if (untrack(() => watchId())) {
@@ -570,6 +633,10 @@ export function useFileTree(props: VirtualizedFileTreeProps) {
       if (unlistenFn) {
         unlistenFn();
         unlistenFn = null;
+      }
+      if (unlistenDeltaFn) {
+        unlistenDeltaFn();
+        unlistenDeltaFn = null;
       }
       debouncedRefresh.cancel();
     });

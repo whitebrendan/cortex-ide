@@ -10,6 +10,7 @@ use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager};
 use tracing::{error, info, warn};
 
+use crate::fs::delta::FileTreeDelta;
 use crate::fs::types::{DirectoryCache, FileChangeEvent, FileWatcherState};
 use crate::fs::utils::matches_exclude_pattern;
 
@@ -104,9 +105,14 @@ pub async fn fs_watch_directory(
                         return;
                     }
 
+                    let mut affected_dirs = Vec::new();
                     for event_path in &event.paths {
                         if let Some(parent) = event_path.parent() {
-                            cache_clone.invalidate(&parent.to_string_lossy());
+                            let parent_str = parent.to_string_lossy().to_string();
+                            cache_clone.invalidate_dir(&parent_str);
+                            if !affected_dirs.contains(&parent_str) {
+                                affected_dirs.push(parent_str);
+                            }
                         }
                     }
 
@@ -116,17 +122,38 @@ pub async fn fs_watch_directory(
                         .map(|p| p.to_string_lossy().to_string())
                         .collect();
 
+                    let mut delta = FileTreeDelta {
+                        added: Vec::new(),
+                        removed: Vec::new(),
+                        modified: Vec::new(),
+                        affected_dirs,
+                        watch_id: String::new(),
+                    };
+
+                    match event_type {
+                        "create" => delta.added = paths.clone(),
+                        "remove" => delta.removed = paths.clone(),
+                        "modify" => delta.modified = paths.clone(),
+                        _ => {}
+                    }
+
                     let watch_ids = watcher_state_clone.get_watch_ids(&normalized_path_clone);
 
-                    for wid in watch_ids {
+                    for wid in &watch_ids {
                         let change_event = FileChangeEvent {
                             event_type: event_type.to_string(),
                             paths: paths.clone(),
-                            watch_id: wid,
+                            watch_id: wid.clone(),
                         };
 
                         if let Err(e) = app_clone.emit("fs:change", &change_event) {
                             error!("Failed to emit fs:change event: {}", e);
+                        }
+
+                        let mut wid_delta = delta.clone();
+                        wid_delta.watch_id = wid.clone();
+                        if let Err(e) = app_clone.emit("fs:tree-delta", &wid_delta) {
+                            error!("Failed to emit fs:tree-delta event: {}", e);
                         }
                     }
                 }
