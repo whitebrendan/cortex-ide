@@ -186,7 +186,7 @@ pub async fn fs_write_file(app: AppHandle, path: String, content: String) -> Res
         }
 
         let cache = app.state::<Arc<DirectoryCache>>();
-        cache.invalidate(&parent.to_string_lossy());
+        cache.invalidate_dir(&parent.to_string_lossy());
     }
 
     // Invalidate content cache before writing
@@ -226,7 +226,7 @@ pub async fn fs_write_file_binary(
         }
 
         let cache = app.state::<Arc<DirectoryCache>>();
-        cache.invalidate(&parent.to_string_lossy());
+        cache.invalidate_dir(&parent.to_string_lossy());
     }
 
     // Invalidate content cache before writing
@@ -262,7 +262,7 @@ pub async fn fs_delete_file(app: AppHandle, path: String) -> Result<(), String> 
 
     if let Some(parent) = validated_path.parent() {
         let cache = app.state::<Arc<DirectoryCache>>();
-        cache.invalidate(&parent.to_string_lossy());
+        cache.invalidate_dir(&parent.to_string_lossy());
     }
 
     // Invalidate content cache
@@ -296,7 +296,7 @@ pub async fn fs_create_file(app: AppHandle, path: String) -> Result<(), String> 
         }
 
         let cache = app.state::<Arc<DirectoryCache>>();
-        cache.invalidate(&parent.to_string_lossy());
+        cache.invalidate_dir(&parent.to_string_lossy());
     }
 
     fs::write(&validated_path, "")
@@ -338,10 +338,10 @@ pub async fn fs_rename(app: AppHandle, old_path: String, new_path: String) -> Re
 
     let cache = app.state::<Arc<DirectoryCache>>();
     if let Some(parent) = validated_from.parent() {
-        cache.invalidate(&parent.to_string_lossy());
+        cache.invalidate_dir(&parent.to_string_lossy());
     }
     if let Some(parent) = validated_to.parent() {
-        cache.invalidate(&parent.to_string_lossy());
+        cache.invalidate_dir(&parent.to_string_lossy());
     }
     cache.invalidate_prefix(&old_path);
 
@@ -386,7 +386,7 @@ pub async fn fs_copy_file(
         }
 
         let cache = app.state::<Arc<DirectoryCache>>();
-        cache.invalidate(&parent.to_string_lossy());
+        cache.invalidate_dir(&parent.to_string_lossy());
     }
 
     fs::copy(&validated_from, &validated_to)
@@ -424,10 +424,10 @@ pub async fn fs_move(app: AppHandle, source: String, destination: String) -> Res
 
     let cache = app.state::<Arc<DirectoryCache>>();
     if let Some(parent) = validated_from.parent() {
-        cache.invalidate(&parent.to_string_lossy());
+        cache.invalidate_dir(&parent.to_string_lossy());
     }
     if let Some(parent) = validated_to.parent() {
-        cache.invalidate(&parent.to_string_lossy());
+        cache.invalidate_dir(&parent.to_string_lossy());
     }
     cache.invalidate_prefix(&source);
 
@@ -517,7 +517,7 @@ pub async fn fs_trash(app: AppHandle, path: String) -> Result<(), String> {
 
     let cache = app.state::<Arc<DirectoryCache>>();
     if let Some(parent) = validated_path.parent() {
-        cache.invalidate(&parent.to_string_lossy());
+        cache.invalidate_dir(&parent.to_string_lossy());
     }
     if validated_path.is_dir() {
         cache.invalidate_prefix(&path);

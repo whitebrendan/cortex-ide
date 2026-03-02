@@ -216,7 +216,7 @@ pub async fn fs_write_file_with_encoding(
 
         // Invalidate directory cache
         let cache = app.state::<Arc<DirectoryCache>>();
-        cache.invalidate(&parent.to_string_lossy());
+        cache.invalidate_dir(&parent.to_string_lossy());
     }
 
     // Invalidate content cache before writing

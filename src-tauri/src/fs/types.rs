@@ -181,6 +181,20 @@ impl DirectoryCache {
         self.lru_order.lock().pop(path);
     }
 
+    pub fn invalidate_dir(&self, path: &str) {
+        self.invalidate(path);
+        let variants = [
+            format!("{}:true:false", path),
+            format!("{}:true:true", path),
+            format!("{}:false:false", path),
+            format!("{}:false:true", path),
+        ];
+        for key in &variants {
+            self.cache.remove(key.as_str());
+            self.lru_order.lock().pop(key.as_str());
+        }
+    }
+
     pub fn invalidate_prefix(&self, prefix: &str) {
         let keys_to_remove: Vec<String> = self
             .cache

@@ -20,6 +20,14 @@ export interface CachedFileEntry {
   children?: CachedFileEntry[];
 }
 
+export interface FileTreeDeltaPayload {
+  added: string[];
+  removed: string[];
+  modified: string[];
+  affectedDirs: string[];
+  watchId: string;
+}
+
 interface CacheEntry {
   entries: CachedFileEntry[];
   timestamp: number;
@@ -46,6 +54,9 @@ class FileTreeCache {
     this.ttl = ttl;
   }
 
+  private unlistenDeltaFn: UnlistenFn | null = null;
+  private deltaListeners = new Set<(delta: FileTreeDeltaPayload) => void>();
+
   async startWatching(): Promise<void> {
     if (this.unlistenFn) return;
     try {
@@ -61,6 +72,19 @@ class FileTreeCache {
           }
         },
       );
+      this.unlistenDeltaFn = await listen<FileTreeDeltaPayload>(
+        "fs:tree-delta",
+        (event) => {
+          const delta = event.payload;
+          for (const dir of delta.affectedDirs) {
+            const normalized = dir.replace(/\\/g, "/");
+            this.invalidate(normalized);
+          }
+          for (const listener of this.deltaListeners) {
+            listener(delta);
+          }
+        },
+      );
     } catch {
       // Not in Tauri context (browser dev)
     }
@@ -71,6 +95,17 @@ class FileTreeCache {
       this.unlistenFn();
       this.unlistenFn = null;
     }
+    if (this.unlistenDeltaFn) {
+      this.unlistenDeltaFn();
+      this.unlistenDeltaFn = null;
+    }
+  }
+
+  onDelta(listener: (delta: FileTreeDeltaPayload) => void): () => void {
+    this.deltaListeners.add(listener);
+    return () => {
+      this.deltaListeners.delete(listener);
+    };
   }
 
   get(dirPath: string): CachedFileEntry[] | undefined {

@@ -22,6 +22,7 @@
 //! - `encoding` - File encoding detection and conversion
 //! - `workspace_edit` - Text edit operations for refactoring
 
+pub mod delta;
 pub mod directory;
 pub mod encoding;
 pub mod operations;
@@ -118,6 +119,117 @@ mod tests {
 
         cache.invalidate("/test");
         assert!(cache.get("/test").is_none());
+    }
+
+    #[test]
+    fn test_cache_key_consistency() {
+        let cache = DirectoryCache::new();
+
+        let entries = vec![FileEntry {
+            name: "file.rs".to_string(),
+            path: "/project/src/file.rs".to_string(),
+            is_dir: false,
+            is_hidden: false,
+            is_symlink: false,
+            size: Some(200),
+            modified_at: None,
+            extension: Some("rs".to_string()),
+            children: None,
+        }];
+
+        let key = format!("{}:{}:{}", "/project/src", true, false);
+        cache.insert(key.clone(), entries.clone());
+
+        assert!(cache.get(&key).is_some());
+
+        assert!(cache.get("/project/src").is_none());
+
+        cache.invalidate(&key);
+        assert!(cache.get(&key).is_none());
+    }
+
+    #[test]
+    fn test_cache_prefix_invalidation_with_keys() {
+        let cache = DirectoryCache::new();
+
+        let entries = vec![FileEntry {
+            name: "a.txt".to_string(),
+            path: "/project/a.txt".to_string(),
+            is_dir: false,
+            is_hidden: false,
+            is_symlink: false,
+            size: Some(10),
+            modified_at: None,
+            extension: Some("txt".to_string()),
+            children: None,
+        }];
+
+        cache.insert("/project:true:false".to_string(), entries.clone());
+        cache.insert("/project:false:false".to_string(), entries.clone());
+        cache.insert("/project/sub:true:false".to_string(), entries.clone());
+        cache.insert("/other:true:false".to_string(), entries.clone());
+
+        cache.invalidate_prefix("/project");
+
+        assert!(cache.get("/project:true:false").is_none());
+        assert!(cache.get("/project:false:false").is_none());
+        assert!(cache.get("/project/sub:true:false").is_none());
+        assert!(cache.get("/other:true:false").is_some());
+    }
+
+    #[test]
+    fn test_file_tree_delta_serialization() {
+        use super::delta::FileTreeDelta;
+
+        let delta = FileTreeDelta {
+            added: vec!["/project/new_file.rs".to_string()],
+            removed: vec![],
+            modified: vec![],
+            affected_dirs: vec!["/project".to_string()],
+            watch_id: "watch_abc123".to_string(),
+        };
+
+        let json = serde_json::to_string(&delta).unwrap();
+        assert!(json.contains("\"affectedDirs\""));
+        assert!(json.contains("\"watchId\""));
+        assert!(json.contains("new_file.rs"));
+
+        let deserialized: FileTreeDelta = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.added.len(), 1);
+        assert_eq!(deserialized.watch_id, "watch_abc123");
+    }
+
+    #[test]
+    fn test_invalidate_dir_clears_all_variants() {
+        let cache = DirectoryCache::new();
+
+        let entries = vec![FileEntry {
+            name: "a.txt".to_string(),
+            path: "/project/a.txt".to_string(),
+            is_dir: false,
+            is_hidden: false,
+            is_symlink: false,
+            size: Some(10),
+            modified_at: None,
+            extension: Some("txt".to_string()),
+            children: None,
+        }];
+
+        cache.insert("/project".to_string(), entries.clone());
+        cache.insert("/project:true:false".to_string(), entries.clone());
+        cache.insert("/project:true:true".to_string(), entries.clone());
+        cache.insert("/project:false:false".to_string(), entries.clone());
+        cache.insert("/project:false:true".to_string(), entries.clone());
+        cache.insert("/other:true:false".to_string(), entries.clone());
+
+        cache.invalidate_dir("/project");
+
+        assert!(cache.get("/project").is_none());
+        assert!(cache.get("/project:true:false").is_none());
+        assert!(cache.get("/project:true:true").is_none());
+        assert!(cache.get("/project:false:false").is_none());
+        assert!(cache.get("/project:false:true").is_none());
+        assert!(cache.get("/other:true:false").is_some());
     }
 
     #[test]

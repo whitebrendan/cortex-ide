@@ -38,7 +38,7 @@ pub async fn fs_create_directory(app: AppHandle, path: String) -> Result<(), Str
 
     if let Some(parent) = validated_path.parent() {
         let cache = app.state::<Arc<DirectoryCache>>();
-        cache.invalidate(&parent.to_string_lossy());
+        cache.invalidate_dir(&parent.to_string_lossy());
     }
 
     fs::create_dir_all(&validated_path)
@@ -72,7 +72,7 @@ pub async fn fs_delete_directory(
     cache.invalidate_prefix(&path);
 
     if let Some(parent) = validated_path.parent() {
-        cache.invalidate(&parent.to_string_lossy());
+        cache.invalidate_dir(&parent.to_string_lossy());
     }
 
     if recursive {
@@ -236,7 +236,12 @@ pub fn build_file_tree_parallel(
 
         // Skip recursive traversal into symlinked directories to prevent infinite loops
         if is_dir && depth > 0 && !is_symlink {
-            let cache_key = path.to_string_lossy().to_string();
+            let cache_key = format!(
+                "{}:{}:{}",
+                path.to_string_lossy(),
+                show_hidden,
+                include_ignored
+            );
 
             let immediate_children = if let Some(cached) = cache.get(&cache_key) {
                 cached
