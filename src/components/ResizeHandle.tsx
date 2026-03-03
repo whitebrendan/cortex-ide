@@ -162,10 +162,10 @@ export function ResizeHandle(props: ResizeHandleProps) {
     "flex-shrink": "0",
     "z-index": "10",
     cursor: getCursor(),
-    // Dimensions based on direction - use CSS variable for consistency
+    // Dimensions based on direction
     ...(isHorizontal() 
-      ? { width: "var(--cortex-sash-size, 4px)", height: "100%" }
-      : { height: "var(--cortex-sash-size, 4px)", width: "100%" }
+      ? { width: "4px", height: "100%" }
+      : { height: "4px", width: "100%" }
     ),
     ...props.style,
   });

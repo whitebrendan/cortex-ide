@@ -49,7 +49,7 @@ export function CortexIDELayout(props: CortexIDELayoutProps) {
     overflow: "hidden",
     "min-width": "0",
     background: "var(--cortex-bg-secondary)",
-    "border-radius": "var(--cortex-sidebar-radius)",
+    "border-radius": "12px",
     border: "1px solid var(--cortex-border-default)",
   });
 

@@ -66,10 +66,7 @@ export function CortexBottomPanelContainer(props: CortexBottomPanelContainerProp
         display: "flex",
         "flex-direction": "column",
         background: "var(--cortex-bg-secondary)",
-        "border-radius": "var(--cortex-sidebar-radius) var(--cortex-sidebar-radius) 0 0",
-        border: "1px solid var(--cortex-border-default)",
-        "border-bottom": "none",
-        overflow: "hidden",
+        "border-radius": "12px 12px 0 0",
       }}>
         <div style={{
           display: "flex",
