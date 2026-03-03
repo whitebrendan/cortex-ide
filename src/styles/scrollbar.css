@@ -45,7 +45,7 @@
   
   /* ---------------------------------------------------------------------
      Sash (Resize Handle) Design Tokens - JetBrains Islands Style
-     Invisible by default, subtle indigo highlight on hover
+     4px by default, subtle indigo highlight on hover
      --------------------------------------------------------------------- */
   --cortex-sash-size: 4px;
   --cortex-sash-hover-size: 4px;
