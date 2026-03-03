@@ -293,17 +293,17 @@ describe("CortexFileExplorer", () => {
       expect(div?.style.width).toBe("320px");
     });
 
-    it("should have correct border-radius of 12px", () => {
+    it("should have correct border-radius using design token", () => {
       const { container } = render(() => <CortexFileExplorer />);
       const div = container.firstChild as HTMLElement;
-      expect(div?.style.borderRadius).toBe("12px");
+      expect(div?.style.borderRadius).toBe("var(--cortex-sidebar-radius)");
     });
 
-    it("should use #1C1C1D for background", () => {
+    it("should use sidebar-bg CSS variable for background", () => {
       const { container } = render(() => <CortexFileExplorer />);
       const div = container.firstChild as HTMLElement;
       const bg = div?.style.background;
-      expect(bg).toContain("rgb(28, 28, 29)");
+      expect(bg).toContain("var(--cortex-sidebar-bg)");
     });
   });
 });
