@@ -48,7 +48,6 @@ const fileExtensionIcons: Record<string, string> = {
   
   // Programming languages
   py: "python",
-  pyi: "python",
   rs: "rust",
   go: "go",
   java: "java",
@@ -68,30 +67,6 @@ const fileExtensionIcons: Record<string, string> = {
   lua: "lua",
   r: "r",
   sql: "database",
-  clj: "clojure",
-  cljs: "clojure",
-  ex: "elixir",
-  exs: "elixir",
-  erl: "erlang",
-  hs: "haskell",
-  scala: "scala",
-  zig: "zig",
-  pl: "perl",
-  jl: "julia",
-  nim: "nim",
-  nix: "nix",
-  ml: "ocaml",
-  mli: "ocaml",
-  fs: "fsharp",
-  fsx: "fsharp",
-  sol: "solidity",
-  tf: "terraform",
-  tfvars: "terraform",
-  proto: "proto",
-  ipynb: "notebook",
-  tex: "tex",
-  http: "http",
-  gradle: "gradle",
   
   // Shell
   sh: "shell",
@@ -234,26 +209,6 @@ const fileNameIcons: Record<string, string> = {
   // Database
   "prisma.schema": "prisma",
   "schema.prisma": "prisma",
-  
-  // Rust
-  "cargo.toml": "rust",
-  "cargo.lock": "rust",
-  
-  // Go
-  "go.mod": "go",
-  "go.sum": "go",
-  
-  // Python
-  "requirements.txt": "python",
-  "pyproject.toml": "python",
-  "pipfile": "python",
-  
-  // Ruby
-  "gemfile": "ruby",
-  "rakefile": "ruby",
-  
-  // Build
-  "makefile": "gear",
   
   // Misc
   ".nvmrc": "node",
@@ -485,8 +440,8 @@ export function getFolderIconExpanded(folderName: string): string {
     return `${ICONS_BASE}/folders/${folderIcon}.svg`;
   }
   
-  // Default expanded folder — use open variant for visual distinction
-  return `${ICONS_BASE}/folders/folder-open.svg`;
+  // Default expanded folder
+  return `${ICONS_BASE}/folders/folder.svg`;
 }
 
 /**
@@ -502,7 +457,6 @@ export function getFolderIcon(folderName: string): string {
 export function preloadCommonIcons(): void {
   const commonIcons = [
     "/icons/folders/folder.svg",
-    "/icons/folders/folder-open.svg",
     "/icons/files/document.svg",
     "/icons/files/js.svg",
     "/icons/files/ts.svg",

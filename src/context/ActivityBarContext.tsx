@@ -25,7 +25,6 @@ import {
   createEffect,
   createMemo,
   onMount,
-  onCleanup,
   batch,
   Accessor,
 } from "solid-js";
@@ -445,40 +444,41 @@ export function ActivityBarProvider(props: ParentProps) {
   };
 
   // Listen for external events
-  const handleViewFocus = (e: Event) => {
-    const detail = (e as CustomEvent<{ view: string }>).detail;
-    if (detail?.view) {
-      setActiveView(detail.view as ViewId);
-      setSidebarVisible(true);
-    }
-  };
-
-  const handleToggleSidebar = () => {
-    toggleSidebar();
-  };
-
-  const handleFocusExplorer = () => {
-    setActiveView("explorer" as ViewId);
-    setSidebarVisible(true);
-  };
-
-  const handleFocusDebug = () => {
-    setActiveView("debug" as ViewId);
-    setSidebarVisible(true);
-  };
-
   onMount(() => {
-    window.addEventListener("layout:focus-view", handleViewFocus);
+    // Listen for view focus commands
+    const handleViewFocus = (e: CustomEvent<{ view: string }>) => {
+      if (e.detail?.view) {
+        setActiveView(e.detail.view as ViewId);
+        setSidebarVisible(true);
+      }
+    };
+
+    // Listen for sidebar toggle commands
+    const handleToggleSidebar = () => {
+      toggleSidebar();
+    };
+
+    const handleFocusExplorer = () => {
+      setActiveView("explorer" as ViewId);
+      setSidebarVisible(true);
+    };
+
+    const handleFocusDebug = () => {
+      setActiveView("debug" as ViewId);
+      setSidebarVisible(true);
+    };
+
+    window.addEventListener("layout:focus-view", handleViewFocus as EventListener);
     window.addEventListener("layout:toggle-sidebar", handleToggleSidebar);
     window.addEventListener("layout:focus-explorer", handleFocusExplorer);
     window.addEventListener("layout:focus-debug", handleFocusDebug);
-  });
 
-  onCleanup(() => {
-    window.removeEventListener("layout:focus-view", handleViewFocus);
-    window.removeEventListener("layout:toggle-sidebar", handleToggleSidebar);
-    window.removeEventListener("layout:focus-explorer", handleFocusExplorer);
-    window.removeEventListener("layout:focus-debug", handleFocusDebug);
+    return () => {
+      window.removeEventListener("layout:focus-view", handleViewFocus as EventListener);
+      window.removeEventListener("layout:toggle-sidebar", handleToggleSidebar);
+      window.removeEventListener("layout:focus-explorer", handleFocusExplorer);
+      window.removeEventListener("layout:focus-debug", handleFocusDebug);
+    };
   });
 
   // Context value
