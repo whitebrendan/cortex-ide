@@ -243,7 +243,7 @@ code, pre {
   --cortex-scrollbar-fade-transition: 800ms;
   
   /* Sash (Resize Handle) Design Tokens - JetBrains Islands Style */
-  --cortex-sash-size: 0px;
+  --cortex-sash-size: 4px;
   --cortex-sash-hover-size: 4px;
   --cortex-sash-hover-border: rgba(99, 102, 241, 0.5);
   
