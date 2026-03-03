@@ -365,7 +365,7 @@ export function Panel(props: PanelProps) {
       <Show when={!isCollapsed()}>
         <Box
           flex={1}
-          overflow="hidden"
+          overflow="auto"
           minHeight={0}
         >
           {props.children}
