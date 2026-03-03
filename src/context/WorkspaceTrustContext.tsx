@@ -6,6 +6,7 @@ import {
   createMemo,
   createEffect,
   onMount,
+  onCleanup,
   batch,
   Accessor,
 } from "solid-js";
@@ -605,31 +606,33 @@ export function WorkspaceTrustProvider(props: ParentProps) {
   });
 
   // Listen for workspace changes from WorkspaceContext
-  onMount(() => {
-    const handleWorkspaceLoaded = (event: CustomEvent<{ filePath?: string }>) => {
-      if (event.detail?.filePath) {
-        const parentPath = getParentPath(event.detail.filePath);
-        if (parentPath) {
-          setCurrentWorkspace(parentPath);
-          setBannerDismissed(false);
-        }
-      }
-    };
-
-    const handleFolderAdded = (event: CustomEvent<{ path: string }>) => {
-      if (event.detail?.path && !currentWorkspace()) {
-        setCurrentWorkspace(event.detail.path);
+  const handleWorkspaceLoaded = (event: Event) => {
+    const detail = (event as CustomEvent<{ filePath?: string }>).detail;
+    if (detail?.filePath) {
+      const parentPath = getParentPath(detail.filePath);
+      if (parentPath) {
+        setCurrentWorkspace(parentPath);
         setBannerDismissed(false);
       }
-    };
+    }
+  };
 
-    const handleWorkspaceClosed = () => {
-      setCurrentWorkspace(null);
+  const handleFolderAdded = (event: Event) => {
+    const detail = (event as CustomEvent<{ path: string }>).detail;
+    if (detail?.path && !currentWorkspace()) {
+      setCurrentWorkspace(detail.path);
       setBannerDismissed(false);
-    };
+    }
+  };
 
-    window.addEventListener("workspace:loaded", handleWorkspaceLoaded as EventListener);
-    window.addEventListener("workspace:folder-added", handleFolderAdded as EventListener);
+  const handleWorkspaceClosed = () => {
+    setCurrentWorkspace(null);
+    setBannerDismissed(false);
+  };
+
+  onMount(() => {
+    window.addEventListener("workspace:loaded", handleWorkspaceLoaded);
+    window.addEventListener("workspace:folder-added", handleFolderAdded);
     window.addEventListener("workspace:closed", handleWorkspaceClosed);
 
     // Check for existing workspace in localStorage
@@ -637,12 +640,12 @@ export function WorkspaceTrustProvider(props: ParentProps) {
     if (storedProject) {
       setCurrentWorkspace(storedProject);
     }
+  });
 
-    return () => {
-      window.removeEventListener("workspace:loaded", handleWorkspaceLoaded as EventListener);
-      window.removeEventListener("workspace:folder-added", handleFolderAdded as EventListener);
-      window.removeEventListener("workspace:closed", handleWorkspaceClosed);
-    };
+  onCleanup(() => {
+    window.removeEventListener("workspace:loaded", handleWorkspaceLoaded);
+    window.removeEventListener("workspace:folder-added", handleFolderAdded);
+    window.removeEventListener("workspace:closed", handleWorkspaceClosed);
   });
 
   // Build state object for consumers that need full state access
