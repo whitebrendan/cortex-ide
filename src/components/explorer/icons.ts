@@ -1,4 +1,4 @@
-import { getFileIcon as getFileIconPath, getFolderIcon } from "@/utils/fileIcons";
+import { getFileIcon as getFileIconPath, getFolderIcon, getFolderIconExpanded } from "@/utils/fileIcons";
 import { tokens } from "@/design-system/tokens";
 
 const FILE_COLORS: Record<string, string> = {};
@@ -58,9 +58,9 @@ export function clearFileExplorerCaches(): void {
   colorCache.clear();
 }
 
-export function getFileIconSvg(name: string, isDir: boolean, _isExpanded: boolean): string {
+export function getFileIconSvg(name: string, isDir: boolean, isExpanded: boolean): string {
   if (isDir) {
-    return getFolderIcon(name);
+    return isExpanded ? getFolderIconExpanded(name) : getFolderIcon(name);
   }
   const cacheKey = name;
   const cached = iconCache.get(cacheKey);
