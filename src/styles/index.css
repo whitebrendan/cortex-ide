@@ -272,22 +272,30 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  line-height: var(--cortex-icon-line-height, 1);
   flex-shrink: 0;
 }
 
 .btn-sm .btn-icon {
-  width: 14px;
-  height: 14px;
+  width: var(--cortex-icon-button-sm, 14px);
+  height: var(--cortex-icon-button-sm, 14px);
 }
 
 .btn-md .btn-icon {
-  width: 16px;
-  height: 16px;
+  width: var(--cortex-icon-button-md, 16px);
+  height: var(--cortex-icon-button-md, 16px);
 }
 
 .btn-lg .btn-icon {
-  width: 18px;
-  height: 18px;
+  width: var(--cortex-icon-button-lg, 18px);
+  height: var(--cortex-icon-button-lg, 18px);
+}
+
+.btn-icon .codicon,
+.btn-icon .codicon[class*='codicon-'] {
+  font-size: 1em;
+  line-height: var(--cortex-icon-line-height, 1);
+  vertical-align: var(--cortex-icon-baseline-offset, -0.125em);
 }
 
 /* VS Code Style Buttons */
@@ -1357,5 +1365,3 @@ button.btn-vscode,
   opacity: 0;
   pointer-events: none;
 }
-
-

@@ -28,8 +28,14 @@
    ============================================================================ */
 
 .codicon[class*='codicon-'] {
-  font: normal normal normal 16px/1 codicon, "Segoe Fluent Icons", "Segoe MDL2 Assets", system-ui;
-  display: inline-block;
+  font: normal normal normal 16px/var(--cortex-icon-line-height, 1) codicon, "Segoe Fluent Icons", "Segoe MDL2 Assets", system-ui;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
+  line-height: var(--cortex-icon-line-height, 1);
+  vertical-align: var(--cortex-icon-baseline-offset, -0.125em);
   text-decoration: none;
   text-rendering: auto;
   text-align: center;
@@ -38,6 +44,15 @@
   -moz-osx-font-smoothing: grayscale;
   user-select: none;
   -webkit-user-select: none;
+}
+
+.codicon[class*='codicon-']::before {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
+  line-height: var(--cortex-icon-line-height, 1);
 }
 
 /* ============================================================================
@@ -110,9 +125,9 @@
 
 /* Action bar icon size */
 .codicon-action {
-  width: 16px;
-  height: 16px;
-  font-size: 16px;
+  width: var(--cortex-icon-container-sm, 16px);
+  height: var(--cortex-icon-container-sm, 16px);
+  font-size: var(--cortex-icon-sm, 16px);
 }
 
 /* ============================================================================
@@ -250,23 +265,25 @@
 }
 
 .cortex-icon-label::before {
-  background-size: 16px;
+  background-size: var(--cortex-icon-container-sm, 16px);
   background-position: left center;
   background-repeat: no-repeat;
-  padding-right: 6px;
-  width: 16px;
-  height: 22px;
+  padding-right: var(--cortex-icon-inline-gap, 6px);
+  width: var(--cortex-icon-container-sm, 16px);
+  height: var(--cortex-icon-hit-area-compact, 22px);
   line-height: inherit !important;
-  display: inline-block;
-  vertical-align: top;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: var(--cortex-icon-baseline-offset, -0.125em);
   flex-shrink: 0;
 }
 
 /* Icon path container (for URI/ThemeIcon) */
 .cortex-icon-label-iconpath {
-  width: 16px;
-  height: 22px;
-  margin-right: 6px;
+  width: var(--cortex-icon-container-sm, 16px);
+  height: var(--cortex-icon-hit-area-compact, 22px);
+  margin-right: var(--cortex-icon-inline-gap, 6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -413,8 +430,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: calc(var(--cortex-icon-hit-area-default, 24px) * 1.5);
+  height: calc(var(--cortex-icon-hit-area-default, 24px) * 1.5);
   font-size: 20px;
   cursor: pointer;
   border-radius: 5px;
@@ -454,8 +471,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: var(--cortex-icon-hit-area-compact, 22px);
+  height: var(--cortex-icon-hit-area-compact, 22px);
+  line-height: var(--cortex-icon-line-height, 1);
   border-radius: var(--cortex-radius-sm, 2px);
   color: var(--cortex-text-muted, #696a6a);
   transition: background-color 0.1s ease, color 0.1s ease;
@@ -490,8 +508,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: var(--cortex-icon-container-sm, 16px);
+  height: var(--cortex-icon-container-sm, 16px);
   flex-shrink: 0;
 }
 
@@ -526,13 +544,17 @@
    ============================================================================ */
 
 .inline-codicon {
-  font: normal normal normal 16px/1 codicon, "Segoe Fluent Icons", "Segoe MDL2 Assets", system-ui;
-  display: inline;
+  font: normal normal normal 16px/var(--cortex-icon-line-height, 1) codicon, "Segoe Fluent Icons", "Segoe MDL2 Assets", system-ui;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
   text-decoration: none;
   text-rendering: auto;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  vertical-align: text-bottom;
+  vertical-align: var(--cortex-icon-baseline-offset, -0.125em);
 }
 
 /* ============================================================================

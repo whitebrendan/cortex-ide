@@ -329,6 +329,19 @@
   /* ===========================================================================
      ICON SIZES
      =========================================================================== */
+  --cortex-icon-container-xs: var(--cortex-icon-xs);
+  --cortex-icon-container-sm: var(--cortex-icon-sm);
+  --cortex-icon-container-md: var(--cortex-icon-md);
+  --cortex-icon-container-lg: var(--cortex-icon-lg);
+  --cortex-icon-hit-area-compact: 22px;
+  --cortex-icon-hit-area-default: 24px;
+  --cortex-icon-hit-area-large: 32px;
+  --cortex-icon-button-sm: 14px;
+  --cortex-icon-button-md: 16px;
+  --cortex-icon-button-lg: 18px;
+  --cortex-icon-inline-gap: 6px;
+  --cortex-icon-line-height: 1;
+  --cortex-icon-baseline-offset: -0.125em;
   --cortex-icon-xs: 12px;
   --cortex-icon-sm: 16px;
   --cortex-icon-md: 20px;
@@ -849,4 +862,3 @@
   --cortex-small-btn-bg: #181720;
   --cortex-card-bg: #131217;
 }
-
