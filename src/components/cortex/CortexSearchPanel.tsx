@@ -151,8 +151,13 @@ export const CortexSearchPanel: Component = () => {
 
   return (
     <div style={{ display: "flex", "flex-direction": "column", height: "100%", background: "var(--cortex-bg-secondary)", color: "var(--cortex-text-primary)", "font-family": "var(--cortex-font-sans)", "font-size": "13px" }}>
-      <div style={{ padding: "12px 16px", "border-bottom": "1px solid var(--cortex-border-default)" }}>
+      <div style={{ display: "flex", "align-items": "center", "justify-content": "space-between", padding: "0 12px", height: "36px", "border-bottom": "1px solid var(--cortex-border-default)", "flex-shrink": "0" }}>
         <span style={{ "font-weight": "600", "font-size": "13px" }}>Search</span>
+        <div style={{ display: "flex", "align-items": "center", gap: "4px" }}>
+          <button onClick={() => { setResults([]); setQuery(""); searchRef?.focus(); }} title="Clear" style={{ background: "transparent", border: "none", color: "var(--cortex-text-inactive)", cursor: "pointer", padding: "4px", "border-radius": "var(--cortex-radius-sm)", display: "flex", "align-items": "center" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </button>
+        </div>
       </div>
 
       <div style={{ padding: "12px 16px", "border-bottom": "1px solid var(--cortex-border-default)" }}>
@@ -219,6 +224,7 @@ export const CortexSearchPanel: Component = () => {
               <div style={{ "border-bottom": "1px solid var(--cortex-border-default)" }}>
                 <div class="sp-file-row" onClick={() => toggleFile(fr.file)} style={{ display: "flex", "align-items": "center", padding: "6px 16px", cursor: "pointer", gap: "8px" }}>
                   <svg width="12" height="12" viewBox="0 0 16 16" fill="var(--cortex-text-inactive)" style={{ ...chevron(expanded().has(fr.file)), "flex-shrink": "0" }}><path d="M6 4l4 4-4 4V4z"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cortex-info)" stroke-width="2" style={{ "flex-shrink": "0" }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
                   <span style={{ "font-weight": "500", overflow: "hidden", "text-overflow": "ellipsis", "white-space": "nowrap" }}>{getFilename(fr.file)}</span>
                   <span style={{ color: "var(--cortex-text-inactive)", "font-size": "12px", overflow: "hidden", "text-overflow": "ellipsis", "white-space": "nowrap", flex: "1", "min-width": "0" }}>{getRelPath(fr.file, fr.root)}</span>
                   <Show when={showReplace()}>
@@ -232,10 +238,10 @@ export const CortexSearchPanel: Component = () => {
                 <Show when={expanded().has(fr.file)}>
                   <For each={fr.matches}>
                     {(m) => (
-                      <div class="sp-match-row" onClick={() => openMatch(fr.file, m.line, m.column)} style={{ padding: "4px 16px 4px 48px", cursor: "pointer", "font-family": "var(--cortex-font-mono)", "font-size": "12px", "white-space": "nowrap", overflow: "hidden", "text-overflow": "ellipsis" }}>
-                        <span style={{ color: "var(--cortex-text-inactive)", "margin-right": "8px", "user-select": "none" }}>{m.line}</span>
+                      <div class="sp-match-row" onClick={() => openMatch(fr.file, m.line, m.column)} style={{ padding: "4px 16px 4px 48px", cursor: "pointer", "font-family": "var(--cortex-font-mono)", "font-size": "12px", "white-space": "nowrap", overflow: "hidden", "text-overflow": "ellipsis", display: "flex", "align-items": "center", gap: "4px" }}>
+                        <span style={{ color: "var(--cortex-text-inactive)", "margin-right": "8px", "user-select": "none", "font-size": "11px", "min-width": "28px", "text-align": "right", "flex-shrink": "0" }}>{m.line}</span>
                         <span style={{ color: "var(--cortex-text-secondary)" }}>{m.text.slice(0, m.matchStart)}</span>
-                        <span style={{ background: "var(--cortex-search-match)", color: "var(--cortex-accent-primary)", "border-radius": "var(--cortex-radius-sm)", padding: "0 2px", "font-weight": "500" }}>{m.text.slice(m.matchStart, m.matchEnd)}</span>
+                        <span style={{ background: "var(--cortex-search-match)", color: "#fff", "border-radius": "2px", padding: "1px 2px", "font-weight": "600", "border-bottom": "2px solid rgba(255, 167, 38, 0.8)" }}>{m.text.slice(m.matchStart, m.matchEnd)}</span>
                         <span style={{ color: "var(--cortex-text-secondary)" }}>{m.text.slice(m.matchEnd)}</span>
                       </div>
                     )}

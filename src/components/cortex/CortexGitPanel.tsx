@@ -37,11 +37,27 @@ const FileRow: Component<{
 }> = (props) => {
   const letter = () => STATUS_LETTER[props.file.status] ?? "?";
   const name = () => props.file.path.split("/").pop() ?? props.file.path;
+  const dir = () => { const parts = props.file.path.split("/"); return parts.length > 1 ? parts.slice(0, -1).join("/") : ""; };
   return (
     <div class="cortex-git-file-row" style={{ display: "flex", "align-items": "center", padding: "4px 12px 4px 36px", cursor: "pointer", gap: "8px" }}>
-      <CortexIcon name="chevron-down" size={12} color="var(--cortex-text-secondary)" />
+      <span style={{
+        color: STATUS_COLOR[letter()],
+        "font-weight": "700",
+        "font-size": "11px",
+        width: "18px",
+        height: "18px",
+        "text-align": "center",
+        "line-height": "18px",
+        "border-radius": "3px",
+        background: `color-mix(in srgb, ${STATUS_COLOR[letter()] || "var(--cortex-text-inactive)"} 15%, transparent)`,
+        "flex-shrink": "0",
+      }}>{letter()}</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cortex-text-inactive)" stroke-width="2" style={{ "flex-shrink": "0" }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
       <span style={{ flex: 1, overflow: "hidden", "text-overflow": "ellipsis", "white-space": "nowrap", "font-size": "13px", color: "var(--cortex-text-on-surface)" }}>{name()}</span>
-      <div class="cortex-git-file-actions" style={{ display: "flex", gap: "2px", opacity: 0 }}>
+      <Show when={dir()}>
+        <span style={{ color: "var(--cortex-text-inactive)", "font-size": "11px", overflow: "hidden", "text-overflow": "ellipsis", "white-space": "nowrap", "max-width": "120px" }}>{dir()}</span>
+      </Show>
+      <div class="cortex-git-file-actions" style={{ display: "flex", gap: "2px", opacity: "0.5" }}>
         <Show when={!props.isStaged}>
           <CortexTooltip content="Open Diff"><CortexIconButton icon="switch-horizontal-01" size={20} onClick={() => window.dispatchEvent(new CustomEvent("cortex:git:diff", { detail: { path: props.file.path, repoId: props.repoId } }))} /></CortexTooltip>
           <CortexTooltip content="Discard Changes"><CortexIconButton icon="reverse-left" size={20} onClick={() => props.onDiscard(props.file.path)} /></CortexTooltip>
@@ -52,7 +68,6 @@ const FileRow: Component<{
           <CortexTooltip content="Unstage"><CortexIconButton icon="minus" size={20} onClick={() => props.onUnstage(props.file.path)} /></CortexTooltip>
         </Show>
       </div>
-      <span style={{ color: STATUS_COLOR[letter()], "font-weight": "600", "font-size": "12px", width: "16px", "text-align": "center" }}>{letter()}</span>
     </div>
   );
 };
@@ -151,7 +166,7 @@ export const CortexGitPanel: Component = () => {
 
   return (
     <div style={{ display: "flex", "flex-direction": "column", height: "100%", background: "var(--cortex-bg-secondary)", color: "var(--cortex-text-on-surface)", "font-family": "var(--cortex-font-sans)", "font-size": "13px" }}>
-      <div style={{ display: "flex", "align-items": "center", "justify-content": "space-between", padding: "12px 12px", "border-bottom": "1px solid var(--cortex-border-default)" }}>
+      <div style={{ display: "flex", "align-items": "center", "justify-content": "space-between", padding: "0 12px", height: "36px", "border-bottom": "1px solid var(--cortex-border-default)", "flex-shrink": "0" }}>
         <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
           <span style={{ "font-size": "13px", "font-weight": "600", color: "var(--cortex-text-on-surface)" }}>Source Control</span>
         </div>
@@ -178,12 +193,13 @@ export const CortexGitPanel: Component = () => {
           <CortexIcon name="git-branch-01" size={16} color="var(--cortex-text-secondary)" />
           <CortexDropdown options={branchOptions()} value={currentBranch() ?? undefined} onChange={onBranchChange} placeholder="Select branch..." searchable fullWidth style={{ height: "28px", "font-size": "13px", flex: "1" }} />
         </div>
-        <input
+        <textarea
           value={commitMsg()}
           onInput={(e) => setCommitMsg(e.currentTarget.value)}
           onKeyDown={(e) => { if (e.ctrlKey && e.key === "Enter") handleCommit(); }}
-          placeholder={amend() ? "Amend commit message" : "✔ Commit message"}
-          style={{ width: "100%", background: "var(--cortex-bg-elevated)", border: "1px solid var(--cortex-border-default)", "border-radius": "var(--cortex-radius-md)", color: "var(--cortex-text-on-surface)", padding: "6px 12px", "font-size": "13px", outline: "none", "box-sizing": "border-box", "font-family": "inherit", height: "32px" }}
+          placeholder={amend() ? "Amend commit message" : "Commit message (Ctrl+Enter to commit)"}
+          rows={3}
+          style={{ width: "100%", background: "var(--cortex-bg-elevated)", border: "1px solid var(--cortex-border-default)", "border-radius": "var(--cortex-radius-md)", color: "var(--cortex-text-on-surface)", padding: "8px 12px", "font-size": "13px", outline: "none", "box-sizing": "border-box", "font-family": "inherit", resize: "vertical", "min-height": "60px" }}
         />
         <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
           <button
@@ -271,6 +287,7 @@ export const CortexGitPanel: Component = () => {
       <style>{`
         .cortex-git-file-row:hover { background: rgba(255,255,255,0.05); }
         .cortex-git-file-row:hover .cortex-git-file-actions { opacity: 1 !important; }
+        textarea:focus { border-color: var(--cortex-border-focus) !important; }
       `}</style>
     </div>
   );

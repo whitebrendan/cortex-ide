@@ -105,10 +105,11 @@ function highlightMatch(text: string, start: number, end: number): JSX.Element {
       <span 
         style={{ 
           background: "var(--cortex-search-match)",
-          "border-radius": tokens.radius.sm,
-          color: tokens.colors.text.primary,
-          "font-weight": "500",
-          padding: "0 2px",
+          "border-radius": "2px",
+          color: "#fff",
+          "font-weight": "600",
+          padding: "1px 2px",
+          "border-bottom": "2px solid rgba(255, 167, 38, 0.8)",
         }}
       >
         {text.slice(safeStart, safeEnd)}
@@ -1000,6 +1001,7 @@ export function SearchSidebar() {
     "border-radius": "var(--cortex-radius-md)",
     height: "28px",
     "box-sizing": "border-box",
+    gap: "6px",
   };
 
   const inputInnerStyle: JSX.CSSProperties = {
@@ -1222,7 +1224,12 @@ export function SearchSidebar() {
       {/* Search Input Section */}
       <div style={{ padding: "8px 12px", display: "flex", "flex-direction": "column", gap: "4px", "min-width": "0" }}>
         {/* Main Search Row */}
-        <div style={{ display: "flex", "align-items": "flex-start", gap: "2px", "min-width": "0" }}>
+        <div style={{
+          display: "flex",
+          "align-items": "flex-start",
+          gap: "2px",
+          "min-width": "0"
+        }}>
           {/* Replace Toggle Chevron - smaller and closer to inputs */}
           <button
             style={{
@@ -1258,6 +1265,10 @@ export function SearchSidebar() {
               "border-bottom": showReplace() ? "none" : undefined,
               "border-radius": showReplace() ? `${tokens.radius.sm} ${tokens.radius.sm} 0 0` : tokens.radius.sm,
             }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style={{ "flex-shrink": "0", color: tokens.colors.text.muted }}>
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
               <input
                 ref={inputRef}
                 type="text"

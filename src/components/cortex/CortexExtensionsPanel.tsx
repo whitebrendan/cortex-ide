@@ -47,22 +47,30 @@ const ExtensionCard: Component<{
   onUpdate?: () => void; onInstall?: () => void;
 }> = (props) => (
   <div class="ext-card" style={{
-    padding: "12px", "border-bottom": "1px solid var(--cortex-border-default)",
+    padding: "12px 16px", "border-bottom": "1px solid var(--cortex-border-default)",
     display: "flex", gap: "12px", "align-items": "flex-start",
   }}>
     <div style={{
-      width: "32px", height: "32px", "border-radius": "50%", background: getIconColor(props.name),
-      display: "flex", "align-items": "center", "justify-content": "center", "flex-shrink": 0,
-      color: "var(--cortex-text-primary)", "font-weight": "700", "font-size": "14px",
+      width: "36px", height: "36px", "border-radius": "8px", background: getIconColor(props.name),
+      display: "flex", "align-items": "center", "justify-content": "center", "flex-shrink": "0",
+      color: "#fff", "font-weight": "700", "font-size": "16px",
+      "box-shadow": "0 2px 4px rgba(0,0,0,0.2)",
     }}>{props.name.charAt(0).toUpperCase()}</div>
     <div style={{ flex: 1, "min-width": 0 }}>
-      <div style={{ display: "flex", "align-items": "center", gap: "8px", "margin-bottom": "2px" }}>
-        <span style={{ "font-weight": "600", "font-size": "14px", color: "var(--cortex-text-on-surface)" }}>{props.name}</span>
-        <span style={{ color: "var(--cortex-text-inactive)", "font-size": "12px" }}>v{props.version}</span>
+      <div style={{ display: "flex", "align-items": "center", gap: "8px", "margin-bottom": "4px" }}>
+        <span style={{ "font-weight": "600", "font-size": "13px", color: "var(--cortex-text-on-surface)" }}>{props.name}</span>
+        <span style={{ color: "var(--cortex-text-inactive)", "font-size": "11px" }}>v{props.version}</span>
+        <Show when={props.isInstalled}>
+          <span style={{
+            background: props.enabled ? "var(--cortex-success-bg)" : "rgba(255,255,255,0.08)",
+            color: props.enabled ? "var(--cortex-success)" : "var(--cortex-text-inactive)",
+            padding: "1px 6px", "border-radius": "4px", "font-size": "10px", "font-weight": "600",
+          }}>{props.enabled ? "Enabled" : "Disabled"}</span>
+        </Show>
         <Show when={props.updateInfo}>
           <span style={{
             background: "var(--cortex-accent-primary)", color: "var(--cortex-accent-text)",
-            padding: "1px 6px", "border-radius": "4px", "font-size": "11px", "font-weight": "600",
+            padding: "1px 6px", "border-radius": "4px", "font-size": "10px", "font-weight": "600",
           }}>{props.updateInfo!.availableVersion}</span>
         </Show>
       </div>
@@ -75,7 +83,7 @@ const ExtensionCard: Component<{
         <div style={{ "margin-top": "4px" }}><RatingStars rating={props.rating!} /></div>
       </Show>
     </div>
-    <div style={{ display: "flex", "flex-direction": "column", gap: "4px", "align-items": "flex-end" }}>
+    <div style={{ display: "flex", "flex-direction": "column", gap: "4px", "align-items": "flex-end", "flex-shrink": "0" }}>
       <Show when={props.isInstalled}>
         <Show when={props.updateInfo}>
           <CortexButton variant="primary" size="xs" onClick={props.onUpdate}>Update</CortexButton>
@@ -150,24 +158,27 @@ export const CortexExtensionsPanel: Component = () => {
       "font-family": "var(--cortex-font-sans)", "font-size": "13px",
     }}>
       <div style={{
-        padding: "12px", "border-bottom": "1px solid var(--cortex-border-default)",
         display: "flex", "align-items": "center", "justify-content": "space-between",
+        padding: "0 12px", height: "36px",
+        "border-bottom": "1px solid var(--cortex-border-default)", "flex-shrink": "0",
       }}>
         <span style={{ "font-size": "13px", "font-weight": "600" }}>Extensions</span>
         <CortexIconButton icon="refresh" size={20} onClick={() => ctx?.loadExtensions()} />
       </div>
 
-      <div style={{ padding: "12px", "border-bottom": "1px solid var(--cortex-border-default)" }}>
+      <div style={{ padding: "8px 12px", "border-bottom": "1px solid var(--cortex-border-default)" }}>
         <div style={{ position: "relative" }}>
-          <CortexIcon name="search" size="sm" color="var(--cortex-text-inactive)"
-            style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)" }} />
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cortex-text-inactive)" stroke-width="2"
+            style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", "pointer-events": "none" }}>
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
           <input type="text" value={searchQuery()} onInput={(e) => handleSearch(e.currentTarget.value)}
             placeholder="Search extensions..." style={{
               width: "100%", background: "var(--cortex-bg-elevated)",
               border: "1px solid var(--cortex-border-default)", "border-radius": "var(--cortex-radius-md)",
               color: "var(--cortex-text-on-surface)", padding: "6px 12px 6px 34px",
               "font-size": "13px", outline: "none", "box-sizing": "border-box",
-              "font-family": "inherit", height: "32px",
+              "font-family": "inherit", height: "28px",
             }} />
         </div>
       </div>
