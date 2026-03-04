@@ -9,4 +9,5 @@ pub mod manager;
 pub mod multi_root;
 pub mod types;
 
+pub use commands::*;
 pub use core::*;
