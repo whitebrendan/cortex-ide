@@ -18,7 +18,10 @@ const ITEMS: ActivityItem[] = [
     label: "Explorer",
     icon: () => (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 5v10a2 2 0 002 2h10a2 2 0 002-2V8a2 2 0 00-2-2h-5l-2-2H5a2 2 0 00-2 2z" />
+        <path d="M7 3H4a1 1 0 00-1 1v12a1 1 0 001 1h8a1 1 0 001-1v-2" />
+        <path d="M9 1h4a1 1 0 011 1v12a1 1 0 01-1 1H8a1 1 0 01-1-1V6" />
+        <path d="M9 7h4" />
+        <path d="M9 10h4" />
       </svg>
     ),
   },
@@ -27,8 +30,8 @@ const ITEMS: ActivityItem[] = [
     label: "Search",
     icon: () => (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="9" cy="9" r="5" />
-        <path d="M13 13l4 4" />
+        <circle cx="8.5" cy="8.5" r="5.5" />
+        <path d="M12.5 12.5l4.5 4.5" />
       </svg>
     ),
   },
@@ -37,11 +40,11 @@ const ITEMS: ActivityItem[] = [
     label: "Source Control",
     icon: () => (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="10" cy="4" r="2" />
-        <circle cx="10" cy="16" r="2" />
-        <circle cx="16" cy="10" r="2" />
-        <path d="M10 6v8" />
-        <path d="M14 10h-2c-1.1 0-2-.9-2-2V6" />
+        <circle cx="6" cy="4" r="2" />
+        <circle cx="6" cy="16" r="2" />
+        <circle cx="14" cy="8" r="2" />
+        <path d="M6 6v10" />
+        <path d="M14 10v-0.5c0-1.1-.9-2-2-2H8c-1.1 0-2-.9-2-2V6" />
       </svg>
     ),
   },
@@ -50,10 +53,8 @@ const ITEMS: ActivityItem[] = [
     label: "Extensions",
     icon: () => (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="6" height="6" rx="1" />
-        <rect x="11" y="3" width="6" height="6" rx="1" />
-        <rect x="3" y="11" width="6" height="6" rx="1" />
-        <rect x="11" y="11" width="6" height="6" rx="1" />
+        <path d="M8 2.5c1.5 0 2.5 1 2.5 2 0 .5-.2.9-.5 1.3-.3.3-.5.7-.5 1.2h4.5a1 1 0 011 1v3.5c.5 0 .9-.2 1.2-.5.4-.3.8-.5 1.3-.5 1 0 2 1 2 2.5s-1 2.5-2 2.5c-.5 0-.9-.2-1.3-.5-.3-.3-.7-.5-1.2-.5V18a1 1 0 01-1 1H10c0-.5.2-.9.5-1.2.3-.4.5-.8.5-1.3 0-1.5-1-2.5-2.5-2.5S6 15 6 16.5c0 .5.2.9.5 1.3.3.3.5.7.5 1.2H3a1 1 0 01-1-1V14c-.5 0-.9.2-1.2.5-.4.3-.8.5-1.3.5" />
+        <path d="M2 8V4a1 1 0 011-1h6.5" />
       </svg>
     ),
   },
@@ -94,6 +95,21 @@ export const ActivityBar: Component<ActivityBarProps> = (props) => {
           />
         )}
       </For>
+
+      {/* Spacer to push settings to bottom */}
+      <div style={{ "margin-top": "auto" }} />
+
+      {/* Settings gear at bottom */}
+      <ActivityBarButton
+        item={{ id: "settings", label: "Settings", icon: () => (
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="10" cy="10" r="2.5" />
+            <path d="M10 1.5v2M10 16.5v2M3.4 3.4l1.4 1.4M15.2 15.2l1.4 1.4M1.5 10h2M16.5 10h2M3.4 16.6l1.4-1.4M15.2 4.8l1.4-1.4" />
+          </svg>
+        )}}
+        isActive={props.activeView === "settings"}
+        onClick={() => props.onSelect("settings")}
+      />
     </aside>
   );
 };
