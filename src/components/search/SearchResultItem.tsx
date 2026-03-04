@@ -79,11 +79,6 @@ export const SearchResultItem: Component<SearchResultItemProps> = (props) => {
 
   const handleClick = () => {
     props.onMatchClick?.(props.file, props.line, props.column);
-    window.dispatchEvent(
-      new CustomEvent("editor:goto", {
-        detail: { file: props.file, line: props.line, column: props.column },
-      })
-    );
   };
 
   const handleReplace = (e: MouseEvent) => {
