@@ -263,6 +263,39 @@ export const CortexTitleBar: Component<CortexTitleBarProps> = (props) => {
         </div>
       </div>
 
+      {/* Center Title */}
+      <Show when={local.appName || local.currentPage}>
+        <div
+          data-testid="titlebar-title"
+          style={{
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)",
+            display: "flex",
+            "align-items": "center",
+            gap: "4px",
+            "max-width": "40%",
+            overflow: "hidden",
+            "pointer-events": "none",
+            "user-select": "none",
+          }}
+        >
+          <span style={{
+            "font-family": "var(--cortex-font-sans)",
+            "font-size": "12px",
+            "font-weight": "400",
+            color: "var(--cortex-text-secondary)",
+            "white-space": "nowrap",
+            overflow: "hidden",
+            "text-overflow": "ellipsis",
+          }}>
+            {local.currentPage
+              ? `${local.currentPage}${local.isDraft ? " ●" : ""} — ${local.appName ?? "Cortex"}`
+              : local.appName}
+          </span>
+        </div>
+      </Show>
+
       {/* Right Section */}
       <div style={{
         display: "flex",
