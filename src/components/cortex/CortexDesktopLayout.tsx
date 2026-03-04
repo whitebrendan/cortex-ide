@@ -190,9 +190,9 @@ export function CortexDesktopLayout(props: ParentProps) {
     const file = activeFile();
     const project = projectName();
     if (file?.name) {
-      document.title = `${file.name} - Cortex`;
+      document.title = `Cortex - ${file.name}`;
     } else if (project && project !== "Cortex") {
-      document.title = `${project} - Cortex`;
+      document.title = `Cortex - ${project}`;
     } else {
       document.title = "Cortex";
     }
