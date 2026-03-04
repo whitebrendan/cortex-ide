@@ -22,6 +22,11 @@ macro_rules! workspace_commands {
             $crate::workspace_settings::settings_get_folder_overrides,
             $crate::workspace_settings::settings_resolve_for_file,
             // Workspace commands
+            $crate::workspace::open_workspace,
+            $crate::workspace::save_workspace,
+            $crate::workspace::add_workspace_folder,
+            $crate::workspace::remove_workspace_folder,
+            $crate::workspace::get_workspace_folders,
             $crate::workspace::workspace_cross_folder_copy,
             $crate::workspace::workspace_cross_folder_move,
             $crate::workspace::workspace_trust_check,
