@@ -697,7 +697,7 @@ const DEFAULT_BREADCRUMBS: BreadcrumbsSettings = {
 
 const DEFAULT_THEME: ThemeSettings = {
   theme: "dark",
-  iconTheme: "default",
+  iconTheme: "seti",
   accentColor: "#6366f1",
   uiFontFamily: "Inter, system-ui, sans-serif",
   uiFontSize: 13,

@@ -270,7 +270,7 @@ const cortex_SETTINGS_SCHEMA = {
         iconTheme: {
           type: "string",
           description: "File icon theme",
-          default: "default"
+          default: "seti"
         },
         accentColor: {
           type: "string",
