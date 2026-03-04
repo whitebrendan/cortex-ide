@@ -40,8 +40,10 @@ const VIEW_ICONS: Record<string, () => JSX.Element> = {
   ),
   extensions: () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M10 3c1.8 0 3 1.2 3 2.5 0 .6-.2 1.1-.6 1.5-.3.4-.6.8-.6 1.5h5.2a1 1 0 011 1v4c.7 0 1.1-.3 1.5-.6.4-.4.9-.6 1.5-.6 1.3 0 2.5 1.2 2.5 3s-1.2 3-2.5 3c-.6 0-1.1-.2-1.5-.6-.4-.3-.8-.6-1.5-.6v5.3a1 1 0 01-1 1h-3.8c0-.7.3-1.1.6-1.5.4-.4.6-.9.6-1.5 0-1.8-1.2-3-3-3s-3 1.2-3 3c0 .6.2 1.1.6 1.5.3.4.6.8.6 1.5H4a1 1 0 01-1-1v-3.8c-.7 0-1.1.3-1.5.6" />
-      <path d="M3 10V5a1 1 0 011-1h7.8" />
+      <rect x="3" y="11" width="7" height="7" rx="1" />
+      <rect x="11" y="11" width="7" height="7" rx="1" />
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="5" width="6" height="6" rx="1" transform="rotate(-10 17 8)" />
     </svg>
   ),
   chat: () => (
