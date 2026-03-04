@@ -332,9 +332,11 @@ Cortex Desktop is not running or the socket server is not listening on port 4000
 
 The command-specific timeout was exceeded. For slow operations (screenshots, large DOM), the timeout is 60s. If Cortex Desktop is under heavy load, the response may take longer than expected.
 
-### "Another request is already in progress"
+### Unexpected timeout / socket reset
 
-The socket client is single-request — it processes one command at a time. If a previous command hasn't finished, the next one will be rejected. Wait for the pending request to complete.
+If a command times out, the MCP client now recycles the TCP connection before retrying future commands. This prevents late/stale responses from being matched to newer requests.
+
+If you see repeated timeout or orphan-response logs, restart Cortex Desktop and confirm the MCP socket is reachable at the configured `CORTEX_MCP_HOST` / `CORTEX_MCP_PORT`.
 
 ### Agent can't find the MCP server
 
