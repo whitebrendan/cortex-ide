@@ -53,8 +53,10 @@ const ITEMS: ActivityItem[] = [
     label: "Extensions",
     icon: () => (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M8 2.5c1.5 0 2.5 1 2.5 2 0 .5-.2.9-.5 1.3-.3.3-.5.7-.5 1.2h4.5a1 1 0 011 1v3.5c.5 0 .9-.2 1.2-.5.4-.3.8-.5 1.3-.5 1 0 2 1 2 2.5s-1 2.5-2 2.5c-.5 0-.9-.2-1.3-.5-.3-.3-.7-.5-1.2-.5V18a1 1 0 01-1 1H10c0-.5.2-.9.5-1.2.3-.4.5-.8.5-1.3 0-1.5-1-2.5-2.5-2.5S6 15 6 16.5c0 .5.2.9.5 1.3.3.3.5.7.5 1.2H3a1 1 0 01-1-1V14c-.5 0-.9.2-1.2.5-.4.3-.8.5-1.3.5" />
-        <path d="M2 8V4a1 1 0 011-1h6.5" />
+        <rect x="2" y="9" width="6" height="6" rx="1" />
+        <rect x="9" y="9" width="6" height="6" rx="1" />
+        <rect x="2" y="2" width="6" height="6" rx="1" />
+        <rect x="12" y="4" width="5" height="5" rx="1" transform="rotate(-10 14.5 6.5)" />
       </svg>
     ),
   },
