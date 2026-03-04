@@ -38,15 +38,30 @@ pub async fn git_unstage(path: String, file_path: String) -> Result<(), String> 
     tokio::task::spawn_blocking(move || {
         let repo = find_repo(&path)?;
 
-        let head = repo
-            .head()
-            .map_err(|e| format!("Failed to get HEAD: {}", e))?;
-        let head_commit = head
-            .peel_to_commit()
-            .map_err(|e| format!("Failed to get HEAD commit: {}", e))?;
+        match repo.head() {
+            Ok(head) => {
+                let head_commit = head
+                    .peel_to_commit()
+                    .map_err(|e| format!("Failed to get HEAD commit: {}", e))?;
 
-        repo.reset_default(Some(&head_commit.into_object()), [Path::new(&file_path)])
-            .map_err(|e| format!("Failed to unstage file: {}", e))?;
+                repo.reset_default(Some(&head_commit.into_object()), [Path::new(&file_path)])
+                    .map_err(|e| format!("Failed to unstage file: {}", e))?;
+            }
+            Err(e) if e.code() == git2::ErrorCode::UnbornBranch => {
+                let mut index = repo
+                    .index()
+                    .map_err(|e| format!("Failed to get index: {}", e))?;
+                index
+                    .remove_path(Path::new(&file_path))
+                    .map_err(|e| format!("Failed to unstage file: {}", e))?;
+                index
+                    .write()
+                    .map_err(|e| format!("Failed to write index: {}", e))?;
+            }
+            Err(e) => {
+                return Err(format!("Failed to get HEAD: {}", e));
+            }
+        }
 
         info!("Unstaged file: {}", file_path);
         Ok(())
@@ -83,15 +98,30 @@ pub async fn git_unstage_all(path: String) -> Result<(), String> {
     tokio::task::spawn_blocking(move || {
         let repo = find_repo(&path)?;
 
-        let head = repo
-            .head()
-            .map_err(|e| format!("Failed to get HEAD: {}", e))?;
-        let head_commit = head
-            .peel_to_commit()
-            .map_err(|e| format!("Failed to get HEAD commit: {}", e))?;
+        match repo.head() {
+            Ok(head) => {
+                let head_commit = head
+                    .peel_to_commit()
+                    .map_err(|e| format!("Failed to get HEAD commit: {}", e))?;
 
-        repo.reset(&head_commit.into_object(), git2::ResetType::Mixed, None)
-            .map_err(|e| format!("Failed to unstage all files: {}", e))?;
+                repo.reset(&head_commit.into_object(), git2::ResetType::Mixed, None)
+                    .map_err(|e| format!("Failed to unstage all files: {}", e))?;
+            }
+            Err(e) if e.code() == git2::ErrorCode::UnbornBranch => {
+                let mut index = repo
+                    .index()
+                    .map_err(|e| format!("Failed to get index: {}", e))?;
+                index
+                    .clear()
+                    .map_err(|e| format!("Failed to clear index: {}", e))?;
+                index
+                    .write()
+                    .map_err(|e| format!("Failed to write index: {}", e))?;
+            }
+            Err(e) => {
+                return Err(format!("Failed to get HEAD: {}", e));
+            }
+        }
 
         info!("Unstaged all files");
         Ok(())
