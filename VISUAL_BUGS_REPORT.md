@@ -135,6 +135,19 @@ Not directly a visual artifact by itself, but strongly correlated with unstable 
 
 ---
 
+## Code-Level Issues (from source inspection)
+
+- `src/components/cortex/CortexDesktopLayout.tsx`
+  - The layout always renders shell structure and then also renders `props.children`, which causes `/welcome` route content to be composed into the same viewport stack.
+- `src/index.tsx`
+  - `/welcome` is mounted inside the same `CortexDesktopLayout` route wrapper as session/admin/share routes.
+- `src/pages/Welcome.tsx`
+  - Welcome container uses full available area (`width: 100%`, `height: 100%`) and competes with shell layout when both are mounted.
+- `src/components/editor/EditorTab.tsx` vs `src/components/editor/TabBar.tsx`
+  - Active-tab accent token usage differs (`--cortex-accent-primary` vs `--cortex-accent` fallback), causing visual inconsistency across tab systems.
+
+---
+
 ## Closed / Verified Non-Issues
 
 1. **Welcome logo image is loading correctly**
