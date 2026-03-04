@@ -132,7 +132,7 @@
 
 /* Focus visible for keyboard navigation */
 .figma-focus-visible:focus-visible {
-  outline: 2px solid var(--cortex-accent-primary, var(--cortex-accent-primary));
+  outline: 2px solid var(--cortex-accent-primary, #bfff00);
   outline-offset: 2px;
 }
 
@@ -201,7 +201,7 @@
 
 ::selection {
   background: var(--cortex-accent-muted, rgba(191, 255, 0, 0.3));
-  color: var(--cortex-text-primary, var(--cortex-text-primary));
+  color: var(--cortex-text-primary, #fcfcfc);
 }
 
 /* =============================================================================
