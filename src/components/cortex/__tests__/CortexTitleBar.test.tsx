@@ -415,6 +415,65 @@ describe("CortexTitleBar", () => {
     });
   });
 
+  describe("Title display (appName, currentPage, isDraft)", () => {
+    it("should not render title when no appName or currentPage is provided", () => {
+      const { queryByTestId } = render(() => <CortexTitleBar />);
+      expect(queryByTestId("titlebar-title")).toBeNull();
+    });
+
+    it("should render title with appName only", () => {
+      const { getByTestId } = render(() => <CortexTitleBar appName="My Project" />);
+      const title = getByTestId("titlebar-title");
+      expect(title).toBeTruthy();
+      expect(title.textContent).toBe("My Project");
+    });
+
+    it("should render title with currentPage and default app name", () => {
+      const { getByTestId } = render(() => <CortexTitleBar currentPage="index.ts" />);
+      const title = getByTestId("titlebar-title");
+      expect(title.textContent).toBe("index.ts — Cortex");
+    });
+
+    it("should render title with currentPage and appName", () => {
+      const { getByTestId } = render(() => (
+        <CortexTitleBar appName="My App" currentPage="main.rs" />
+      ));
+      const title = getByTestId("titlebar-title");
+      expect(title.textContent).toBe("main.rs — My App");
+    });
+
+    it("should show draft indicator when isDraft is true", () => {
+      const { getByTestId } = render(() => (
+        <CortexTitleBar appName="My App" currentPage="main.rs" isDraft={true} />
+      ));
+      const title = getByTestId("titlebar-title");
+      expect(title.textContent).toContain("●");
+      expect(title.textContent).toBe("main.rs ● — My App");
+    });
+
+    it("should not show draft indicator when isDraft is false", () => {
+      const { getByTestId } = render(() => (
+        <CortexTitleBar appName="My App" currentPage="main.rs" isDraft={false} />
+      ));
+      const title = getByTestId("titlebar-title");
+      expect(title.textContent).not.toContain("●");
+    });
+
+    it("should have pointer-events none to preserve drag region", () => {
+      const { getByTestId } = render(() => <CortexTitleBar appName="Test" />);
+      const title = getByTestId("titlebar-title");
+      expect(title.style.pointerEvents).toBe("none");
+    });
+
+    it("should be absolutely positioned and centered", () => {
+      const { getByTestId } = render(() => <CortexTitleBar appName="Test" />);
+      const title = getByTestId("titlebar-title");
+      expect(title.style.position).toBe("absolute");
+      expect(title.style.left).toBe("50%");
+      expect(title.style.transform).toBe("translateX(-50%)");
+    });
+  });
+
   describe("Menu hover behavior", () => {
     it("should call onMenuSelect with label on mouse enter over menu item", async () => {
       const onMenuSelect = vi.fn();
