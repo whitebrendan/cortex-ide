@@ -112,6 +112,7 @@ export function CortexIDELayout(props: CortexIDELayoutProps) {
           isSyncing={props.isSyncing}
           hasChanges={props.hasChanges}
           languageName={props.languageName}
+          bottomPanelOpen={!props.bottomPanelCollapsed}
           onBranchClick={props.onBranchClick}
           onTogglePanel={props.onTogglePanel}
           onToggleTerminal={props.onToggleTerminal}

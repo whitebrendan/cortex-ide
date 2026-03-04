@@ -32,6 +32,7 @@ export interface CortexStatusBarProps {
   hasNotificationDot?: boolean;
   notificationCount?: number;
   languageName?: string;
+  bottomPanelOpen?: boolean;
   onBranchClick?: () => void;
   onNotificationClick?: () => void;
   onTogglePanel?: () => void;
@@ -53,6 +54,7 @@ export const CortexStatusBar: Component<CortexStatusBarProps> = (props) => {
     "hasNotificationDot",
     "notificationCount",
     "languageName",
+    "bottomPanelOpen",
     "onBranchClick",
     "onNotificationClick",
     "onTogglePanel",
@@ -99,7 +101,7 @@ export const CortexStatusBar: Component<CortexStatusBarProps> = (props) => {
           iconName={"navigation/menu-left-on" as CortexIconName}
           onClick={local.onTogglePanel}
           title="Toggle Panel"
-          active={isActive()}
+          active={local.bottomPanelOpen ?? isActive()}
         />
 
         <StatusBarIconButton

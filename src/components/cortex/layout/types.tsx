@@ -3,6 +3,16 @@ export type BottomPanelTab = "terminal" | "output" | "problems" | "debug console
 export type ViewMode = "vibe" | "ide";
 
 export const BOTTOM_PANEL_TABS: BottomPanelTab[] = ["terminal", "output", "problems", "debug console", "diff", "history"];
+
+export const BOTTOM_PANEL_TAB_ICONS: Record<BottomPanelTab, string> = {
+  terminal: "terminal",
+  output: "file-text",
+  problems: "warning",
+  "debug console": "debug",
+  diff: "code",
+  history: "clock",
+};
+
 export const BOTTOM_PANEL_DEFAULT_HEIGHT = 200;
 export const BOTTOM_PANEL_MIN_HEIGHT = 100;
 export const BOTTOM_PANEL_MAX_HEIGHT = 500;
