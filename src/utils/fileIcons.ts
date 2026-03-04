@@ -165,12 +165,19 @@ const fileNameIcons: Record<string, string> = {
   ".eslintrc.cjs": "eslint",
   "eslint.config.js": "eslint",
   "eslint.config.mjs": "eslint",
+  "eslint.config.ts": "eslint",
   ".prettierrc": "prettier",
   ".prettierrc.js": "prettier",
   ".prettierrc.json": "prettier",
+  ".prettierrc.cjs": "prettier",
   "prettier.config.js": "prettier",
+  "prettier.config.mjs": "prettier",
   "biome.json": "biome",
   ".editorconfig": "editorconfig",
+  ".babelrc": "babel",
+  ".babelrc.json": "babel",
+  "babel.config.js": "babel",
+  "babel.config.json": "babel",
   
   // Git
   ".gitignore": "git",
@@ -203,7 +210,9 @@ const fileNameIcons: Record<string, string> = {
   "tailwind.config.js": "tailwind",
   "tailwind.config.ts": "tailwind",
   "postcss.config.js": "postcss",
+  "postcss.config.ts": "postcss",
   "webpack.config.js": "webpack",
+  "webpack.config.ts": "webpack",
   
   // Testing
   "jest.config.js": "jest",
@@ -216,10 +225,13 @@ const fileNameIcons: Record<string, string> = {
   // Documentation
   "readme.md": "markdown",
   "readme": "markdown",
+  "readme.txt": "markdown",
   "license": "license",
   "license.md": "license",
   "license.txt": "license",
+  "changelog": "markdown",
   "changelog.md": "markdown",
+  "changelog.txt": "markdown",
   
   // Environment
   ".env": "gear",
@@ -227,6 +239,8 @@ const fileNameIcons: Record<string, string> = {
   ".env.development": "gear",
   ".env.production": "gear",
   ".env.example": "gear",
+  ".env.test": "gear",
+  ".env.staging": "gear",
   
   // Tauri
   "tauri.conf.json": "tauri",
@@ -247,6 +261,8 @@ const fileNameIcons: Record<string, string> = {
   "requirements.txt": "python",
   "pyproject.toml": "python",
   "pipfile": "python",
+  "setup.py": "python",
+  "setup.cfg": "python",
   
   // Ruby
   "gemfile": "ruby",
@@ -254,13 +270,17 @@ const fileNameIcons: Record<string, string> = {
   
   // Build
   "makefile": "gear",
+  "cmakelists.txt": "cmake",
   
   // Misc
   ".nvmrc": "node",
   ".node-version": "node",
+  ".npmrc": "npm",
   "nodemon.json": "nodemon",
   "vercel.json": "vercel",
   "netlify.toml": "netlify",
+  ".browserslistrc": "gear",
+  "turbo.json": "turborepo",
 };
 
 // Folder name to icon mapping
@@ -416,7 +436,8 @@ const folderIcons: Record<string, string> = {
 };
 
 /**
- * Get the icon path for a file
+ * Get the icon path for a file.
+ * Handles case-insensitive matching, dotfiles, and special filenames.
  */
 export function getFileIcon(filename: string, isDir: boolean = false): string {
   const lowerName = filename.toLowerCase();
@@ -467,6 +488,16 @@ export function getFileIcon(filename: string, isDir: boolean = false): string {
   const extIcon = fileExtensionIcons[ext];
   if (extIcon) {
     return `${ICONS_BASE}/files/${extIcon}.svg`;
+  }
+  
+  // For dotfiles without a recognized extension (e.g., ".npmrc"),
+  // try matching the name without the leading dot as a pseudo-extension
+  if (lowerName.startsWith(".") && lowerName.lastIndexOf(".") === 0) {
+    const withoutDot = lowerName.slice(1);
+    const dotfileIcon = fileExtensionIcons[withoutDot];
+    if (dotfileIcon) {
+      return `${ICONS_BASE}/files/${dotfileIcon}.svg`;
+    }
   }
   
   // Default file icon
