@@ -15,6 +15,21 @@ export function setupEventHandlers(
   operations: EventOperations,
 ) {
   onMount(() => {
+    let gotoLineTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const scheduleGotoLine = (line: number, column?: number) => {
+      if (gotoLineTimeoutId !== null) {
+        clearTimeout(gotoLineTimeoutId);
+      }
+
+      gotoLineTimeoutId = setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("editor:goto-line", {
+          detail: { line, column: column || 1 },
+        }));
+        gotoLineTimeoutId = null;
+      }, 50);
+    };
+
     const handleSplitRight = () => {
       if (state.useGridLayout) {
         operations.splitEditorInGrid("vertical");
@@ -98,11 +113,7 @@ export function setupEventHandlers(
       if (!filePath) return;
       await operations.openFile(filePath);
       if (e.detail.line) {
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent("editor:goto-line", {
-            detail: { line: e.detail.line, column: e.detail.column || 1 },
-          }));
-        }, 50);
+        scheduleGotoLine(e.detail.line, e.detail.column);
       }
     };
 
@@ -110,11 +121,7 @@ export function setupEventHandlers(
       if (!e.detail?.path) return;
       await operations.openFile(e.detail.path);
       if (e.detail.line) {
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent("editor:goto-line", {
-            detail: { line: e.detail.line, column: e.detail.column || 1 },
-          }));
-        }, 50);
+        scheduleGotoLine(e.detail.line, e.detail.column);
       }
     };
 
@@ -158,6 +165,10 @@ export function setupEventHandlers(
       window.removeEventListener("editor:open-file", handleEditorOpenFile as unknown as EventListener);
       window.removeEventListener("file:save", handleFileSave);
       window.removeEventListener("file:save-all", handleFileSaveAll);
+      if (gotoLineTimeoutId !== null) {
+        clearTimeout(gotoLineTimeoutId);
+        gotoLineTimeoutId = null;
+      }
     });
   });
 }

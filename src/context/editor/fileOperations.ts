@@ -73,85 +73,129 @@ export function createFileOperations(
   state: EditorState,
   setState: SetStoreFunction<EditorState>,
 ) {
+  const pendingFileOpens = new Map<string, Promise<OpenFile | null>>();
+  let pendingOpenCount = 0;
+
+  const setActiveFileInGroup = (fileId: string, targetGroupId: string) => {
+    batch(() => {
+      setState("activeFileId", fileId);
+      setState("activeGroupId", targetGroupId);
+      setState(
+        "groups",
+        (g) => g.id === targetGroupId,
+        produce((group) => {
+          if (!group.fileIds.includes(fileId)) {
+            group.fileIds.push(fileId);
+          }
+          group.activeFileId = fileId;
+        })
+      );
+    });
+  };
+
+  const beginOpenOperation = () => {
+    pendingOpenCount += 1;
+    if (pendingOpenCount === 1) {
+      setState("isOpening", true);
+    }
+  };
+
+  const endOpenOperation = () => {
+    pendingOpenCount = Math.max(0, pendingOpenCount - 1);
+    if (pendingOpenCount === 0) {
+      setState("isOpening", false);
+    }
+  };
+
   const openFile = async (path: string, groupId?: string) => {
     const perfStart = performance.now();
     const targetGroupId = groupId || state.activeGroupId;
-    
+
     const existing = state.openFiles.find((f) => f.path === path);
     if (existing) {
-      batch(() => {
-        setState("activeFileId", existing.id);
-        setState("activeGroupId", targetGroupId);
-        setState(
-          "groups",
-          (g) => g.id === targetGroupId,
-          produce((group) => {
-            if (!group.fileIds.includes(existing.id)) {
-              group.fileIds.push(existing.id);
-            }
-            group.activeFileId = existing.id;
-          })
-        );
-      });
+      setActiveFileInGroup(existing.id, targetGroupId);
       console.debug(`[EditorContext] openFile (existing): ${(performance.now() - perfStart).toFixed(1)}ms`);
       preloadAdjacentTabs(state, existing.id);
       return;
     }
 
-    setState("isOpening", true);
-    try {
-      const readStart = performance.now();
-      const cached = getPreloadedContent(path);
-      const content = cached ?? await invoke<string>("fs_read_file", { path });
-      console.debug(`[EditorContext] ${cached ? "preload-hit" : "fs_read_file"}: ${(performance.now() - readStart).toFixed(1)}ms (${(content.length / 1024).toFixed(1)}KB)`);
-      
-      const name = path.split(/[/\\]/).pop() || path;
-      const id = `file-${generateId()}`;
+    const pendingOpen = pendingFileOpens.get(path);
+    if (pendingOpen) {
+      const openedFile = await pendingOpen;
+      if (openedFile) {
+        setActiveFileInGroup(openedFile.id, targetGroupId);
+        console.debug(`[EditorContext] openFile (deduped): ${(performance.now() - perfStart).toFixed(1)}ms`);
+        preloadAdjacentTabs(state, openedFile.id);
+      }
+      return;
+    }
 
-      const newFile: OpenFile = {
-        id,
-        path,
-        name,
-        content,
-        language: detectLanguage(name),
-        modified: false,
-        cursors: [{ line: 1, column: 1 }],
-        selections: [],
-      };
+    beginOpenOperation();
 
-      const batchStart = performance.now();
-      batch(() => {
-        setState("openFiles", (files) => [...files, newFile]);
-        setState("activeFileId", id);
-        setState("activeGroupId", targetGroupId);
-        setState(
-          "groups",
-          (g) => g.id === targetGroupId,
-          produce((group) => {
-            group.fileIds.push(id);
-            group.activeFileId = id;
+    const openPromise = (async (): Promise<OpenFile | null> => {
+      try {
+        const readStart = performance.now();
+        const cached = getPreloadedContent(path);
+        const content = cached ?? await invoke<string>("fs_read_file", { path });
+        console.debug(`[EditorContext] ${cached ? "preload-hit" : "fs_read_file"}: ${(performance.now() - readStart).toFixed(1)}ms (${(content.length / 1024).toFixed(1)}KB)`);
+
+        const name = path.split(/[/\\]/).pop() || path;
+        const id = `file-${generateId()}`;
+
+        const newFile: OpenFile = {
+          id,
+          path,
+          name,
+          content,
+          language: detectLanguage(name),
+          modified: false,
+          cursors: [{ line: 1, column: 1 }],
+          selections: [],
+        };
+
+        const batchStart = performance.now();
+        batch(() => {
+          setState("openFiles", (files) => [...files, newFile]);
+          setState("activeFileId", id);
+          setState("activeGroupId", targetGroupId);
+          setState(
+            "groups",
+            (g) => g.id === targetGroupId,
+            produce((group) => {
+              group.fileIds.push(id);
+              group.activeFileId = id;
+            })
+          );
+        });
+        console.debug(`[EditorContext] batch setState: ${(performance.now() - batchStart).toFixed(1)}ms`);
+        console.debug(`[EditorContext] openFile (new) TOTAL: ${(performance.now() - perfStart).toFixed(1)}ms`);
+
+        preloadAdjacentTabs(state, id);
+        return newFile;
+      } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        console.error("Failed to open file:", errorMessage);
+
+        window.dispatchEvent(
+          new CustomEvent("notification", {
+            detail: {
+              type: "error",
+              title: "Failed to open file",
+              message: `Could not open "${path.split("/").pop() || path.split("\\").pop() || path}": ${errorMessage}`,
+            },
           })
         );
-      });
-      console.debug(`[EditorContext] batch setState: ${(performance.now() - batchStart).toFixed(1)}ms`);
-      console.debug(`[EditorContext] openFile (new) TOTAL: ${(performance.now() - perfStart).toFixed(1)}ms`);
+        return null;
+      } finally {
+        endOpenOperation();
+      }
+    })();
 
-      preloadAdjacentTabs(state, id);
-    } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : String(e);
-      console.error("Failed to open file:", errorMessage);
-      
-      window.dispatchEvent(
-        new CustomEvent("notification", {
-          detail: {
-            type: "error",
-            title: "Failed to open file",
-            message: `Could not open "${path.split("/").pop() || path.split("\\").pop() || path}": ${errorMessage}`,
-          },
-        })
-      );
+    pendingFileOpens.set(path, openPromise);
+    try {
+      await openPromise;
     } finally {
-      setState("isOpening", false);
+      pendingFileOpens.delete(path);
     }
   };
 
