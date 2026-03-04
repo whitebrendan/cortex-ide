@@ -17,6 +17,7 @@
 
 import { Component, JSX, For, Show, createSignal, onCleanup } from "solid-js";
 import { CortexIcon } from "./primitives";
+import { getFileIcon } from "@/utils/fileIcons";
 
 export interface EditorTab {
   id: string;
@@ -387,136 +388,22 @@ interface FileTypeIconProps {
 
 const FileTypeIcon: Component<FileTypeIconProps> = (props) => {
   const size = () => props.size || 16;
-  const ext = props.name.split('.').pop()?.toLowerCase() || '';
-  const filename = props.name.toLowerCase();
-
-  if (ext === 'tsx' || ext === 'jsx') {
-    return (
-      <svg width={size()} height={size()} viewBox="0 0 16 16" fill="none">
-        <circle cx="8" cy="8" r="2" fill="var(--cortex-info, #61DAFB)" />
-        <ellipse cx="8" cy="8" rx="7" ry="2.5" stroke="var(--cortex-info, #61DAFB)" stroke-width="1" fill="none" transform="rotate(0 8 8)" />
-        <ellipse cx="8" cy="8" rx="7" ry="2.5" stroke="var(--cortex-info, #61DAFB)" stroke-width="1" fill="none" transform="rotate(60 8 8)" />
-        <ellipse cx="8" cy="8" rx="7" ry="2.5" stroke="var(--cortex-info, #61DAFB)" stroke-width="1" fill="none" transform="rotate(-60 8 8)" />
-      </svg>
-    );
-  }
-
-  if (ext === 'ts') {
-    return (
-      <svg width={size()} height={size()} viewBox="0 0 16 16" fill="none">
-        <rect width="16" height="16" rx="2" fill="var(--cortex-info, #3178C6)" />
-        <path d="M4 8h5M6.5 8v4.5" stroke="white" stroke-width="1.5" />
-        <path d="M10 12.5c.5.3 1 .5 1.5.5.8 0 1.5-.4 1.5-1.2 0-.6-.4-1-1.2-1.2l-.6-.2c-.5-.1-.8-.3-.8-.6 0-.4.3-.6.8-.6.4 0 .8.1 1.2.4" stroke="white" stroke-width="1" />
-      </svg>
-    );
-  }
-
-  if (ext === 'rs') {
-    return (
-      <svg width={size()} height={size()} viewBox="0 0 16 16" fill="none">
-        <circle cx="8" cy="8" r="6" stroke="var(--cortex-warning, #DEA584)" stroke-width="1.5" fill="none" />
-        <circle cx="8" cy="8" r="2" fill="var(--cortex-warning, #DEA584)" />
-        <path d="M8 2v2M8 12v2M2 8h2M12 8h2" stroke="var(--cortex-warning, #DEA584)" stroke-width="1.5" />
-      </svg>
-    );
-  }
-
-  if (filename === 'cargo.toml' || ext === 'toml') {
-    return (
-      <svg width={size()} height={size()} viewBox="0 0 16 16" fill="none">
-        <rect x="2" y="2" width="12" height="12" rx="2" stroke="var(--cortex-warning, #DEA584)" stroke-width="1.5" fill="none" />
-        <path d="M5 5h6M5 8h4M5 11h5" stroke="var(--cortex-warning, #DEA584)" stroke-width="1" />
-      </svg>
-    );
-  }
-
-  if (filename === 'cargo.lock' || ext === 'lock') {
-    return (
-      <svg width={size()} height={size()} viewBox="0 0 16 16" fill="none">
-        <rect x="3" y="7" width="10" height="7" rx="1" stroke="var(--cortex-warning, #DEA584)" stroke-width="1.5" fill="none" />
-        <path d="M5 7V5a3 3 0 016 0v2" stroke="var(--cortex-warning, #DEA584)" stroke-width="1.5" fill="none" />
-        <circle cx="8" cy="10.5" r="1" fill="var(--cortex-warning, #DEA584)" />
-      </svg>
-    );
-  }
-
-  if (ext === 'md') {
-    return (
-      <svg width={size()} height={size()} viewBox="0 0 16 16" fill="none">
-        <rect x="1" y="3" width="14" height="10" rx="1" stroke="var(--cortex-info, #519ABA)" stroke-width="1" fill="none" />
-        <path d="M3 10V6l2 2.5L7 6v4M10 10V7l1.5 2 1.5-2v3" stroke="var(--cortex-info, #519ABA)" stroke-width="1" />
-      </svg>
-    );
-  }
-
-  if (ext === 'json') {
-    return (
-      <svg width={size()} height={size()} viewBox="0 0 16 16" fill="none">
-        <path d="M5 3c-1.5 0-2 1-2 2v2c0 1-1 1-1 1s1 0 1 1v2c0 1 .5 2 2 2" stroke="var(--cortex-warning, #CBCB41)" stroke-width="1.5" fill="none" />
-        <path d="M11 3c1.5 0 2 1 2 2v2c0 1 1 1 1 1s-1 0-1 1v2c0 1-.5 2-2 2" stroke="var(--cortex-warning, #CBCB41)" stroke-width="1.5" fill="none" />
-      </svg>
-    );
-  }
-
-  if (ext === 'css' || ext === 'scss' || ext === 'less' || ext === 'sass') {
-    return (
-      <svg width={size()} height={size()} viewBox="0 0 16 16" fill="none">
-        <rect width="16" height="16" rx="2" fill="#563D7C" />
-        <path d="M5 5h6M5 8h4M5 11h5" stroke="white" stroke-width="1" />
-      </svg>
-    );
-  }
-
-  if (ext === 'html' || ext === 'htm') {
-    return (
-      <svg width={size()} height={size()} viewBox="0 0 16 16" fill="none">
-        <rect width="16" height="16" rx="2" fill="#E34C26" />
-        <path d="M5 5l-2 3 2 3M11 5l2 3-2 3M9 4l-2 8" stroke="white" stroke-width="1" />
-      </svg>
-    );
-  }
-
-  if (ext === 'py') {
-    return (
-      <svg width={size()} height={size()} viewBox="0 0 16 16" fill="none">
-        <rect width="16" height="16" rx="2" fill="#3776AB" />
-        <path d="M5 4v4c0 1 1 2 3 2s3-1 3-2V4M5 12v-4c0-1 1-2 3-2s3 1 3 2v4" stroke="white" stroke-width="1" />
-      </svg>
-    );
-  }
-
-  if (ext === 'go') {
-    return (
-      <svg width={size()} height={size()} viewBox="0 0 16 16" fill="none">
-        <rect width="16" height="16" rx="2" fill="#00ADD8" />
-        <path d="M4 8h8M4 5h6M4 11h5" stroke="white" stroke-width="1.5" />
-      </svg>
-    );
-  }
-
-  if (ext === 'yaml' || ext === 'yml') {
-    return (
-      <svg width={size()} height={size()} viewBox="0 0 16 16" fill="none">
-        <rect width="16" height="16" rx="2" fill="#CB171E" />
-        <path d="M4 4l3 4v4M12 4l-3 4" stroke="white" stroke-width="1.2" />
-      </svg>
-    );
-  }
-
-  if (ext === 'sh' || ext === 'bash' || ext === 'zsh') {
-    return (
-      <svg width={size()} height={size()} viewBox="0 0 16 16" fill="none">
-        <rect width="16" height="16" rx="2" fill="#4EAA25" />
-        <path d="M4 5l4 3-4 3M9 11h4" stroke="white" stroke-width="1.2" />
-      </svg>
-    );
-  }
+  const iconPath = () => getFileIcon(props.name, false);
 
   return (
-    <svg width={size()} height={size()} viewBox="0 0 16 16" fill="none">
-      <path d="M4 2h5l4 4v8a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="var(--cortex-text-secondary, #8C8D8F)" stroke-width="1.2" fill="none" />
-      <path d="M9 2v4h4" stroke="var(--cortex-text-secondary, #8C8D8F)" stroke-width="1.2" fill="none" />
-    </svg>
+    <img
+      src={iconPath()}
+      alt=""
+      width={size()}
+      height={size()}
+      style={{
+        width: `${size()}px`,
+        height: `${size()}px`,
+        "flex-shrink": "0",
+        "object-fit": "contain",
+      }}
+      draggable={false}
+    />
   );
 };
 
