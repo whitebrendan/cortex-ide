@@ -3,8 +3,7 @@
  * Detects file paths, URLs, and custom word links in terminal output
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
+import { fsExists, fsGetMetadata } from './tauri-api';
 
 export interface TerminalLink {
   startIndex: number;
@@ -45,6 +44,84 @@ const URL_PATTERN = /\b(https?:\/\/|ftp:\/\/|file:\/\/|mailto:)[^\s<>"')\]]+/gi;
 const UNIX_PATH_PATTERN = /(?:^|[\s'"({\[])((?:\/[\w.-]+)+(?::\d+(?::\d+)?)?)/g;
 const WINDOWS_PATH_PATTERN = /(?:^|[\s'"({\[])([A-Za-z]:\\(?:[\w.-]+\\)*[\w.-]+(?::\d+(?::\d+)?)?)/g;
 const RELATIVE_PATH_PATTERN = /(?:^|[\s'"({\[])(\.{1,2}\/[\w./-]+(?::\d+(?::\d+)?)?)/g;
+
+/**
+ * Browser-safe path helpers (no Node.js runtime dependencies)
+ */
+function normalizePathSeparators(pathValue: string): string {
+  return pathValue.replace(/\\/g, '/');
+}
+
+function isAbsolutePath(pathValue: string): boolean {
+  const normalized = normalizePathSeparators(pathValue);
+  return (
+    normalized.startsWith('/') ||
+    normalized.startsWith('//') ||
+    /^[A-Za-z]:\//.test(normalized)
+  );
+}
+
+function normalizePath(pathValue: string): string {
+  const normalized = normalizePathSeparators(pathValue);
+  if (!normalized) return normalized;
+
+  let prefix = '';
+  let segmentPath = normalized;
+
+  if (normalized.startsWith('//')) {
+    prefix = '//';
+    segmentPath = normalized.slice(2);
+  } else if (/^[A-Za-z]:\//.test(normalized)) {
+    prefix = normalized.slice(0, 2);
+    segmentPath = normalized.slice(2);
+    if (segmentPath.startsWith('/')) {
+      segmentPath = segmentPath.slice(1);
+    }
+  } else if (normalized.startsWith('/')) {
+    prefix = '/';
+    segmentPath = normalized.slice(1);
+  }
+
+  const parts = segmentPath.split('/').filter(Boolean);
+  const stack: string[] = [];
+
+  for (const part of parts) {
+    if (part === '.') continue;
+    if (part === '..') {
+      const previous = stack[stack.length - 1];
+      if (stack.length > 0 && previous !== '..') {
+        stack.pop();
+      } else if (!prefix) {
+        stack.push('..');
+      }
+      continue;
+    }
+    stack.push(part);
+  }
+
+  const joined = stack.join('/');
+
+  if (prefix === '//') {
+    return joined ? `//${joined}` : '//';
+  }
+  if (prefix === '/') {
+    return joined ? `/${joined}` : '/';
+  }
+  if (prefix) {
+    return joined ? `${prefix}/${joined}` : `${prefix}/`;
+  }
+  return joined || '.';
+}
+
+function resolvePath(basePath: string | undefined, targetPath: string): string {
+  const normalizedTarget = normalizePathSeparators(targetPath);
+  if (isAbsolutePath(normalizedTarget) || !basePath) {
+    return normalizePath(normalizedTarget);
+  }
+
+  const normalizedBase = normalizePathSeparators(basePath).replace(/\/+$/, '');
+  return normalizePath(`${normalizedBase}/${normalizedTarget}`);
+}
 
 /**
  * Default word separators
@@ -145,11 +222,10 @@ export function detectFilePaths(
   cwd?: string
 ): TerminalLink[] {
   const links: TerminalLink[] = [];
-  const isWindows = process.platform === 'win32';
 
-  // Detect absolute paths
-  const absolutePattern = isWindows ? WINDOWS_PATH_PATTERN : UNIX_PATH_PATTERN;
-  links.push(...detectPathsWithPattern(line, absolutePattern, 'localFile', workspaceFolder, cwd));
+  // Detect absolute paths for both styles (without relying on process.platform)
+  links.push(...detectPathsWithPattern(line, UNIX_PATH_PATTERN, 'localFile', workspaceFolder, cwd));
+  links.push(...detectPathsWithPattern(line, WINDOWS_PATH_PATTERN, 'localFile', workspaceFolder, cwd));
 
   // Detect relative paths
   links.push(...detectPathsWithPattern(line, RELATIVE_PATH_PATTERN, 'localFile', workspaceFolder, cwd));
@@ -199,17 +275,7 @@ function detectPathsWithPattern(
  * Build file URI from path
  */
 function buildFileUri(filePath: string, workspaceFolder?: string, cwd?: string): string {
-  let resolvedPath = filePath;
-
-  // Resolve relative paths
-  if (!path.isAbsolute(filePath)) {
-    const basePath = cwd || workspaceFolder || process.cwd();
-    resolvedPath = path.resolve(basePath, filePath);
-  }
-
-  // Normalize path separators
-  resolvedPath = resolvedPath.replace(/\\/g, '/');
-
+  const resolvedPath = resolvePath(cwd || workspaceFolder, filePath);
   return `file://${resolvedPath}`;
 }
 
@@ -227,6 +293,16 @@ export function parseFilePath(filePath: string): {
   // /path/to/file(10,5)
   // /path/to/file
   
+  // Pattern: Windows path:line:column or path:line (handle drive letter first)
+  const windowsColonMatch = filePath.match(/^([A-Za-z]:[\\/].+?):(\d+)(?::(\d+))?$/);
+  if (windowsColonMatch) {
+    return {
+      path: windowsColonMatch[1],
+      line: parseInt(windowsColonMatch[2], 10),
+      column: windowsColonMatch[3] ? parseInt(windowsColonMatch[3], 10) : undefined,
+    };
+  }
+
   // Pattern: path:line:column or path:line
   const colonMatch = filePath.match(/^(.+?):(\d+)(?::(\d+))?$/);
   if (colonMatch) {
@@ -258,47 +334,51 @@ export async function resolveFilePath(
   workspaceFolder?: string,
   cwd?: string
 ): Promise<{ exists: boolean; resolvedPath: string; isDirectory: boolean }> {
-  let resolvedPath = filePath;
-
   // Parse out line/column info
   const parsed = parseFilePath(filePath);
-  resolvedPath = parsed.path;
+  const resolvedPath = resolvePath(cwd || workspaceFolder, parsed.path);
 
-  // Resolve relative paths
-  if (!path.isAbsolute(resolvedPath)) {
-    const basePath = cwd || workspaceFolder || process.cwd();
-    resolvedPath = path.resolve(basePath, resolvedPath);
+  const checkPath = async (candidatePath: string): Promise<{
+    exists: boolean;
+    resolvedPath: string;
+    isDirectory: boolean;
+  } | undefined> => {
+    try {
+      const exists = await fsExists(candidatePath);
+      if (!exists) return undefined;
+
+      const metadata = await fsGetMetadata(candidatePath).catch(() => undefined);
+      return {
+        exists: true,
+        resolvedPath: candidatePath,
+        isDirectory: metadata?.isDirectory ?? false,
+      };
+    } catch {
+      return undefined;
+    }
+  };
+
+  const directResult = await checkPath(resolvedPath);
+  if (directResult) {
+    return directResult;
   }
 
-  try {
-    const stats = await fs.promises.stat(resolvedPath);
-    return {
-      exists: true,
-      resolvedPath,
-      isDirectory: stats.isDirectory(),
-    };
-  } catch {
-    // Try with workspace folder if different from cwd
-    if (workspaceFolder && workspaceFolder !== cwd) {
-      const altPath = path.resolve(workspaceFolder, parsed.path);
-      try {
-        const stats = await fs.promises.stat(altPath);
-        return {
-          exists: true,
-          resolvedPath: altPath,
-          isDirectory: stats.isDirectory(),
-        };
-      } catch {
-        // Path doesn't exist
+  // Try with workspace folder if different from cwd
+  if (workspaceFolder && workspaceFolder !== cwd) {
+    const altPath = resolvePath(workspaceFolder, parsed.path);
+    if (altPath !== resolvedPath) {
+      const altResult = await checkPath(altPath);
+      if (altResult) {
+        return altResult;
       }
     }
-
-    return {
-      exists: false,
-      resolvedPath,
-      isDirectory: false,
-    };
   }
+
+  return {
+    exists: false,
+    resolvedPath,
+    isDirectory: false,
+  };
 }
 
 /**
@@ -406,7 +486,7 @@ export function detectCompilerOutputLinks(line: string): TerminalLink[] {
         text: fullText,
         type: 'file',
         tooltip: `Open ${filePath} at line ${lineNum}${colNum ? `, column ${colNum}` : ''}`,
-        uri: `file://${filePath}`,
+        uri: buildFileUri(filePath),
         range: { line: lineNum, column: colNum ?? 1 },
       });
     }
