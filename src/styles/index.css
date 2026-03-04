@@ -71,6 +71,9 @@
 /* Cortex scrollbar tokens - Figma-aligned scrollbar design */
 @import "./cortex-scrollbar.css";
 
+/* Scrollbar, sash, and resize handle styles */
+@import "./scrollbar.css";
+
 /* Base styles use design tokens - MUST come after design-tokens */
 @import "./base.css";
 @import "./layout.css";
