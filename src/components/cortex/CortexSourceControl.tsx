@@ -38,6 +38,10 @@ const dpath = (p: string) => { const s = p.split("/"); return s.length > 1 ? s.s
 const FileSection: Component<{
   title: string; files: GitFile[]; expanded: boolean;
   onToggle: () => void; actions?: JSX.Element;
+  onStageFile?: (path: string) => void;
+  onUnstageFile?: (path: string) => void;
+  onDiscardFile?: (path: string) => void;
+  isStaged?: boolean;
 }> = (props) => (
   <div style={{ "border-bottom": "1px solid var(--cortex-bg-hover)" }}>
     <div onClick={props.onToggle} style={{ display: "flex", "align-items": "center", padding: "8px 16px", cursor: "pointer", "user-select": "none" }}>
@@ -57,11 +61,38 @@ const FileSection: Component<{
             const st = getStatus(file);
             return (
               <div style={{ display: "flex", "align-items": "center", padding: "4px 16px 4px 32px", cursor: "pointer", gap: "8px" }} class="sc-file-row">
-                <span style={{ color: st.color, "font-weight": "600", "font-size": "11px", width: "14px", "text-align": "center" }}>{st.letter}</span>
+                <span style={{
+                  color: st.color,
+                  "font-weight": "700",
+                  "font-size": "11px",
+                  width: "18px",
+                  height: "18px",
+                  "text-align": "center",
+                  "line-height": "18px",
+                  "border-radius": "3px",
+                  background: `color-mix(in srgb, ${st.color} 15%, transparent)`,
+                  "flex-shrink": "0",
+                }}>{st.letter}</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cortex-text-inactive)" stroke-width="2" style={{ "flex-shrink": "0" }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
                 <span style={{ flex: 1, overflow: "hidden", "text-overflow": "ellipsis", "white-space": "nowrap" }}>
                   {fname(file.path)}
                   <Show when={dpath(file.path)}><span style={{ color: "var(--cortex-text-inactive)", "margin-left": "8px", "font-size": "12px" }}>{dpath(file.path)}</span></Show>
                 </span>
+                <div class="sc-file-actions" style={{ display: "flex", gap: "2px", opacity: "0.5" }}>
+                  <Show when={!props.isStaged}>
+                    <button onClick={(e) => { e.stopPropagation(); props.onStageFile?.(file.path); }} style={iconBtn} title="Stage">
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M14 7v1H8v6H7V8H1V7h6V1h1v6h6z"/></svg>
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); props.onDiscardFile?.(file.path); }} style={iconBtn} title="Discard">
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5.23 1.354a.5.5 0 0 1 .707 0L8 3.414l2.063-2.06a.5.5 0 1 1 .707.707L8.707 4.12l2.063 2.063a.5.5 0 0 1-.707.707L8 4.828 5.937 6.89a.5.5 0 1 1-.707-.707L7.293 4.12 5.23 2.06a.5.5 0 0 1 0-.707z"/></svg>
+                    </button>
+                  </Show>
+                  <Show when={props.isStaged}>
+                    <button onClick={(e) => { e.stopPropagation(); props.onUnstageFile?.(file.path); }} style={iconBtn} title="Unstage">
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M1 8h14v1H1z"/></svg>
+                    </button>
+                  </Show>
+                </div>
               </div>
             );
           }}
@@ -137,9 +168,9 @@ export const CortexSourceControl: Component = () => {
           </div>
         </Show>
 
-        <div style={{ display: "flex", "align-items": "center", "justify-content": "space-between", padding: "12px 16px", "border-bottom": "1px solid var(--cortex-bg-hover)" }}>
+        <div style={{ display: "flex", "align-items": "center", "justify-content": "space-between", padding: "0 16px", height: "36px", "border-bottom": "1px solid var(--cortex-bg-hover)", "flex-shrink": "0" }}>
           <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
-            <span style={{ "font-weight": "500" }}>Source Control</span>
+            <span style={{ "font-weight": "600", "font-size": "13px" }}>Source Control</span>
             <Show when={total() > 0}>
               <span style={{ background: "var(--cortex-accent-primary)", color: "var(--cortex-accent-text)", padding: "2px 6px", "border-radius": "var(--cortex-radius-lg)", "font-size": "11px", "font-weight": "600" }}>{total()}</span>
             </Show>
@@ -168,10 +199,15 @@ export const CortexSourceControl: Component = () => {
 
         <div style={{ flex: 1, overflow: "auto" }}>
           <FileSection title="Staged Changes" files={staged()} expanded={sections().has("staged")} onToggle={() => toggle("staged")}
+            isStaged={true}
+            onUnstageFile={(path) => { const rid = id(); if (rid) multiRepo?.unstageFiles?.(rid, [path]); }}
             actions={<button onClick={() => { const rid = id(); if (rid) multiRepo?.unstageAll?.(rid); }} style={iconBtn} title="Unstage All">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M1 8h14v1H1z"/></svg>
             </button>} />
           <FileSection title="Changes" files={unstaged()} expanded={sections().has("changes")} onToggle={() => toggle("changes")}
+            isStaged={false}
+            onStageFile={(path) => { const rid = id(); if (rid) multiRepo?.stageFiles?.(rid, [path]); }}
+            onDiscardFile={(path) => { const rid = id(); if (rid) multiRepo?.discardChanges?.(rid, [path]); }}
             actions={<button onClick={() => { const rid = id(); if (rid) multiRepo?.stageAll?.(rid); }} style={iconBtn} title="Stage All">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M14 7v1H8v6H7V8H1V7h6V1h1v6h6z"/></svg>
             </button>} />
@@ -196,7 +232,11 @@ export const CortexSourceControl: Component = () => {
           </Show>
         </div>
 
-        <style>{`.sc-file-row:hover { background: rgba(255,255,255,0.05); }`}</style>
+        <style>{`
+          .sc-file-row:hover { background: rgba(255,255,255,0.05); }
+          .sc-file-row:hover .sc-file-actions { opacity: 1 !important; }
+          textarea:focus { border-color: var(--cortex-border-focus) !important; }
+        `}</style>
       </Show>
     </div>
   );
