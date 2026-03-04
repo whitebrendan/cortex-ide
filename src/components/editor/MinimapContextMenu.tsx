@@ -24,13 +24,13 @@ interface MinimapContextMenuProps {
 }
 
 const MENU_COLORS = {
-  shadow: "rgba(0, 0, 0, 0.36)",
-  border: "var(--cortex-bg-active)",
-  foreground: "var(--cortex-text-primary)",
-  background: "var(--ui-panel-bg-lighter)",
-  selectionForeground: "var(--cortex-text-primary)",
-  selectionBackground: "var(--cortex-bg-active)",
-  separator: "var(--cortex-bg-active)",
+  shadow: "var(--cortex-menu-shadow-color, rgba(0, 0, 0, 0.36))",
+  border: "var(--cortex-menu-border-color, #454545)",
+  foreground: "var(--cortex-menu-foreground-color, #cccccc)",
+  background: "var(--cortex-menu-background-color, #1e1e1e)",
+  selectionForeground: "var(--cortex-menu-selection-foreground-color, #ffffff)",
+  selectionBackground: "var(--cortex-menu-selection-background-color, #04395e)",
+  separator: "var(--cortex-menu-separator-color, #454545)",
 } as const;
 
 const MENU_STYLES = {
@@ -126,9 +126,13 @@ export const MinimapContextMenu: Component<MinimapContextMenuProps> = (props) =>
       y = window.innerHeight - menuHeight - padding;
     }
 
+    // Ensure minimum padding from edges
+    x = Math.max(padding, x);
+    y = Math.max(padding, y);
+
     return {
-      left: `${Math.max(padding, x)}px`,
-      top: `${Math.max(padding, y)}px`,
+      left: `${x}px`,
+      top: `${y}px`,
     };
   };
 
