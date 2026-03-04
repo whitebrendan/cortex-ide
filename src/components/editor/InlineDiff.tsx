@@ -172,7 +172,7 @@ export function InlineDiff(props: InlineDiffProps) {
   return (
     <div class="overflow-hidden rounded border border-[var(--cortex-border,#333)] bg-[var(--cortex-bg-secondary,#252526)]">
       {/* Header */}
-      <div class="flex h-7 items-center justify-between border-b border-[var(--cortex-border,#333)] bg-[var(--cortex-bg-primary,#1e1e1e)] px-3 text-xs">
+      <div class="flex h-7 items-center justify-between border-b border-[var(--cortex-border,#333)] bg-[var(--cortex-bg-primary,#141415)] px-3 text-xs">
         <div class="flex items-center gap-3">
           <span class="text-[var(--cortex-text-secondary,#ccc)]">Inline Diff</span>
           <Show when={!loading()}>

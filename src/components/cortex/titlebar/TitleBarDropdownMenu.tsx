@@ -41,7 +41,7 @@ export const TitleBarDropdownMenu: Component<TitleBarDropdownMenuProps> = (props
         border: "1px solid var(--cortex-border-default)",
         padding: "4px",
         "box-shadow": "0 8px 16px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.4)",
-        "z-index": "9999",
+        "z-index": "var(--cortex-z-dropdown)",
         "margin-top": "0",
       }}>
       <For each={props.items}>
@@ -82,7 +82,7 @@ const DropdownMenuItem: Component<{ item: MenuItem; onClick: () => void }> = (pr
     background: hovered() ? "var(--cortex-bg-hover)" : "transparent",
     border: "none",
     cursor: "pointer",
-    "font-family": "'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    "font-family": "var(--cortex-font-sans)",
     "font-size": "12px",
     "font-weight": "400",
     "line-height": "1.167em",
@@ -103,7 +103,7 @@ const DropdownMenuItem: Component<{ item: MenuItem; onClick: () => void }> = (pr
       <Show when={props.item.shortcut}>
         <span style={{
           color: "var(--cortex-text-secondary)",
-          "font-family": "'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+          "font-family": "var(--cortex-font-sans)",
           "font-size": "12px",
           "font-weight": "400",
           "line-height": "1.167em",

@@ -109,7 +109,7 @@ export function CortexDiffEditor(props: CortexDiffEditorProps) {
     display: "flex", "align-items": "center", "justify-content": "space-between",
     height: "36px", padding: "0 12px",
     "border-bottom": "1px solid var(--cortex-bg-hover, rgba(255,255,255,0.08))",
-    "flex-shrink": "0", "font-family": "'Inter', -apple-system, sans-serif",
+    "flex-shrink": "0", "font-family": "var(--cortex-font-sans)",
     "font-size": "13px", gap: "8px",
   };
 

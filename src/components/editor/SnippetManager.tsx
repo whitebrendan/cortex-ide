@@ -137,7 +137,7 @@ export function SnippetManager(props: SnippetManagerProps) {
             ref={searchInputRef}
             type="text"
             placeholder="Search snippets..."
-            class="w-full rounded bg-[var(--cortex-bg-primary,#1e1e1e)] px-2 py-1 text-xs text-[var(--cortex-text-primary,#fff)] outline-none ring-1 ring-[var(--cortex-border,#333)] focus:ring-[var(--cortex-info,#569cd6)]"
+            class="w-full rounded bg-[var(--cortex-bg-primary,#141415)] px-2 py-1 text-xs text-[var(--cortex-text-primary,#fff)] outline-none ring-1 ring-[var(--cortex-border,#333)] focus:ring-[var(--cortex-info,#569cd6)]"
             value={searchQuery()}
             onInput={(e) => setSearchQuery(e.currentTarget.value)}
             onKeyDown={handleKeyDown}
@@ -171,7 +171,7 @@ export function SnippetManager(props: SnippetManagerProps) {
                   }}
                   onMouseLeave={() => setPreviewSnippet(null)}
                 >
-                  <span class="shrink-0 rounded bg-[var(--cortex-bg-primary,#1e1e1e)] px-1.5 py-0.5 font-mono text-[var(--cortex-info,#569cd6)]">
+                  <span class="shrink-0 rounded bg-[var(--cortex-bg-primary,#141415)] px-1.5 py-0.5 font-mono text-[var(--cortex-info,#569cd6)]">
                     {snippet.prefix}
                   </span>
                   <div class="min-w-0 flex-1">
@@ -192,7 +192,7 @@ export function SnippetManager(props: SnippetManagerProps) {
 
         {/* Preview */}
         <Show when={previewSnippet()}>
-          <div class="max-h-[120px] overflow-auto border-t border-[var(--cortex-border,#333)] bg-[var(--cortex-bg-primary,#1e1e1e)] p-2">
+          <div class="max-h-[120px] overflow-auto border-t border-[var(--cortex-border,#333)] bg-[var(--cortex-bg-primary,#141415)] p-2">
             <pre class="whitespace-pre-wrap font-mono text-[11px] text-[var(--cortex-text-secondary,#ccc)]">
               {previewSnippet()!.body}
             </pre>

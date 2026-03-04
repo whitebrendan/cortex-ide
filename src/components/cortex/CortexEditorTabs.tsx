@@ -200,7 +200,7 @@ const TabContextMenu: Component<TabContextMenuProps> = (props) => {
     position: "fixed",
     left: `${props.x}px`,
     top: `${props.y}px`,
-    "z-index": "9999",
+    "z-index": "var(--cortex-z-popover)",
     background: "var(--cortex-bg-elevated, #252628)",
     border: "1px solid var(--cortex-border-default, #2E2F31)",
     "border-radius": "8px",

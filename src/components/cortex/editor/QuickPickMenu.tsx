@@ -136,7 +136,7 @@ export const QuickPickMenu: Component<QuickPickMenuProps> = (props) => {
     "max-height": "300px",
     display: "flex",
     "flex-direction": "column",
-    background: "var(--cortex-bg-elevated, #1e1e2e)",
+    background: "var(--cortex-bg-elevated, #252628)",
     border: "1px solid var(--cortex-border-default, rgba(255,255,255,0.1))",
     "border-radius": "var(--cortex-radius-md, 6px)",
     "box-shadow": "0 8px 24px rgba(0,0,0,0.4)",

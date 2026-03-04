@@ -173,7 +173,7 @@ export function StickyScroll(props: StickyScrollProps) {
 
   return (
     <Show when={enabled() && stickyLines().length > 0}>
-      <div class="absolute left-0 right-0 top-0 z-10 select-none border-b border-[var(--cortex-border,#333)] bg-[var(--cortex-bg-primary,#1e1e1e)]">
+      <div class="absolute left-0 right-0 top-0 z-10 select-none border-b border-[var(--cortex-border,#333)] bg-[var(--cortex-bg-primary,#141415)]">
         <For each={stickyLines()}>
           {(line) => (
             <div

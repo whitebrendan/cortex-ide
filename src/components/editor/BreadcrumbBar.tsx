@@ -115,7 +115,7 @@ export function BreadcrumbBar(props: BreadcrumbBarProps) {
   });
 
   return (
-    <div class="flex h-[22px] items-center overflow-hidden border-b border-[var(--cortex-border,#333)] bg-[var(--cortex-bg-primary,#1e1e1e)] px-2 text-xs">
+    <div class="flex h-[22px] items-center overflow-hidden border-b border-[var(--cortex-border,#333)] bg-[var(--cortex-bg-primary,#141415)] px-2 text-xs">
       <Show when={loading()}>
         <span class="animate-pulse text-[var(--cortex-text-inactive,#666)]">Loading...</span>
       </Show>

@@ -166,11 +166,11 @@ const TabItem: Component<TabItemProps> = (props) => {
   });
 
   const nameStyle = (): JSX.CSSProperties => ({
-    "font-family": "'Figtree', sans-serif",
+    "font-family": "var(--cortex-font-sans)",
     "font-size": "14px",
     "font-weight": "500",
     "line-height": "1em",
-    color: props.isActive ? "#E9E9EA" : "#8C8C8F",
+    color: props.isActive ? "var(--cortex-text-primary)" : "var(--cortex-text-secondary)",
     "white-space": "nowrap",
     "font-style": props.tab.isPreview ? "italic" : "normal",
   });
@@ -333,7 +333,7 @@ const TabBarContextMenu: Component<TabBarContextMenuProps> = (props) => {
     position: "fixed",
     left: `${props.x}px`,
     top: `${props.y}px`,
-    "z-index": "9999",
+    "z-index": "var(--cortex-z-popover)",
     background: "var(--cortex-bg-secondary)",
     border: "1px solid var(--cortex-border-default)",
     "border-radius": "8px",
@@ -350,8 +350,8 @@ const TabBarContextMenu: Component<TabBarContextMenuProps> = (props) => {
     padding: "6px 12px",
     background: "transparent",
     border: "none",
-    color: "#FCFCFC",
-    "font-family": "'Figtree', 'Inter', sans-serif",
+    color: "var(--cortex-text-primary)",
+    "font-family": "var(--cortex-font-sans)",
     "font-size": "12px",
     cursor: "pointer",
     "text-align": "left",
@@ -366,23 +366,23 @@ const TabBarContextMenu: Component<TabBarContextMenuProps> = (props) => {
   return (
     <div style={menuStyle()} onClick={(e) => e.stopPropagation()}>
       <button style={itemStyle} onClick={handleClick(props.onClose)}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--cortex-interactive-hover)"; }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
         Close
       </button>
       <button style={itemStyle} onClick={handleClick(props.onCloseOthers)}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--cortex-interactive-hover)"; }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
         Close Others
       </button>
       <button style={itemStyle} onClick={handleClick(props.onCloseAll)}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--cortex-interactive-hover)"; }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
         Close All
       </button>
       <div style={{ height: "1px", background: "var(--cortex-border-default)", margin: "4px 0" }} />
       <button style={itemStyle} onClick={handleClick(props.onCopyPath)}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--cortex-interactive-hover)"; }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
         Copy Path
       </button>

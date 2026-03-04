@@ -31,7 +31,7 @@ export const TunnelStatusBar: Component<TunnelStatusBarProps> = (props) => {
       {/* Tooltip on hover */}
       <Show when={tunnel.state.tunnels.length > 0}>
         <div class="absolute bottom-full left-0 mb-1 hidden group-hover:block z-50">
-          <div class="bg-[#2d2d2d] border border-white/10 rounded-lg shadow-lg p-2 min-w-[200px] max-w-[320px]">
+          <div class="bg-[var(--cortex-bg-elevated)] border border-white/10 rounded-lg shadow-lg p-2 min-w-[200px] max-w-[320px]">
             <div class="text-xs text-white/50 mb-1.5 font-medium">Tunnels</div>
             <For each={tunnel.state.tunnels}>
               {(t) => (

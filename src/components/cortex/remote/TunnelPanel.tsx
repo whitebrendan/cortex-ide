@@ -59,7 +59,7 @@ export const TunnelPanel: Component = () => {
   };
 
   return (
-    <div class="flex flex-col h-full bg-[#1e1e1e] text-white text-sm">
+    <div class="flex flex-col h-full bg-[var(--cortex-bg-primary)] text-white text-sm">
       {/* Header */}
       <div class="flex items-center justify-between px-4 py-3 border-b border-white/10">
         <div class="flex items-center gap-2">
