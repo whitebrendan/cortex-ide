@@ -28,20 +28,20 @@ interface IContextMenuStyles {
   scrollbarSliderActiveBackground: string;
 }
 
-// VS Code context menu color theme - exact VS Code specs
+// VS Code context menu color theme - uses CSS variable tokens from menu.css
 const CONTEXT_MENU_COLORS: IContextMenuStyles = {
-  shadowColor: "rgba(0, 0, 0, 0.36)",
-  borderColor: "var(--cortex-bg-active)",
-  foregroundColor: "var(--cortex-text-primary)",
-  backgroundColor: "var(--ui-panel-bg-lighter)",
-  selectionForegroundColor: "var(--cortex-text-primary)",
-  selectionBackgroundColor: "var(--cortex-bg-active)",
-  selectionBorderColor: "transparent",
-  separatorColor: "var(--cortex-bg-active)",
-  scrollbarShadow: "rgba(0, 0, 0, 0.3)",
-  scrollbarSliderBackground: "rgba(252, 252, 252, 0.12)",
-  scrollbarSliderHoverBackground: "rgba(252, 252, 252, 0.24)",
-  scrollbarSliderActiveBackground: "rgba(252, 252, 252, 0.24)",
+  shadowColor: "var(--cortex-menu-shadow-color, rgba(0, 0, 0, 0.36))",
+  borderColor: "var(--cortex-menu-border-color, #454545)",
+  foregroundColor: "var(--cortex-menu-foreground-color, #cccccc)",
+  backgroundColor: "var(--cortex-menu-background-color, #1e1e1e)",
+  selectionForegroundColor: "var(--cortex-menu-selection-foreground-color, #ffffff)",
+  selectionBackgroundColor: "var(--cortex-menu-selection-background-color, #04395e)",
+  selectionBorderColor: "var(--cortex-menu-selection-border-color, transparent)",
+  separatorColor: "var(--cortex-menu-separator-color, #454545)",
+  scrollbarShadow: "var(--cortex-menu-scrollbar-shadow, rgba(0, 0, 0, 0.3))",
+  scrollbarSliderBackground: "var(--cortex-menu-scrollbar-slider-background, rgba(252, 252, 252, 0.12))",
+  scrollbarSliderHoverBackground: "var(--cortex-menu-scrollbar-slider-hover-background, rgba(252, 252, 252, 0.24))",
+  scrollbarSliderActiveBackground: "var(--cortex-menu-scrollbar-slider-active-background, rgba(252, 252, 252, 0.24))",
 };
 
 // VS Code menu timing constants
@@ -90,7 +90,7 @@ const CONTEXT_MENU_STYLES = {
     opacity: "0.5",
   },
   shortcut: {
-    color: "rgba(204, 204, 204, 0.6)", // VS Code: muted color
+    color: "var(--cortex-text-muted, rgba(204, 204, 204, 0.6))",
     fontSize: "11px",                // VS Code: 11px keybinding font-size
     fontFamily: "monospace",         // VS Code: monospace font
     marginLeft: "auto",              // VS Code: right-aligned
@@ -476,7 +476,7 @@ actions.push({
                 class="flex items-center justify-center"
                 style={{ 
                   height: "48px",
-                  color: "rgba(204, 204, 204, 0.6)",
+                  color: "var(--cortex-text-muted, rgba(204, 204, 204, 0.6))",
                   "font-size": CONTEXT_MENU_STYLES.item.fontSize,
                 }}
               >
@@ -491,7 +491,7 @@ actions.push({
                 style={{
                   padding: `4px ${CONTEXT_MENU_STYLES.item.paddingHorizontal}`,
                   "margin-bottom": "4px",
-                  color: "rgba(204, 204, 204, 0.6)",
+                  color: "var(--cortex-text-muted, rgba(204, 204, 204, 0.6))",
                   "font-size": "11px",
                   "font-weight": "500",
                   "padding-bottom": "8px",

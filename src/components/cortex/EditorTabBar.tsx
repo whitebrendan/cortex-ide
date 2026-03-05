@@ -13,6 +13,7 @@
 import { Component, JSX, For, Show, createSignal, onCleanup } from "solid-js";
 import { CortexIcon } from "./primitives";
 import type { EditorTab } from "./CortexEditorTabs";
+import { ContextMenu, ContextMenuPresets } from "../ui/ContextMenu";
 
 export interface EditorTabBarProps {
   tabs: EditorTab[];
@@ -113,22 +114,31 @@ export const EditorTabBar: Component<EditorTabBarProps> = (props) => {
         </For>
       </div>
 
-      <Show when={contextMenuState().visible}>
-        <TabBarContextMenu
-          x={contextMenuState().x}
-          y={contextMenuState().y}
-          onClose={() => props.onTabClose?.(contextMenuState().tabId)}
-          onCloseOthers={() => props.onTabCloseOthers?.(contextMenuState().tabId)}
-          onCloseAll={() => props.onTabCloseAll?.()}
-          onCopyPath={() => {
-            const path = contextMenuState().tabPath;
-            if (path && typeof navigator !== "undefined") {
-              navigator.clipboard.writeText(path).catch(() => {});
-            }
-          }}
-          onDismiss={closeContextMenu}
-        />
-      </Show>
+      <ContextMenu
+        state={{
+          visible: contextMenuState().visible,
+          x: contextMenuState().x,
+          y: contextMenuState().y,
+          sections: contextMenuState().visible ? ContextMenuPresets.tabItems({
+            onClose: () => {
+              props.onTabClose?.(contextMenuState().tabId);
+            },
+            onCloseOthers: () => {
+              props.onTabCloseOthers?.(contextMenuState().tabId);
+            },
+            onCloseAll: () => {
+              props.onTabCloseAll?.();
+            },
+            onCopyPath: () => {
+              const path = contextMenuState().tabPath;
+              if (path && typeof navigator !== "undefined") {
+                navigator.clipboard.writeText(path).catch(() => {});
+              }
+            },
+          }) : [],
+        }}
+        onClose={closeContextMenu}
+      />
 
       <style>{`
         .cortex-editor-tabbar-scroll::-webkit-scrollbar { display: none; }
@@ -315,78 +325,6 @@ const TabFileIcon: Component<TabFileIconProps> = (props) => {
       <path d="M4 2h5l4 4v8a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="#8C8D8F" stroke-width="1.2" fill="none" />
       <path d="M9 2v4h4" stroke="#8C8D8F" stroke-width="1.2" fill="none" />
     </svg>
-  );
-};
-
-interface TabBarContextMenuProps {
-  x: number;
-  y: number;
-  onClose: () => void;
-  onCloseOthers: () => void;
-  onCloseAll: () => void;
-  onCopyPath: () => void;
-  onDismiss: () => void;
-}
-
-const TabBarContextMenu: Component<TabBarContextMenuProps> = (props) => {
-  const menuStyle = (): JSX.CSSProperties => ({
-    position: "fixed",
-    left: `${props.x}px`,
-    top: `${props.y}px`,
-    "z-index": "9999",
-    background: "var(--cortex-bg-secondary)",
-    border: "1px solid var(--cortex-border-default)",
-    "border-radius": "8px",
-    padding: "4px 0",
-    "min-width": "160px",
-    "box-shadow": "0 4px 16px rgba(0,0,0,0.4)",
-  });
-
-  const itemStyle: JSX.CSSProperties = {
-    display: "flex",
-    "align-items": "center",
-    gap: "8px",
-    width: "100%",
-    padding: "6px 12px",
-    background: "transparent",
-    border: "none",
-    color: "#FCFCFC",
-    "font-family": "'Figtree', 'Inter', sans-serif",
-    "font-size": "12px",
-    cursor: "pointer",
-    "text-align": "left",
-  };
-
-  const handleClick = (fn: () => void) => (e: MouseEvent) => {
-    e.stopPropagation();
-    fn();
-    props.onDismiss();
-  };
-
-  return (
-    <div style={menuStyle()} onClick={(e) => e.stopPropagation()}>
-      <button style={itemStyle} onClick={handleClick(props.onClose)}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
-        Close
-      </button>
-      <button style={itemStyle} onClick={handleClick(props.onCloseOthers)}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
-        Close Others
-      </button>
-      <button style={itemStyle} onClick={handleClick(props.onCloseAll)}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
-        Close All
-      </button>
-      <div style={{ height: "1px", background: "var(--cortex-border-default)", margin: "4px 0" }} />
-      <button style={itemStyle} onClick={handleClick(props.onCopyPath)}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
-        Copy Path
-      </button>
-    </div>
   );
 };
 

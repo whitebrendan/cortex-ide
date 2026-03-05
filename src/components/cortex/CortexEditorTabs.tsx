@@ -17,6 +17,7 @@
 
 import { Component, JSX, For, Show, createSignal, onCleanup } from "solid-js";
 import { CortexIcon } from "./primitives";
+import { ContextMenu, ContextMenuPresets } from "../ui/ContextMenu";
 
 export interface EditorTab {
   id: string;
@@ -161,110 +162,35 @@ export const CortexEditorTabs: Component<CortexEditorTabsProps> = (props) => {
         onClick={props.onNewTab}
       />
 
-      <Show when={contextMenuState().visible}>
-        <TabContextMenu
-          x={contextMenuState().x}
-          y={contextMenuState().y}
-          onClose={() => props.onTabClose?.(contextMenuState().tabId)}
-          onCloseOthers={() => props.onTabCloseOthers?.(contextMenuState().tabId)}
-          onCloseAll={() => props.onTabCloseAll?.()}
-          onCopyPath={() => {
-            const path = contextMenuState().tabPath;
-            if (path && typeof navigator !== "undefined") {
-              navigator.clipboard.writeText(path).catch(() => {});
-            }
-          }}
-          onDismiss={closeContextMenu}
-        />
-      </Show>
+      <ContextMenu
+        state={{
+          visible: contextMenuState().visible,
+          x: contextMenuState().x,
+          y: contextMenuState().y,
+          sections: contextMenuState().visible ? ContextMenuPresets.tabItems({
+            onClose: () => {
+              props.onTabClose?.(contextMenuState().tabId);
+            },
+            onCloseOthers: () => {
+              props.onTabCloseOthers?.(contextMenuState().tabId);
+            },
+            onCloseAll: () => {
+              props.onTabCloseAll?.();
+            },
+            onCopyPath: () => {
+              const path = contextMenuState().tabPath;
+              if (path && typeof navigator !== "undefined") {
+                navigator.clipboard.writeText(path).catch(() => {});
+              }
+            },
+          }) : [],
+        }}
+        onClose={closeContextMenu}
+      />
 
       <style>{`
         .cortex-editor-tabs-scroll::-webkit-scrollbar { display: none; }
       `}</style>
-    </div>
-  );
-};
-
-interface TabContextMenuProps {
-  x: number;
-  y: number;
-  onClose: () => void;
-  onCloseOthers: () => void;
-  onCloseAll: () => void;
-  onCopyPath: () => void;
-  onDismiss: () => void;
-}
-
-const TabContextMenu: Component<TabContextMenuProps> = (props) => {
-  const menuStyle = (): JSX.CSSProperties => ({
-    position: "fixed",
-    left: `${props.x}px`,
-    top: `${props.y}px`,
-    "z-index": "9999",
-    background: "var(--cortex-bg-elevated, #252628)",
-    border: "1px solid var(--cortex-border-default, #2E2F31)",
-    "border-radius": "8px",
-    padding: "4px 0",
-    "min-width": "160px",
-    "box-shadow": "0 4px 16px rgba(0,0,0,0.4)",
-  });
-
-  const itemStyle: JSX.CSSProperties = {
-    display: "flex",
-    "align-items": "center",
-    gap: "8px",
-    width: "100%",
-    padding: "6px 12px",
-    background: "transparent",
-    border: "none",
-    color: "var(--cortex-text-primary, #FCFCFC)",
-    "font-family": "var(--cortex-font-sans, 'Figtree', sans-serif)",
-    "font-size": "12px",
-    cursor: "pointer",
-    "text-align": "left",
-  };
-
-  const handleClick = (fn: () => void) => (e: MouseEvent) => {
-    e.stopPropagation();
-    fn();
-    props.onDismiss();
-  };
-
-  return (
-    <div style={menuStyle()} onClick={(e) => e.stopPropagation()}>
-      <button
-        style={itemStyle}
-        onClick={handleClick(props.onClose)}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--cortex-bg-hover, #2E2F31)"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-      >
-        Close
-      </button>
-      <button
-        style={itemStyle}
-        onClick={handleClick(props.onCloseOthers)}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--cortex-bg-hover, #2E2F31)"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-      >
-        Close Others
-      </button>
-      <button
-        style={itemStyle}
-        onClick={handleClick(props.onCloseAll)}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--cortex-bg-hover, #2E2F31)"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-      >
-        Close All
-      </button>
-      <div style={{ height: "1px", background: "var(--cortex-border-default, #2E2F31)", margin: "4px 0" }} />
-      <button
-        style={itemStyle}
-        onClick={handleClick(props.onCopyPath)}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--cortex-bg-hover, #2E2F31)"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-      >
-        Copy Path
-      </button>
     </div>
   );
 };

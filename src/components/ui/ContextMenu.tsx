@@ -25,36 +25,35 @@
  *   <ContextMenu state={menuState()} onClose={hideMenu} />
  */
 
-import { Show, For, createSignal, createEffect, onCleanup, onMount, type JSX } from "solid-js";
+import { Show, For, createSignal, createEffect, onCleanup, type JSX } from "solid-js";
 import { Portal } from "solid-js/web";
 import { Icon } from "./Icon";
 
 // =============================================================================
-// JETBRAINS DARK THEME COLORS
+// VS CODE DARK THEME COLORS (using CSS variables from menu.css)
 // =============================================================================
 
 const JB_COLORS = {
-  // Container - Figma: bg #1C1C1D, border #2E2F31
-  background: "var(--cortex-dropdown-bg, #1C1C1D)",
-  backgroundHover: "var(--cortex-dropdown-bg, #1C1C1D)",
-  border: "var(--cortex-border-default, #2E2F31)",
-  shadow: "0 4px 12px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.25)",
+  // Container - uses VS Code menu CSS variables
+  background: "var(--cortex-menu-background-color, #1e1e1e)",
+  border: "var(--cortex-menu-border-color, #454545)",
+  shadow: "0 2px 8px var(--cortex-menu-shadow-color, rgba(0, 0, 0, 0.36))",
   
   // Text
-  foreground: "var(--cortex-text-secondary)",
-  foregroundHover: "var(--cortex-text-primary)",
-  shortcut: "var(--cortex-text-inactive)",
-  disabled: "var(--cortex-text-disabled)",
+  foreground: "var(--cortex-menu-foreground-color, #cccccc)",
+  foregroundHover: "var(--cortex-menu-selection-foreground-color, #ffffff)",
+  shortcut: "var(--cortex-text-muted, rgba(204, 204, 204, 0.6))",
+  disabled: "var(--cortex-text-disabled, rgba(204, 204, 204, 0.4))",
   header: "var(--cortex-info)",
   
-  // Hover state - Figma: #252628
-  hoverBg: "var(--cortex-bg-hover, #252628)",
+  // Hover state - VS Code selection background
+  hoverBg: "var(--cortex-menu-selection-background-color, #04395e)",
   
-  // Separator - Figma: #2E2F31
-  separator: "var(--cortex-border-default, #2E2F31)",
+  // Separator
+  separator: "var(--cortex-menu-separator-color, #454545)",
   
   // Icon colors
-  iconDefault: "var(--cortex-text-inactive)",
+  iconDefault: "var(--cortex-text-muted, rgba(204, 204, 204, 0.6))",
   iconYellow: "var(--cortex-warning)",
   iconBlue: "var(--cortex-info)",
   iconGreen: "var(--cortex-success)",
@@ -63,17 +62,17 @@ const JB_COLORS = {
 } as const;
 
 // =============================================================================
-// STYLING CONSTANTS
+// STYLING CONSTANTS (VS Code menu specs)
 // =============================================================================
 
 const JB_STYLES = {
   container: {
-    minWidth: "200px",
+    minWidth: "160px",
     maxWidth: "340px",
-    padding: "5px 0",
-    borderRadius: "var(--cortex-radius-md, 8px)",
+    padding: "4px 0",
+    borderRadius: "var(--cortex-menu-border-radius, 6px)",
     fontSize: "13px",
-    fontWeight: "450",
+    fontWeight: "400",
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
   },
   item: {
@@ -240,8 +239,9 @@ function MenuItem(props: MenuItemProps) {
 
   const shortcutStyle = (): JSX.CSSProperties => ({
     color: JB_COLORS.shortcut,
-    "font-size": "12.5px",
+    "font-size": "11px",
     "font-weight": "400",
+    "font-family": "monospace",
     "margin-left": "auto",
     "padding-left": "20px",
     "flex-shrink": "0",
@@ -395,11 +395,16 @@ export function ContextMenu(props: ContextMenuProps) {
     });
   });
 
-  // Measure menu size after render
-  onMount(() => {
-    if (menuRef) {
-      const rect = menuRef.getBoundingClientRect();
-      setMenuSize({ width: rect.width, height: rect.height });
+  // Measure menu size after render and when visibility changes
+  createEffect(() => {
+    if (props.state.visible && menuRef) {
+      // Use requestAnimationFrame to get accurate measurements after render
+      requestAnimationFrame(() => {
+        if (menuRef) {
+          const rect = menuRef.getBoundingClientRect();
+          setMenuSize({ width: rect.width, height: rect.height });
+        }
+      });
     }
   });
 
@@ -561,7 +566,7 @@ export const ContextMenuPresets = {
         { id: "cut", label: "Cut", icon: "scissors", shortcut: "Ctrl+X", action: handlers.onCut },
         { id: "copy", label: "Copy", icon: "copy", shortcut: "Ctrl+C", action: handlers.onCopy },
         { id: "paste", label: "Paste", icon: "paste", shortcut: "Ctrl+V", disabled: !handlers.hasClipboard, action: handlers.onPaste },
-        { id: "duplicate", label: "Duplicate", shortcut: "Ctrl+D", action: handlers.onDuplicate },
+        { id: "duplicate", label: "Duplicate", icon: "clone", shortcut: "Ctrl+D", action: handlers.onDuplicate },
       ],
     },
     {
@@ -572,8 +577,8 @@ export const ContextMenuPresets = {
     },
     {
       items: [
-        { id: "copyPath", label: "Copy Path", action: handlers.onCopyPath },
-        { id: "copyRelativePath", label: "Copy Relative Path", action: handlers.onCopyRelativePath },
+        { id: "copyPath", label: "Copy Path", icon: "clipboard", action: handlers.onCopyPath },
+        { id: "copyRelativePath", label: "Copy Relative Path", icon: "clipboard", action: handlers.onCopyRelativePath },
       ],
     },
     {
@@ -610,7 +615,7 @@ export const ContextMenuPresets = {
         { id: "cut", label: "Cut", icon: "scissors", shortcut: "Ctrl+X", action: handlers.onCut },
         { id: "copy", label: "Copy", icon: "copy", shortcut: "Ctrl+C", action: handlers.onCopy },
         { id: "paste", label: "Paste", icon: "paste", shortcut: "Ctrl+V", disabled: !handlers.hasClipboard, action: handlers.onPaste },
-        { id: "duplicate", label: "Duplicate", action: handlers.onDuplicate },
+        { id: "duplicate", label: "Duplicate", icon: "clone", action: handlers.onDuplicate },
       ],
     },
     {
@@ -621,8 +626,8 @@ export const ContextMenuPresets = {
     },
     {
       items: [
-        { id: "copyPath", label: "Copy Path", action: handlers.onCopyPath },
-        { id: "copyRelativePath", label: "Copy Relative Path", action: handlers.onCopyRelativePath },
+        { id: "copyPath", label: "Copy Path", icon: "clipboard", action: handlers.onCopyPath },
+        { id: "copyRelativePath", label: "Copy Relative Path", icon: "clipboard", action: handlers.onCopyRelativePath },
       ],
     },
     {
@@ -648,11 +653,11 @@ export const ContextMenuPresets = {
   }): ContextMenuSection[] => [
     {
       items: [
-        { id: "close", label: "Close", shortcut: "Ctrl+W", action: handlers.onClose },
-        { id: "closeOthers", label: "Close Others", action: handlers.onCloseOthers },
-        { id: "closeAll", label: "Close All", action: handlers.onCloseAll },
-        { id: "closeToRight", label: "Close to the Right", action: handlers.onCloseToRight },
-        { id: "closeToLeft", label: "Close to the Left", action: handlers.onCloseToLeft },
+        { id: "close", label: "Close", icon: "xmark", shortcut: "Ctrl+W", action: handlers.onClose },
+        { id: "closeOthers", label: "Close Others", icon: "xmark", action: handlers.onCloseOthers },
+        { id: "closeAll", label: "Close All", icon: "xmark", action: handlers.onCloseAll },
+        { id: "closeToRight", label: "Close to the Right", icon: "arrow-right", action: handlers.onCloseToRight },
+        { id: "closeToLeft", label: "Close to the Left", icon: "arrow-left", action: handlers.onCloseToLeft },
       ],
     },
     {
@@ -668,8 +673,8 @@ export const ContextMenuPresets = {
     },
     {
       items: [
-        { id: "copyPath", label: "Copy Path", action: handlers.onCopyPath },
-        { id: "copyRelativePath", label: "Copy Relative Path", action: handlers.onCopyRelativePath },
+        { id: "copyPath", label: "Copy Path", icon: "clipboard", action: handlers.onCopyPath },
+        { id: "copyRelativePath", label: "Copy Relative Path", icon: "clipboard", action: handlers.onCopyRelativePath },
       ],
     },
     {
