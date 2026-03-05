@@ -73,7 +73,7 @@ function FilePlusIcon() {
 
 function CortexLogoInline() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M14.5293 5.416L18.9454 5.4167L24.0016 14.1533H19.5855L14.5293 5.416Z" fill="#FCFCFC"/>
       <path d="M11.2225 9.5391L13.4295 5.7241L18.4863 14.4613L16.2786 18.2764L11.2225 9.5391Z" fill="#FCFCFC"/>
       <path d="M11.2225 19.3857L13.4316 15.5707L15.6386 19.3843L13.4309 23.1993L11.2225 19.3857Z" fill="#FCFCFC"/>
@@ -162,8 +162,8 @@ export function WelcomeTab(props: WelcomeTabProps) {
 
   const quickActions: QuickAction[] = [
     { label: "Open File", icon: <FileIcon />, action: handleOpenFile, shortcut: "Ctrl+O" },
-    { label: "Open Folder", icon: <FolderIcon />, action: handleOpenFolder },
-    { label: "Clone Repository", icon: <GitBranchIcon />, action: handleCloneRepo },
+    { label: "Open Folder", icon: <FolderIcon />, action: handleOpenFolder, shortcut: "Ctrl+Shift+O" },
+    { label: "Clone Repository", icon: <GitBranchIcon />, action: handleCloneRepo, shortcut: "Ctrl+Shift+G" },
     { label: "New File", icon: <FilePlusIcon />, action: handleNewFile, shortcut: "Ctrl+N" },
   ];
 
@@ -319,7 +319,6 @@ export function WelcomeTab(props: WelcomeTabProps) {
             display: "flex",
             "align-items": "center",
             "justify-content": "center",
-            opacity: "0.7",
           }}>
             <CortexLogoInline />
           </div>

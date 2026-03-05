@@ -2,9 +2,7 @@ import { Show, createMemo, type JSX } from "solid-js";
 import { MultiBuffer } from "./MultiBuffer";
 import { useEditor } from "@/context/EditorContext";
 import { EditorSkeleton } from "./EditorSkeleton";
-import { Text, Card } from "@/components/ui";
-import { Icon } from "../ui/Icon";
-import { tokens } from "@/design-system/tokens";
+import { WelcomeTab } from "./WelcomeTab";
 
 /**
  * EditorPanel - Main editor container component
@@ -45,44 +43,11 @@ export function EditorPanel() {
         style={{ 
           display: (!state.isOpening && !hasOpenFiles()) ? "flex" : "none",
           flex: "1",
-          "align-items": "center",
-          "justify-content": "center",
-          background: `var(--vscode-editor-background, ${tokens.colors.surface.canvas})`,
+          "min-height": "0",
+          overflow: "hidden",
         } as JSX.CSSProperties}
       >
-        <Card padding="lg" style={{ "text-align": "center", background: tokens.colors.surface.elevated }}>
-          <div style={{ 
-            display: "flex", 
-            "flex-direction": "column", 
-            "align-items": "center", 
-            gap: tokens.spacing.lg 
-          }}>
-            <Icon name="file" style={{ 
-              width: "32px", 
-              height: "32px", 
-              color: tokens.colors.text.muted 
-            }} />
-            <Text variant="body" style={{ color: tokens.colors.text.primary }}>
-              No files open
-            </Text>
-            <Text variant="muted" size="sm">
-              Press{" "}
-              <kbd 
-                style={{ 
-                  padding: "2px 6px",
-                  background: tokens.colors.interactive.active,
-                  border: `1px solid ${tokens.colors.border.default}`,
-                  "border-radius": tokens.radius.sm,
-                  "font-family": "var(--jb-font-mono)",
-                  "font-size": "var(--jb-text-muted-size)",
-                }}
-              >
-                Ctrl+P
-              </kbd>{" "}
-              to open a file
-            </Text>
-          </div>
-        </Card>
+        <WelcomeTab />
       </div>
       
       {/* Editor - always mounted but hidden via CSS to prevent cleanup race condition.
