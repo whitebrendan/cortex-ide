@@ -34,7 +34,7 @@ export const EditorBreadcrumbs: Component<EditorBreadcrumbsProps> = (props) => {
   });
 
   const segmentStyle = (): JSX.CSSProperties => ({
-    "font-family": "'Figtree', sans-serif",
+    "font-family": "var(--cortex-font-sans)",
     "font-size": "12px",
     "font-weight": "500",
     "line-height": "1em",

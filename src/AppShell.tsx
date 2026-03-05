@@ -47,7 +47,7 @@ function ErrorFallback(props: { error: Error; reset?: () => void }) {
     <div style={{
       "min-height": "100vh",
       "min-width": "100vw",
-      background: "#1e1e1e",
+      background: "var(--cortex-bg-primary, #141415)",
       display: "flex",
       "flex-direction": "column",
       "align-items": "center",

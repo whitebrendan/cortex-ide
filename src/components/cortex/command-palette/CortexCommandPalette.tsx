@@ -48,14 +48,14 @@ function HighlightedText(props: { text: string; matches: number[] }) {
 }
 
 const backdropStyle: JSX.CSSProperties = {
-  position: "fixed", inset: "0", "z-index": "2549", background: "transparent",
+  position: "fixed", inset: "0", "z-index": "var(--cortex-z-popover)", background: "transparent",
 };
 
 const popupStyle: JSX.CSSProperties = {
   position: "fixed", top: "44px", left: "50%", transform: "translateX(-50%)",
-  width: "720px", "max-width": "calc(100vw - 48px)", "z-index": "2550",
+  width: "720px", "max-width": "calc(100vw - 48px)", "z-index": "calc(var(--cortex-z-popover) + 1)",
   "border-radius": "var(--cortex-radius-md, 12px)", "font-size": "18px",
-  background: "var(--cortex-bg-elevated, #1e1e1e)", color: "var(--cortex-text-primary, #e0e0e0)",
+  background: "var(--cortex-bg-elevated, #252628)", color: "var(--cortex-text-primary, #FCFCFC)",
   border: "1px solid var(--cortex-border-default, rgba(255,255,255,0.08))",
   "box-shadow": "0 8px 32px rgba(0,0,0,0.4)", overflow: "hidden",
   "-webkit-app-region": "no-drag",
@@ -70,7 +70,7 @@ const searchIconStyle: JSX.CSSProperties = { color: "var(--cortex-text-muted)", 
 
 const inputStyle: JSX.CSSProperties = {
   flex: "1", height: "33px", background: "transparent", border: "none", outline: "none",
-  color: "var(--cortex-text-primary, #e0e0e0)", "font-size": "18px",
+  color: "var(--cortex-text-primary, #FCFCFC)", "font-size": "18px",
 };
 
 const listStyle: JSX.CSSProperties = {

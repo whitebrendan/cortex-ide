@@ -168,7 +168,7 @@ export function PeekView(props: PeekViewProps) {
     <Show when={props.visible && props.locations.length > 0}>
       <div class="overflow-hidden rounded border border-[var(--cortex-border,#333)] bg-[var(--cortex-bg-secondary,#252526)]">
         {/* Header */}
-        <div class="flex h-7 items-center justify-between border-b border-[var(--cortex-border,#333)] bg-[var(--cortex-bg-primary,#1e1e1e)] px-2 text-xs">
+        <div class="flex h-7 items-center justify-between border-b border-[var(--cortex-border,#333)] bg-[var(--cortex-bg-primary,#141415)] px-2 text-xs">
           <div class="flex items-center gap-2 overflow-hidden">
             <span class="truncate font-medium text-[var(--cortex-text-primary,#fff)]">
               {currentLocation() ? extractFileName(currentLocation()!.uri) : ""}

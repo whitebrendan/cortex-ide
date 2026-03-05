@@ -50,7 +50,7 @@ const containerStyle = (role: Message["role"], isError?: boolean): JSX.CSSProper
 });
 
 const contentStyle: JSX.CSSProperties = {
-  "font-family": "'Inter', sans-serif",
+  "font-family": "var(--cortex-font-sans)",
   "font-size": "14px",
   "line-height": "1.6",
   color: "var(--cortex-text-primary)",
@@ -189,7 +189,7 @@ export const CortexConversationMessage: Component<CortexConversationMessageProps
     background: "rgba(255,255,255,0.03)",
     "border-radius": "var(--cortex-radius-md)",
     "margin-top": "8px",
-    "font-family": "'Inter', sans-serif",
+    "font-family": "var(--cortex-font-sans)",
     "font-size": "12px",
     color: "var(--cortex-text-inactive)",
     cursor: "pointer",

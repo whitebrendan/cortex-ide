@@ -46,7 +46,7 @@ export const PullRequestPanel: Component = () => {
   ];
 
   return (
-    <div class="flex flex-col h-full bg-[#1e1e1e] text-white text-sm">
+    <div class="flex flex-col h-full bg-[var(--cortex-bg-primary)] text-white text-sm">
       {/* Auth Gate */}
       <Show when={!pr.state.isAuthenticated}>
         <div class="flex flex-col items-center justify-center flex-1 px-6 py-8 gap-4">

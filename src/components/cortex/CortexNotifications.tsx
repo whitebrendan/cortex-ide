@@ -162,7 +162,7 @@ export function CortexNotifications() {
             display: "flex",
             "flex-direction": "column-reverse",
             gap: "8px",
-            "z-index": "9999",
+            "z-index": "var(--cortex-z-toast)",
             "pointer-events": "none",
             "max-width": "400px",
           }}
@@ -188,7 +188,7 @@ export function CortexNotifications() {
             style={{
               position: "fixed",
               inset: "0",
-              "z-index": "9998",
+              "z-index": "var(--cortex-z-overlay)",
               background: "rgba(0,0,0,0.3)",
             }}
           />
@@ -205,7 +205,7 @@ export function CortexNotifications() {
               "box-shadow": "-4px 0 24px rgba(0,0,0,0.4)",
               display: "flex",
               "flex-direction": "column",
-              "z-index": "9999",
+              "z-index": "var(--cortex-z-modal)",
               "font-family": "var(--cortex-font-sans, Inter, sans-serif)",
               animation: "cortex-slide-in-right 200ms ease-out",
             }}

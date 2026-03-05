@@ -294,8 +294,8 @@ export const CortexDropdown: Component<CortexDropdownProps> = (props) => {
     color:
       opt.value === local.value
         ? "var(--cortex-accent-primary)"
-        : "#FCFCFC",
-    "font-family": "'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        : "var(--cortex-text-primary)",
+    "font-family": "var(--cortex-font-sans)",
     "font-size": "12px",
     "font-weight": "400",
     "line-height": "1.167em",

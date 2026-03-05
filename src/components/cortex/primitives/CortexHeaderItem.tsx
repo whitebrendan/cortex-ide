@@ -52,7 +52,7 @@ export const CortexHeaderItem: Component<CortexHeaderItemProps> = (props) => {
     background: getBackground(),
     "border-radius": "8px",
     color: isHighlighted() ? "var(--cortex-text-primary)" : "var(--cortex-text-secondary)",
-    "font-family": "'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    "font-family": "var(--cortex-font-sans)",
     "font-size": "14px",
     "font-weight": "500",
     "line-height": "1.15",
