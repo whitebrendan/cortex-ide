@@ -32,6 +32,102 @@ const COMMAND_TIMEOUTS: Record<string, number> = {
   default: 30000,
 };
 
+const CONNECT_TIMEOUT_MS = 10000;
+const SOCKET_IDLE_TIMEOUT_MS = 60000;
+const MIN_NON_PRIVILEGED_PORT = 1024;
+const MAX_PORT = 65535;
+
+function toError(value: unknown, fallbackMessage: string): Error {
+  if (value instanceof Error) {
+    return value;
+  }
+
+  if (typeof value === "string" && value.trim().length > 0) {
+    return new Error(value);
+  }
+
+  return new Error(fallbackMessage);
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function isValidRequestId(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0;
+}
+
+function parseSocketRequest(value: unknown): SocketRequest {
+  if (!isPlainObject(value)) {
+    throw new Error("Socket request must be an object");
+  }
+
+  const id = value.id;
+  if (!isValidRequestId(id)) {
+    throw new Error("Socket request id must be a positive integer");
+  }
+
+  const command = value.command;
+  if (typeof command !== "string" || command.trim().length === 0) {
+    throw new Error("Socket request command must be a non-empty string");
+  }
+
+  const payload = value.payload;
+  if (!isPlainObject(payload)) {
+    throw new Error("Socket request payload must be an object");
+  }
+
+  return {
+    id,
+    command: command.trim(),
+    payload,
+  };
+}
+
+function parseSocketResponse(value: unknown): SocketResponse {
+  if (!isPlainObject(value)) {
+    throw new Error("Socket response must be an object");
+  }
+
+  const success = value.success;
+  if (typeof success !== "boolean") {
+    throw new Error("Socket response success must be a boolean");
+  }
+
+  const response: SocketResponse = { success };
+
+  if ("id" in value) {
+    const id = value.id;
+    if (!isValidRequestId(id)) {
+      throw new Error("Socket response id must be a positive integer");
+    }
+    response.id = id;
+  }
+
+  if ("error" in value && value.error !== undefined) {
+    const errorMessage = value.error;
+    if (typeof errorMessage !== "string") {
+      throw new Error("Socket response error must be a string");
+    }
+    response.error = errorMessage;
+  }
+
+  if ("data" in value) {
+    response.data = value.data;
+  }
+
+  return response;
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export class CortexSocketClient {
   private socket: net.Socket | null = null;
   private host: string;
@@ -63,91 +159,193 @@ export class CortexSocketClient {
     this.connecting = true;
 
     return new Promise<void>((resolve, reject) => {
-      this.socket = new net.Socket();
-
-      this.socket.setTimeout(60000);
-
-      const connectTimeout = setTimeout(() => {
-        this.connecting = false;
-        if (this.socket) {
-          this.socket.destroy();
-          this.socket = null;
-        }
-        const err = new Error("Connection timeout");
-        reject(err);
-        this.drainConnectWaiters(err);
-      }, 10000);
+      const socket = new net.Socket();
+      this.socket = socket;
+      socket.setTimeout(SOCKET_IDLE_TIMEOUT_MS);
 
       let settled = false;
+      let connectTimeout: NodeJS.Timeout | null = null;
 
-      this.socket.on("connect", () => {
-        clearTimeout(connectTimeout);
-        this.connected = true;
-        this.connecting = false;
+      const clearConnectTimeout = (): void => {
+        if (connectTimeout) {
+          clearTimeout(connectTimeout);
+          connectTimeout = null;
+        }
+      };
+
+      const settle = (error: Error | null): void => {
+        if (settled) {
+          return;
+        }
+
         settled = true;
-        console.error(`[MCP Client] Connected to Cortex Desktop at ${this.host}:${this.port}`);
+        clearConnectTimeout();
+        this.connecting = false;
+
+        if (error) {
+          this.connected = false;
+          if (this.socket === socket) {
+            this.socket = null;
+          }
+          reject(error);
+          this.drainConnectWaiters(error);
+          return;
+        }
+
+        this.connected = true;
         resolve();
         this.drainConnectWaiters(null);
+      };
+
+      connectTimeout = setTimeout(() => {
+        const timeoutError = new Error("Connection timeout");
+        console.error(`[MCP Client] ${timeoutError.message}`);
+        settle(timeoutError);
+        socket.destroy();
+      }, CONNECT_TIMEOUT_MS);
+
+      socket.on("connect", () => {
+        if (this.socket !== socket) {
+          socket.destroy();
+          return;
+        }
+
+        console.error(`[MCP Client] Connected to Cortex Desktop at ${this.host}:${this.port}`);
+        settle(null);
       });
 
-      this.socket.on("data", (data) => {
-        this.handleData(data);
-      });
+      socket.on("data", (data) => {
+        if (this.socket !== socket) {
+          return;
+        }
 
-      this.socket.on("timeout", () => {
-        console.error("[MCP Client] Socket idle timeout — destroying connection");
-        if (this.socket) {
-          this.socket.destroy();
+        try {
+          this.handleData(data);
+        } catch (error) {
+          const err = toError(error, "Failed to process socket data");
+          console.error("[MCP Client] Failed to process socket data:", err.message);
+          this.rejectAllPending(err);
         }
       });
 
-      this.socket.on("error", (err) => {
-        clearTimeout(connectTimeout);
+      socket.on("timeout", () => {
+        if (this.socket !== socket) {
+          return;
+        }
+
+        console.error("[MCP Client] Socket idle timeout — destroying connection");
+        socket.destroy(new Error("Socket idle timeout"));
+      });
+
+      socket.on("error", (error) => {
+        if (this.socket !== socket) {
+          return;
+        }
+
+        const err = toError(error, "Socket error");
         console.error("[MCP Client] Socket error:", err.message);
         this.connected = false;
         this.connecting = false;
-
+        this.socket = null;
+        this.responseBuffer = "";
         this.rejectAllPending(err);
 
-        if (!settled) {
-          settled = true;
-          reject(err);
-          this.drainConnectWaiters(err);
-        }
+        settle(err);
       });
 
-      this.socket.on("close", () => {
+      socket.on("close", () => {
+        if (this.socket !== socket) {
+          return;
+        }
+
         console.error("[MCP Client] Connection closed");
-        const wasClosed = !this.connected;
         this.connected = false;
         this.connecting = false;
         this.socket = null;
         this.responseBuffer = "";
 
-        this.rejectAllPending(new Error("Connection closed"));
+        const closeError = new Error("Connection closed");
+        this.rejectAllPending(closeError);
 
-        if (!settled && !wasClosed) {
-          settled = true;
-          const err = new Error("Connection closed before established");
-          reject(err);
-          this.drainConnectWaiters(err);
+        if (!settled) {
+          settle(new Error("Connection closed before established"));
         }
       });
 
-      this.socket.connect(this.port, this.host);
+      try {
+        socket.connect(this.port, this.host);
+      } catch (error) {
+        const err = toError(error, "Connection failed");
+        console.error("[MCP Client] Socket connect failed:", err.message);
+        this.connected = false;
+        this.connecting = false;
+        this.socket = null;
+        this.responseBuffer = "";
+        this.rejectAllPending(err);
+        settle(err);
+      }
     });
   }
 
   private drainConnectWaiters(err: Error | null): void {
     const waiters = this.connectWaiters;
     this.connectWaiters = [];
-    for (const w of waiters) {
+    for (const waiter of waiters) {
       if (err) {
-        w.reject(err);
+        waiter.reject(err);
       } else {
-        w.resolve();
+        waiter.resolve();
       }
     }
+  }
+
+  private takePendingRequest(requestId: number): PendingRequest | null {
+    const pending = this.pendingRequests.get(requestId);
+    if (!pending) {
+      return null;
+    }
+
+    this.pendingRequests.delete(requestId);
+    clearTimeout(pending.timeoutId);
+    return pending;
+  }
+
+  private resolvePendingRequest(requestId: number, response: SocketResponse): boolean {
+    const pending = this.takePendingRequest(requestId);
+    if (!pending) {
+      return false;
+    }
+
+    pending.resolve(response);
+    return true;
+  }
+
+  private rejectPendingRequest(requestId: number, error: Error): boolean {
+    const pending = this.takePendingRequest(requestId);
+    if (!pending) {
+      return false;
+    }
+
+    pending.reject(error);
+    return true;
+  }
+
+  private resolveFirstPendingRequest(response: SocketResponse): boolean {
+    const firstEntry = this.pendingRequests.entries().next();
+    if (firstEntry.done) {
+      return false;
+    }
+
+    return this.resolvePendingRequest(firstEntry.value[0], response);
+  }
+
+  private rejectFirstPendingRequest(error: Error): boolean {
+    const firstEntry = this.pendingRequests.entries().next();
+    if (firstEntry.done) {
+      return false;
+    }
+
+    return this.rejectPendingRequest(firstEntry.value[0], error);
   }
 
   private handleData(data: Buffer): void {
@@ -158,44 +356,38 @@ export class CortexSocketClient {
       const jsonStr = this.responseBuffer.substring(0, newlineIndex);
       this.responseBuffer = this.responseBuffer.substring(newlineIndex + 1);
 
-      if (!jsonStr.trim()) continue;
+      if (!jsonStr.trim()) {
+        continue;
+      }
 
       try {
-        const response = JSON.parse(jsonStr) as SocketResponse;
+        const parsed = JSON.parse(jsonStr) as unknown;
+        const response = parseSocketResponse(parsed);
 
-        if (response.id != null && this.pendingRequests.has(response.id)) {
-          const pending = this.pendingRequests.get(response.id)!;
-          this.pendingRequests.delete(response.id);
-          clearTimeout(pending.timeoutId);
-          pending.resolve(response);
-        } else {
-          const firstEntry = this.pendingRequests.entries().next();
-          if (!firstEntry.done) {
-            const [id, pending] = firstEntry.value;
-            this.pendingRequests.delete(id);
-            clearTimeout(pending.timeoutId);
-            pending.resolve(response);
+        if (response.id != null) {
+          if (!this.resolvePendingRequest(response.id, response)) {
+            console.error(`[MCP Client] Received response for unknown request id: ${response.id}`);
           }
+          continue;
         }
-      } catch (e) {
-        console.error("[MCP Client] Failed to parse response:", e, "Raw:", jsonStr.substring(0, 200));
-        const firstEntry = this.pendingRequests.entries().next();
-        if (!firstEntry.done) {
-          const [id, pending] = firstEntry.value;
-          this.pendingRequests.delete(id);
-          clearTimeout(pending.timeoutId);
-          pending.reject(new Error(`Failed to parse response: ${e}`));
+
+        if (!this.resolveFirstPendingRequest(response)) {
+          console.error("[MCP Client] Received response but no pending requests are waiting");
+        }
+      } catch (error) {
+        const err = toError(error, "Failed to parse socket response");
+        console.error("[MCP Client] Failed to parse response:", err.message, "Raw:", jsonStr.substring(0, 200));
+        if (!this.rejectFirstPendingRequest(new Error(`Invalid socket response: ${err.message}`))) {
+          console.error("[MCP Client] Dropped invalid response because no pending request exists");
         }
       }
     }
   }
 
   private rejectAllPending(error: Error): void {
-    const entries = Array.from(this.pendingRequests.entries());
-    this.pendingRequests.clear();
-    for (const [, pending] of entries) {
-      clearTimeout(pending.timeoutId);
-      pending.reject(error);
+    const requestIds = Array.from(this.pendingRequests.keys());
+    for (const requestId of requestIds) {
+      this.rejectPendingRequest(requestId, error);
     }
   }
 
@@ -203,40 +395,55 @@ export class CortexSocketClient {
     return COMMAND_TIMEOUTS[command] ?? COMMAND_TIMEOUTS["default"];
   }
 
-  async sendCommand(command: string, payload: Record<string, unknown> = {}): Promise<SocketResponse> {
-    if (!this.connected || !this.socket) {
-      let lastErr: unknown;
-      for (let attempt = 0; attempt <= this.maxReconnectAttempts; attempt++) {
-        try {
-          if (attempt > 0) {
-            console.error(`[MCP Client] Reconnect attempt ${attempt}/${this.maxReconnectAttempts}`);
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-          }
-          await this.connect();
-          break;
-        } catch (err) {
-          lastErr = err;
-          if (attempt === this.maxReconnectAttempts) {
-            throw lastErr;
-          }
+  private async ensureConnectedWithRetry(): Promise<void> {
+    if (this.connected && this.socket) {
+      return;
+    }
+
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt <= this.maxReconnectAttempts; attempt++) {
+      try {
+        if (attempt > 0) {
+          console.error(`[MCP Client] Reconnect attempt ${attempt}/${this.maxReconnectAttempts}`);
+          await wait(1000 * attempt);
         }
+
+        await this.connect();
+        return;
+      } catch (error) {
+        lastError = toError(error, "Failed to connect to Cortex Desktop");
       }
     }
 
-    return new Promise((resolve, reject) => {
+    throw lastError ?? new Error("Failed to connect to Cortex Desktop");
+  }
+
+  async sendCommand(command: string, payload: Record<string, unknown> = {}): Promise<SocketResponse> {
+    const commandName = typeof command === "string" ? command.trim() : "";
+    if (!commandName) {
+      throw new Error("Command must be a non-empty string");
+    }
+
+    if (!isPlainObject(payload)) {
+      throw new Error("Payload must be an object");
+    }
+
+    await this.ensureConnectedWithRetry();
+
+    return new Promise<SocketResponse>((resolve, reject) => {
       if (!this.socket || !this.connected) {
         reject(new Error("Socket not connected"));
         return;
       }
 
       const requestId = this.nextRequestId++;
-      const timeout = this.getTimeout(command);
+      const timeout = this.getTimeout(commandName);
 
       const timeoutId = setTimeout(() => {
-        if (this.pendingRequests.has(requestId)) {
-          this.pendingRequests.delete(requestId);
-          console.error(`[MCP Client] Request timeout for command: ${command} (${timeout}ms)`);
-          reject(new Error(`Request timed out after ${timeout}ms`));
+        const timeoutError = new Error(`Request timed out after ${timeout}ms`);
+        if (this.rejectPendingRequest(requestId, timeoutError)) {
+          console.error(`[MCP Client] Request timeout for command: ${commandName} (${timeout}ms)`);
         }
       }, timeout);
 
@@ -244,36 +451,56 @@ export class CortexSocketClient {
         resolve,
         reject,
         timeoutId,
-        command,
+        command: commandName,
       });
 
-      const request: SocketRequest = { id: requestId, command, payload };
-      const json = JSON.stringify(request) + "\n";
+      let request: SocketRequest;
+      try {
+        request = parseSocketRequest({ id: requestId, command: commandName, payload });
+      } catch (error) {
+        const validationError = toError(error, "Invalid socket request");
+        this.rejectPendingRequest(requestId, validationError);
+        return;
+      }
 
-      this.socket.write(json, (err) => {
-        if (err) {
-          if (this.pendingRequests.has(requestId)) {
-            const pending = this.pendingRequests.get(requestId)!;
-            this.pendingRequests.delete(requestId);
-            clearTimeout(pending.timeoutId);
-            pending.reject(err);
+      let json: string;
+      try {
+        json = JSON.stringify(request) + "\n";
+      } catch (error) {
+        const serializationError = toError(error, "Failed to serialize socket request");
+        this.rejectPendingRequest(requestId, serializationError);
+        return;
+      }
+
+      try {
+        this.socket.write(json, (error) => {
+          if (!error) {
+            return;
           }
-        }
-      });
+
+          const writeError = toError(error, `Failed to send command: ${commandName}`);
+          this.rejectPendingRequest(requestId, writeError);
+        });
+      } catch (error) {
+        const writeError = toError(error, `Failed to send command: ${commandName}`);
+        this.rejectPendingRequest(requestId, writeError);
+      }
     });
   }
 
   disconnect(): void {
-    this.rejectAllPending(new Error("Client disconnected"));
+    const disconnectError = new Error("Client disconnected");
+    this.rejectAllPending(disconnectError);
+    this.connected = false;
+    this.connecting = false;
 
     if (this.socket) {
       this.socket.destroy();
       this.socket = null;
-      this.connected = false;
     }
 
     this.responseBuffer = "";
-    this.connectWaiters = [];
+    this.drainConnectWaiters(disconnectError);
   }
 
   isConnected(): boolean {
@@ -281,10 +508,24 @@ export class CortexSocketClient {
   }
 }
 
+function isAllowedPort(port: number): boolean {
+  return Number.isSafeInteger(port) && port >= MIN_NON_PRIVILEGED_PORT && port <= MAX_PORT;
+}
+
 function parsePort(value: string | undefined, fallback: number): number {
-  if (value == null) return fallback;
-  const parsed = parseInt(value, 10);
-  return Number.isFinite(parsed) && parsed > 0 && parsed <= 65535 ? parsed : fallback;
+  const safeFallback = isAllowedPort(fallback) ? fallback : 4000;
+
+  if (typeof value !== "string") {
+    return safeFallback;
+  }
+
+  const trimmed = value.trim();
+  if (!/^\d+$/.test(trimmed)) {
+    return safeFallback;
+  }
+
+  const parsed = Number(trimmed);
+  return isAllowedPort(parsed) ? parsed : safeFallback;
 }
 
 // Singleton instance
