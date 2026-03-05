@@ -298,8 +298,8 @@ describe("CortexEditorTabs", () => {
         <CortexEditorTabs tabs={tabs} activeTabId="1" />
       ));
 
-      const svgElements = container.querySelectorAll("svg");
-      expect(svgElements.length).toBeGreaterThan(0);
+      const imgElements = container.querySelectorAll("img");
+      expect(imgElements.length).toBeGreaterThan(0);
     });
 
     it("should render React icon for .tsx files", () => {
@@ -309,8 +309,8 @@ describe("CortexEditorTabs", () => {
         <CortexEditorTabs tabs={tabs} activeTabId="1" />
       ));
 
-      const svgElements = container.querySelectorAll("svg");
-      expect(svgElements.length).toBeGreaterThan(0);
+      const imgElements = container.querySelectorAll("img");
+      expect(imgElements.length).toBeGreaterThan(0);
     });
 
     it("should render Rust icon for .rs files", () => {
@@ -320,8 +320,8 @@ describe("CortexEditorTabs", () => {
         <CortexEditorTabs tabs={tabs} activeTabId="1" />
       ));
 
-      const svgElements = container.querySelectorAll("svg");
-      expect(svgElements.length).toBeGreaterThan(0);
+      const imgElements = container.querySelectorAll("img");
+      expect(imgElements.length).toBeGreaterThan(0);
     });
 
     it("should render TOML icon for Cargo.toml", () => {
@@ -331,8 +331,8 @@ describe("CortexEditorTabs", () => {
         <CortexEditorTabs tabs={tabs} activeTabId="1" />
       ));
 
-      const svgElements = container.querySelectorAll("svg");
-      expect(svgElements.length).toBeGreaterThan(0);
+      const imgElements = container.querySelectorAll("img");
+      expect(imgElements.length).toBeGreaterThan(0);
     });
 
     it("should render default file icon for unknown extensions", () => {
@@ -342,8 +342,8 @@ describe("CortexEditorTabs", () => {
         <CortexEditorTabs tabs={tabs} activeTabId="1" />
       ));
 
-      const svgElements = container.querySelectorAll("svg");
-      expect(svgElements.length).toBeGreaterThan(0);
+      const imgElements = container.querySelectorAll("img");
+      expect(imgElements.length).toBeGreaterThan(0);
     });
   });
 
