@@ -26,6 +26,32 @@ interface TruncationConfig {
   truncateMessage?: string;
 }
 
+type ToolTextContent = {
+  type: "text";
+  text: string;
+};
+
+type ToolImageContent = {
+  type: "image";
+  data: string;
+  mimeType: string;
+};
+
+type ToolContent = ToolTextContent | ToolImageContent;
+
+interface ToolResult {
+  content: ToolContent[];
+  isError?: boolean;
+}
+
+interface ResourceTextResult {
+  contents: Array<{
+    uri: string;
+    mimeType: string;
+    text: string;
+  }>;
+}
+
 const DEFAULT_TRUNCATION: TruncationConfig = {
   enabled: true,
   maxLength: 2000,
@@ -33,27 +59,65 @@ const DEFAULT_TRUNCATION: TruncationConfig = {
   truncateMessage: "... [truncated]",
 };
 
+function normalizePositiveLimit(limit: number | undefined): number | undefined {
+  if (limit == null || !Number.isFinite(limit)) {
+    return undefined;
+  }
+
+  const normalized = Math.floor(limit);
+  return normalized > 0 ? normalized : undefined;
+}
+
 function truncateText(text: string, config: TruncationConfig = DEFAULT_TRUNCATION): string {
   if (!config.enabled || !text) {
     return text;
   }
 
-  let result = text;
   const suffix = config.truncateMessage ?? "";
+  const maxLines = normalizePositiveLimit(config.maxLines);
+  const maxLength = normalizePositiveLimit(config.maxLength);
 
-  if (config.maxLines != null && config.maxLines > 0) {
-    const lines = result.split('\n');
-    if (lines.length > config.maxLines) {
-      result = lines.slice(0, config.maxLines).join('\n');
-      if (suffix) {
-        result += '\n' + suffix;
+  let result = text;
+  let wasLineTruncated = false;
+
+  if (maxLines != null) {
+    let lineCount = 1;
+    let cutIndex = -1;
+
+    for (let i = 0; i < result.length; i++) {
+      if (result.charCodeAt(i) !== 10) {
+        continue;
       }
+
+      if (lineCount >= maxLines) {
+        cutIndex = i;
+        break;
+      }
+
+      lineCount += 1;
+    }
+
+    if (cutIndex >= 0) {
+      result = result.slice(0, cutIndex);
+      wasLineTruncated = true;
     }
   }
 
-  if (config.maxLength != null && config.maxLength > 0 && result.length > config.maxLength) {
-    const cutAt = Math.max(0, config.maxLength - suffix.length);
-    result = result.substring(0, cutAt) + suffix;
+  if (wasLineTruncated && suffix) {
+    result = `${result}\n${suffix}`;
+  }
+
+  if (maxLength != null && result.length > maxLength) {
+    if (!suffix) {
+      return result.slice(0, maxLength);
+    }
+
+    const available = maxLength - suffix.length;
+    if (available <= 0) {
+      return suffix.slice(0, maxLength);
+    }
+
+    return `${result.slice(0, available)}${suffix}`;
   }
 
   return result;
@@ -61,6 +125,7 @@ function truncateText(text: string, config: TruncationConfig = DEFAULT_TRUNCATIO
 
 // Workspace root from environment or cwd — normalized without trailing separator
 const WORKSPACE_ROOT = path.resolve(process.env.CORTEX_WORKSPACE_ROOT || process.cwd());
+let workspaceRootRealPathPromise: Promise<string> | null = null;
 
 // Create MCP server instance
 const server = new McpServer({
@@ -68,19 +133,84 @@ const server = new McpServer({
   version: "1.0.0",
 });
 
+// Helper: format a caught error for tool responses
+function errorText(e: unknown): string {
+  return e instanceof Error ? e.message : String(e);
+}
+
+function isPathInside(basePath: string, targetPath: string): boolean {
+  const relative = path.relative(basePath, targetPath);
+  return relative === "" || (!relative.startsWith(`..${path.sep}`) && relative !== ".." && !path.isAbsolute(relative));
+}
+
+async function getWorkspaceRootRealPath(): Promise<string> {
+  const realPathPromise = workspaceRootRealPathPromise ?? fs.realpath(WORKSPACE_ROOT).catch((e: unknown) => {
+    throw new Error(`Workspace root is not accessible: ${errorText(e)}`);
+  });
+
+  workspaceRootRealPathPromise = realPathPromise;
+  return realPathPromise;
+}
+
+async function resolveNearestExistingPath(targetPath: string): Promise<{ existingPath: string; remaining: string[] }> {
+  const remaining: string[] = [];
+  let currentPath = targetPath;
+
+  while (true) {
+    try {
+      const existingPath = await fs.realpath(currentPath);
+      remaining.reverse();
+      return { existingPath, remaining };
+    } catch (e) {
+      const err = e as { code?: string };
+      if (err.code !== "ENOENT") {
+        throw e;
+      }
+
+      const parent = path.dirname(currentPath);
+      if (parent === currentPath) {
+        throw new Error(`Unable to resolve path: ${targetPath}`);
+      }
+
+      remaining.push(path.basename(currentPath));
+      currentPath = parent;
+    }
+  }
+}
+
 // Helper: resolve a path relative to workspace root, preventing path traversal
-function resolveSafePath(inputPath: string): string {
+async function resolveSafePath(inputPath: string): Promise<string> {
+  if (typeof inputPath !== "string" || !inputPath) {
+    throw new Error("Path must be a non-empty string");
+  }
+
+  if (inputPath.includes("\0")) {
+    throw new Error("Path contains null bytes");
+  }
+
   const resolved = path.resolve(WORKSPACE_ROOT, inputPath);
-  if (resolved !== WORKSPACE_ROOT && !resolved.startsWith(WORKSPACE_ROOT + path.sep)) {
+  if (!isPathInside(WORKSPACE_ROOT, resolved)) {
     throw new Error(`Path traversal denied: ${inputPath}`);
   }
+
+  const workspaceRootRealPath = await getWorkspaceRootRealPath();
+  const { existingPath, remaining } = await resolveNearestExistingPath(resolved);
+  const canonicalTargetPath = path.resolve(existingPath, ...remaining);
+
+  if (!isPathInside(workspaceRootRealPath, canonicalTargetPath)) {
+    throw new Error(`Path escapes workspace root via symlink: ${inputPath}`);
+  }
+
   return resolved;
 }
 
 // Helper: detect MIME type from file extension
 function mimeFromExt(filePath: string): string {
-  if (!filePath) return "text/plain";
+  if (!filePath) return "application/octet-stream";
+
   const ext = path.extname(filePath).toLowerCase();
+  if (!ext) return "text/plain";
+
   const mimeMap: Record<string, string> = {
     ".ts": "text/typescript", ".tsx": "text/typescript",
     ".js": "text/javascript", ".jsx": "text/javascript",
@@ -97,43 +227,80 @@ function mimeFromExt(filePath: string): string {
     ".sql": "text/x-sql",
     ".txt": "text/plain",
   };
-  return mimeMap[ext] ?? "text/plain";
+
+  return mimeMap[ext] ?? "application/octet-stream";
 }
 
-// Helper: format a caught error for tool responses
-function errorText(e: unknown): string {
-  return e instanceof Error ? e.message : String(e);
+function toolErrorResult(message: string): ToolResult {
+  return {
+    content: [{ type: "text", text: message }],
+    isError: true,
+  };
 }
+
+type ToolSchemaShape = z.ZodRawShape;
+type ToolArgs<TSchema extends ToolSchemaShape> = z.infer<z.ZodObject<TSchema>>;
+
+function registerTool<TSchema extends ToolSchemaShape>(
+  name: string,
+  description: string,
+  schema: TSchema,
+  handler: (args: ToolArgs<TSchema>) => Promise<ToolResult>,
+): void {
+  const wrapped = async (args: ToolArgs<TSchema>): Promise<ToolResult> => {
+    try {
+      return await handler(args);
+    } catch (e) {
+      return toolErrorResult(`Error: ${errorText(e)}`);
+    }
+  };
+
+  (server.tool as any)(name, description, schema, wrapped);
+}
+
+function registerResource<TParams extends Record<string, unknown>>(
+  name: string,
+  template: ResourceTemplate,
+  handler: (uri: URL, params: TParams) => Promise<ResourceTextResult>,
+): void {
+  const wrapped = async (uri: URL, params: TParams): Promise<ResourceTextResult> => {
+    try {
+      return await handler(uri, params);
+    } catch (e) {
+      return {
+        contents: [{
+          uri: uri.href,
+          mimeType: "text/plain",
+          text: `Error reading resource: ${errorText(e)}`,
+        }],
+      };
+    }
+  };
+
+  (server.resource as any)(name, template, wrapped);
+}
+
 
 // Register workspace resource templates
 function registerResources() {
-  server.resource(
+  registerResource(
     "workspace-file",
     new ResourceTemplate("cortex://workspace/{+filepath}", { list: undefined }),
     async (uri, params) => {
-      try {
-        const filepath = params.filepath;
-        if (typeof filepath !== "string" || !filepath) {
-          throw new Error("Invalid filepath parameter");
-        }
-        const safePath = resolveSafePath(filepath);
-        const content = await fs.readFile(safePath, "utf-8");
-        return {
-          contents: [{
-            uri: uri.href,
-            mimeType: mimeFromExt(safePath),
-            text: content,
-          }],
-        };
-      } catch (e) {
-        return {
-          contents: [{
-            uri: uri.href,
-            mimeType: "text/plain",
-            text: `Error reading resource: ${errorText(e)}`,
-          }],
-        };
+      const filepath = params.filepath;
+      if (typeof filepath !== "string" || !filepath) {
+        throw new Error("Invalid filepath parameter");
       }
+
+      const safePath = await resolveSafePath(filepath);
+      const content = await fs.readFile(safePath, "utf-8");
+      return {
+        contents: [{
+          uri: uri.href,
+          mimeType: mimeFromExt(safePath),
+          text: content,
+        }],
+      };
     }
   );
 }
@@ -141,7 +308,7 @@ function registerResources() {
 // Register tools
 function registerTools() {
   // Ping - test connectivity
-  server.tool(
+  registerTool(
     "ping",
     "Test connectivity to Cortex Desktop",
     {},
@@ -161,7 +328,7 @@ function registerTools() {
   );
 
   // Take Screenshot
-  server.tool(
+  registerTool(
     "take_screenshot",
     "Capture a screenshot of the Cortex Desktop window. Supports compression to reduce file size.",
     {
@@ -208,7 +375,7 @@ function registerTools() {
   );
 
   // Get DOM
-  server.tool(
+  registerTool(
     "get_dom",
     "Get the HTML DOM content from Cortex Desktop",
     {
@@ -242,7 +409,7 @@ function registerTools() {
   );
 
   // Execute JavaScript
-  server.tool(
+  registerTool(
     "execute_js",
     "Execute JavaScript code in Cortex Desktop",
     {
@@ -276,7 +443,7 @@ function registerTools() {
   );
 
   // Manage Window
-  server.tool(
+  registerTool(
     "manage_window",
     "Control the Cortex Desktop window (minimize, maximize, move, resize, etc.)",
     {
@@ -318,7 +485,7 @@ function registerTools() {
   );
 
   // Text Input
-  server.tool(
+  registerTool(
     "text_input",
     "Simulate keyboard text input",
     {
@@ -352,7 +519,7 @@ function registerTools() {
   );
 
   // Mouse Movement
-  server.tool(
+  registerTool(
     "mouse_action",
     "Simulate mouse actions (move, click, scroll)",
     {
@@ -392,7 +559,7 @@ function registerTools() {
   );
 
   // LocalStorage
-  server.tool(
+  registerTool(
     "local_storage",
     "Manage localStorage in Cortex Desktop",
     {
@@ -430,7 +597,7 @@ function registerTools() {
   );
 
   // Get Element Position
-  server.tool(
+  registerTool(
     "get_element_position",
     "Get the screen position of a DOM element",
     {
@@ -464,7 +631,7 @@ function registerTools() {
   );
 
   // Send Text to Element
-  server.tool(
+  registerTool(
     "send_text_to_element",
     "Send text to a specific DOM element (focuses and sets value)",
     {
@@ -500,7 +667,7 @@ function registerTools() {
   );
 
   // List Windows
-  server.tool(
+  registerTool(
     "list_windows",
     "List all available windows in Cortex Desktop",
     {},
@@ -532,7 +699,7 @@ function registerTools() {
   // ========================================================================
 
   // Read File
-  server.tool(
+  registerTool(
     "read_file",
     "Read the contents of a file from the workspace. Supports optional line range.",
     {
@@ -542,14 +709,14 @@ function registerTools() {
     },
     async (args) => {
       try {
-        const safePath = resolveSafePath(args.path);
+        const safePath = await resolveSafePath(args.path);
         const raw = await fs.readFile(safePath, "utf-8");
         const allLines = raw.split("\n");
         const start = Math.max(0, (args.start_line ?? 1) - 1);
         const selected = args.max_lines != null
           ? allLines.slice(start, start + args.max_lines)
           : allLines.slice(start);
-        const numbered = selected.map((line, i) => `${start + i + 1}: ${line}`);
+        const numbered = selected.map((line: string, i: number) => `${start + i + 1}: ${line}`);
         const text = truncateText(numbered.join("\n"), { enabled: true, maxLength: 50000, maxLines: 500, truncateMessage: "... [truncated]" });
         return {
           content: [{ type: "text" as const, text }],
@@ -564,7 +731,7 @@ function registerTools() {
   );
 
   // Write File
-  server.tool(
+  registerTool(
     "write_file",
     "Write content to a file in the workspace. Creates parent directories if needed.",
     {
@@ -573,7 +740,7 @@ function registerTools() {
     },
     async (args) => {
       try {
-        const safePath = resolveSafePath(args.path);
+        const safePath = await resolveSafePath(args.path);
         const dir = path.dirname(safePath);
         await fs.mkdir(dir, { recursive: true });
         await fs.writeFile(safePath, args.content, "utf-8");
@@ -590,7 +757,7 @@ function registerTools() {
   );
 
   // List Directory
-  server.tool(
+  registerTool(
     "list_directory",
     "List files and directories at a given path in the workspace.",
     {
@@ -599,7 +766,7 @@ function registerTools() {
     },
     async (args) => {
       try {
-        const safePath = resolveSafePath(args.path);
+        const safePath = await resolveSafePath(args.path);
         const entries = await fs.readdir(safePath, { withFileTypes: true });
         const results: Array<{ name: string; type: string; path: string }> = [];
         for (const entry of entries) {
@@ -627,7 +794,7 @@ function registerTools() {
   );
 
   // Search Code
-  server.tool(
+  registerTool(
     "search_code",
     "Search for a regex pattern across files in the workspace. Returns matching lines with file paths and line numbers.",
     {
@@ -638,7 +805,7 @@ function registerTools() {
     },
     async (args) => {
       try {
-        const searchDir = resolveSafePath(args.directory ?? ".");
+        const searchDir = await resolveSafePath(args.directory ?? ".");
         const globPattern = args.file_pattern || "**/*";
         const files = await glob(globPattern, {
           cwd: searchDir,
@@ -684,7 +851,7 @@ function registerTools() {
   );
 
   // Run Terminal Command
-  server.tool(
+  registerTool(
     "run_terminal_command",
     "Execute a shell command in the workspace. Returns stdout, stderr, and exit code.",
     {
@@ -695,7 +862,7 @@ function registerTools() {
     },
     async (args) => {
       try {
-        const cwd = args.cwd ? resolveSafePath(args.cwd) : WORKSPACE_ROOT;
+        const cwd = args.cwd ? await resolveSafePath(args.cwd) : WORKSPACE_ROOT;
         const timeout = args.timeout_ms ?? 30000;
 
         const result = await new Promise<{ stdout: string; stderr: string; exitCode: number | null }>((resolve, reject) => {
@@ -743,7 +910,7 @@ function registerTools() {
   );
 
   // Get Diagnostics (via Cortex Desktop socket)
-  server.tool(
+  registerTool(
     "get_diagnostics",
     "Get diagnostics (errors, warnings) from the Cortex Desktop workspace. Requires Cortex Desktop to be running.",
     {
@@ -792,7 +959,7 @@ function registerTools() {
   );
 
   // Get Open Files (via Cortex Desktop socket)
-  server.tool(
+  registerTool(
     "get_open_files",
     "Get the list of currently open files in Cortex Desktop. Requires Cortex Desktop to be running.",
     {},
