@@ -7,6 +7,7 @@ import { initializeWindowStorage, getWindowLabel } from "@/utils/windowStorage";
 // AppShell is minimal (~1KB) and lazy-loads AppCore (with 68 providers) after render
 import AppShell from "./AppShell";
 import "@/styles/index.css";
+import "@/styles/tokens.css";
 
 // ============================================================================
 // PERFORMANCE TRACKING: Startup Metrics
