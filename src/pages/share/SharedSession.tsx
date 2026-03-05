@@ -24,6 +24,7 @@ export default function SharedSessionPage() {
   const [passwordError, setPasswordError] = createSignal<string | null>(null);
   const [passwordLoading, setPasswordLoading] = createSignal(false);
   const [showReportModal, setShowReportModal] = createSignal(false);
+  const [reportError, setReportError] = createSignal<string | null>(null);
   const [reportReason, setReportReason] = createSignal("");
   const [reportSubmitting, setReportSubmitting] = createSignal(false);
   const [reportSuccess, setReportSuccess] = createSignal(false);
@@ -84,20 +85,23 @@ export default function SharedSessionPage() {
     const token = params.token;
     if (!token || !reportReason().trim()) return;
 
-    try {
-      setReportSubmitting(true);
-      await reportShare(token, reportReason());
+    setReportSubmitting(true);
+    setReportError(null);
+
+    const result = await reportShare(token, reportReason());
+    if (result.success) {
       setReportSuccess(true);
       setTimeout(() => {
         setShowReportModal(false);
         setReportSuccess(false);
         setReportReason("");
+        setReportError(null);
       }, 2000);
-    } catch (e) {
-      console.error("Failed to report:", e);
-    } finally {
-      setReportSubmitting(false);
+    } else {
+      setReportError(result.error);
     }
+
+    setReportSubmitting(false);
   };
 
   const containerStyle: JSX.CSSProperties = {
@@ -232,12 +236,15 @@ export default function SharedSessionPage() {
         title="Report Session"
         size="sm"
         footer={
-          <Show when={!reportSuccess()} fallback={
-            <div style={{ color: "var(--state-success)", display: "flex", "align-items": "center", gap: "8px" }}>
-              <Icon name="check" size={16} />
-              <span>Report submitted. Thank you!</span>
-            </div>
-          }>
+          <Show
+            when={!reportSuccess()}
+            fallback={
+              <div style={{ color: "var(--state-success)", display: "flex", "align-items": "center", gap: "8px" }}>
+                <Icon name="check" size={16} />
+                <span>Report submitted. Thank you!</span>
+              </div>
+            }
+          >
             <>
               <Button variant="ghost" onClick={() => setShowReportModal(false)}>
                 Cancel
@@ -257,6 +264,11 @@ export default function SharedSessionPage() {
         <p style={{ "font-size": "14px", color: "var(--text-muted)", "margin-bottom": "16px" }}>
           If this session contains inappropriate content, please let us know.
         </p>
+        <Show when={reportError() && !reportSuccess()}>
+          <p style={{ "font-size": "13px", color: "var(--state-error)", "margin-bottom": "12px" }}>
+            {reportError()}
+          </p>
+        </Show>
         <textarea
           style={textareaStyle}
           placeholder="Describe the issue..."

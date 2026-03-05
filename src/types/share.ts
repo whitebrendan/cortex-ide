@@ -52,3 +52,24 @@ export interface ShareResponse {
   shareUrl: string;
   expiresAt?: string;
 }
+
+/** Generic envelope for share mutation responses */
+export type ShareMutationResult<T> =
+  | {
+      success: true;
+      data: T;
+    }
+  | {
+      success: false;
+      error: string;
+      status?: number;
+    };
+
+/** Result from creating a share */
+export type CreateShareResult = ShareMutationResult<ShareResponse>;
+
+/** Result from revoking a share */
+export type RevokeShareResult = ShareMutationResult<null>;
+
+/** Result from reporting a share */
+export type ReportShareResult = ShareMutationResult<null>;
