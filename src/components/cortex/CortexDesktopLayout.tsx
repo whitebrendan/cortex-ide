@@ -186,6 +186,18 @@ export function CortexDesktopLayout(props: ParentProps) {
   const projectName = createMemo(() => { const p = projectPath(); if (!p || p === ".") return "Cortex"; return p.replace(/\\/g, "/").split("/").pop() || "Cortex"; });
   const activeFile = createMemo(() => editor.state.openFiles.find(f => f.id === editor.state.activeFileId));
 
+  createEffect(() => {
+    const file = activeFile();
+    const project = projectName();
+    if (file?.name) {
+      document.title = `Cortex - ${file.name}`;
+    } else if (project && project !== "Cortex") {
+      document.title = `Cortex - ${project}`;
+    } else {
+      document.title = "Cortex";
+    }
+  });
+
   const workspaceFolders = createMemo((): WorkspaceFolderInfo[] => {
     if (!workspace) return [];
     return workspace.folders().map(f => ({ path: f.path, name: f.name }));
