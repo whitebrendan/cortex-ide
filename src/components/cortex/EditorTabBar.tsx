@@ -14,6 +14,7 @@ import { Component, JSX, For, Show, createSignal, onCleanup } from "solid-js";
 import { CortexIcon } from "./primitives";
 import type { EditorTab } from "./CortexEditorTabs";
 import { ContextMenu, ContextMenuPresets } from "../ui/ContextMenu";
+import { getFileIcon } from "@/utils/fileIcons";
 
 export interface EditorTabBarProps {
   tabs: EditorTab[];
@@ -259,72 +260,22 @@ interface TabFileIconProps {
 
 const TabFileIcon: Component<TabFileIconProps> = (props) => {
   const size = () => props.size || 16;
-  const ext = props.name.split(".").pop()?.toLowerCase() || "";
-  const filename = props.name.toLowerCase();
-
-  if (ext === "tsx" || ext === "jsx") {
-    return (
-      <svg width={size()} height={size()} viewBox="0 0 16 16" fill="none">
-        <circle cx="8" cy="8" r="2" fill="#61DAFB" />
-        <ellipse cx="8" cy="8" rx="7" ry="2.5" stroke="#61DAFB" stroke-width="1" fill="none" />
-        <ellipse cx="8" cy="8" rx="7" ry="2.5" stroke="#61DAFB" stroke-width="1" fill="none" transform="rotate(60 8 8)" />
-        <ellipse cx="8" cy="8" rx="7" ry="2.5" stroke="#61DAFB" stroke-width="1" fill="none" transform="rotate(-60 8 8)" />
-      </svg>
-    );
-  }
-
-  if (ext === "ts") {
-    return (
-      <svg width={size()} height={size()} viewBox="0 0 16 16" fill="none">
-        <rect width="16" height="16" rx="2" fill="#3178C6" />
-        <path d="M4 8h5M6.5 8v4.5" stroke="white" stroke-width="1.5" />
-        <path d="M10 12.5c.5.3 1 .5 1.5.5.8 0 1.5-.4 1.5-1.2 0-.6-.4-1-1.2-1.2l-.6-.2c-.5-.1-.8-.3-.8-.6 0-.4.3-.6.8-.6.4 0 .8.1 1.2.4" stroke="white" stroke-width="1" />
-      </svg>
-    );
-  }
-
-  if (ext === "rs") {
-    return (
-      <svg width={size()} height={size()} viewBox="0 0 16 16" fill="none">
-        <circle cx="8" cy="8" r="6" stroke="#DEA584" stroke-width="1.5" fill="none" />
-        <circle cx="8" cy="8" r="2" fill="#DEA584" />
-        <path d="M8 2v2M8 12v2M2 8h2M12 8h2" stroke="#DEA584" stroke-width="1.5" />
-      </svg>
-    );
-  }
-
-  if (filename === "cargo.toml" || ext === "toml") {
-    return (
-      <svg width={size()} height={size()} viewBox="0 0 16 16" fill="none">
-        <rect x="2" y="2" width="12" height="12" rx="2" stroke="#DEA584" stroke-width="1.5" fill="none" />
-        <path d="M5 5h6M5 8h4M5 11h5" stroke="#DEA584" stroke-width="1" />
-      </svg>
-    );
-  }
-
-  if (ext === "json") {
-    return (
-      <svg width={size()} height={size()} viewBox="0 0 16 16" fill="none">
-        <path d="M5 3c-1.5 0-2 1-2 2v2c0 1-1 1-1 1s1 0 1 1v2c0 1 .5 2 2 2" stroke="#CBCB41" stroke-width="1.5" fill="none" />
-        <path d="M11 3c1.5 0 2 1 2 2v2c0 1 1 1 1 1s-1 0-1 1v2c0 1-.5 2-2 2" stroke="#CBCB41" stroke-width="1.5" fill="none" />
-      </svg>
-    );
-  }
-
-  if (ext === "md") {
-    return (
-      <svg width={size()} height={size()} viewBox="0 0 16 16" fill="none">
-        <rect x="1" y="3" width="14" height="10" rx="1" stroke="#519ABA" stroke-width="1" fill="none" />
-        <path d="M3 10V6l2 2.5L7 6v4M10 10V7l1.5 2 1.5-2v3" stroke="#519ABA" stroke-width="1" />
-      </svg>
-    );
-  }
+  const iconPath = () => getFileIcon(props.name, false);
 
   return (
-    <svg width={size()} height={size()} viewBox="0 0 16 16" fill="none">
-      <path d="M4 2h5l4 4v8a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="#8C8D8F" stroke-width="1.2" fill="none" />
-      <path d="M9 2v4h4" stroke="#8C8D8F" stroke-width="1.2" fill="none" />
-    </svg>
+    <img
+      src={iconPath()}
+      alt=""
+      width={size()}
+      height={size()}
+      style={{
+        width: `${size()}px`,
+        height: `${size()}px`,
+        "flex-shrink": "0",
+        "object-fit": "contain",
+      }}
+      draggable={false}
+    />
   );
 };
 
