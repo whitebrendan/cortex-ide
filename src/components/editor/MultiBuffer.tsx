@@ -3,6 +3,7 @@ import { useEditor, SplitDirection, OpenFile, EditorGroup } from "@/context/Edit
 import { CodeEditor } from "./CodeEditor";
 import { LazyEditor } from "./LazyEditor";
 import { TabBar } from "./TabBar";
+import { EditorBreadcrumbs } from "@/components/editor/EditorBreadcrumbs";
 import { ImageViewer, isImageFile, SVGPreview, isSVGFile } from "../viewers";
 import { Icon } from "../ui/Icon";
 import { Card, Text } from "@/components/ui";
@@ -126,6 +127,10 @@ function EditorGroupPanel(props: EditorGroupPanelProps) {
         showCloseGroupButton={props.showCloseButton}
         onCloseGroup={props.onClose}
       />
+
+      <Show when={activeFile()}>
+        <EditorBreadcrumbs filePath={activeFile()?.path} />
+      </Show>
       
       {/* Use CSS visibility instead of Show to prevent SolidJS cleanup race condition
           when closing the last file. Monaco editor needs time to dispose properly. */}

@@ -73,6 +73,7 @@ export const CortexStatusBar: Component<CortexStatusBarProps> = (props) => {
     display: "flex",
     "align-items": "center",
     "justify-content": "space-between",
+    width: "100%",
     gap: "40px",
     padding: "8px 8px",
     height: "48px",
