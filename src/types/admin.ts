@@ -44,8 +44,27 @@ export interface AdminSessionsResponse {
   totalPages: number;
 }
 
+/** Single/bulk session mutation action */
+export type SessionMutationAction = "delete" | "archive" | "restore";
+
 /** Bulk action type */
-export type BulkAction = "delete" | "archive" | "restore" | "export";
+export type BulkAction = SessionMutationAction | "export";
+
+/** Result shape for session mutation operations */
+export interface AdminMutationResult {
+  action: SessionMutationAction;
+  requested: number;
+  success: number;
+  failed: number;
+  sessionIds: string[];
+  failedIds?: string[];
+  message?: string;
+}
+
+/** Detailed session payload for admin detail view */
+export interface AdminSessionDetails extends AdminSession {
+  messages: unknown[];
+}
 
 /** Session statistics */
 export interface SessionStats {
