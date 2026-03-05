@@ -303,6 +303,7 @@
   --cortex-radius-xl: 16px;          /* Figma send button, panels */
   --cortex-radius-2xl: 16px;
   --cortex-radius-3xl: 16px;
+  --cortex-radius-window: 24px;      /* Figma main window shell */
   --cortex-radius-full: 9999px;     /* Pills, circular elements */
   
   /* ===========================================================================
@@ -385,14 +386,14 @@
   --cortex-height-button-sm: 32px;
   --cortex-height-button-lg: 48px;
   --cortex-height-tab: 44px;
-  --cortex-height-titlebar: 48px;
-  --cortex-height-statusbar: 24px;
+  --cortex-height-titlebar: 56px;
+  --cortex-height-statusbar: 42px;
   --cortex-height-navbar: 48px;
   
   --cortex-width-sidebar: 280px;
   --cortex-width-sidebar-sm: 220px;
   --cortex-width-sidebar-lg: 320px;
-  --cortex-width-activitybar: 40px;
+  --cortex-width-activitybar: 52px;
   --cortex-width-modal-sm: 400px;
   --cortex-width-modal-md: 560px;
   --cortex-width-modal-lg: 720px;

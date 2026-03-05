@@ -59,6 +59,15 @@ export function CortexIDELayout(props: CortexIDELayoutProps) {
         activeId={props.sidebarCollapsed ? null : props.sidebarTab}
         onItemClick={props.onNavItemClick}
         onAvatarClick={props.onAvatarClick}
+        style={{
+          width: "var(--cortex-width-activitybar)",
+          height: "100%",
+          margin: "0",
+          background: "var(--cortex-bg-secondary)",
+          border: "none",
+          "border-radius": "0",
+          padding: "0",
+        }}
       />
 
       <div style={{ display: "flex", flex: "1", overflow: "hidden", "flex-direction": "column" }}>
@@ -116,6 +125,12 @@ export function CortexIDELayout(props: CortexIDELayoutProps) {
           onBranchClick={props.onBranchClick}
           onTogglePanel={props.onTogglePanel}
           onToggleTerminal={props.onToggleTerminal}
+          style={{
+            height: "var(--cortex-height-statusbar)",
+            background: "var(--cortex-bg-secondary)",
+            "border-top": "1px solid var(--cortex-border-default)",
+            padding: "8px 24px",
+          }}
         />
       </div>
 

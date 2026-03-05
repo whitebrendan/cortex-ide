@@ -302,7 +302,9 @@ export function CortexDesktopLayout(props: ParentProps) {
     <div style={{
       display: "flex", "flex-direction": "column", width: "100vw", height: "100vh",
       background: "var(--cortex-bg-primary)",
-      "border-radius": "16px",
+      "border-radius": "var(--cortex-radius-window)",
+      border: "1px solid var(--cortex-border-default)",
+      "box-sizing": "border-box",
       overflow: "hidden", "font-family": "var(--cortex-font-sans)", color: "var(--cortex-text-primary)",
     }}>
       <FileEditHandlers />
@@ -320,9 +322,15 @@ export function CortexDesktopLayout(props: ParentProps) {
           else { const msg = chatInput().trim(); if (msg) handleChatSubmit(msg); }
         }}
         onProjectDropdownClick={() => window.dispatchEvent(new CustomEvent("folder:open"))}
+        style={{
+          height: "var(--cortex-height-titlebar)",
+          "min-height": "var(--cortex-height-titlebar)",
+          background: "var(--cortex-bg-elevated)",
+          "border-bottom": "1px solid var(--cortex-border-default)",
+        }}
       />
 
-      <main style={{ display: "flex", flex: "1", overflow: "hidden", position: "relative" }}>
+      <main style={{ display: "flex", flex: "1", overflow: "hidden", position: "relative", background: "var(--cortex-bg-primary)" }}>
         <CortexModeCarousel
           mode={mode()}
           vibeContent={() =>
