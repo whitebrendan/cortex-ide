@@ -75,6 +75,25 @@ describe("workingSurface", () => {
     dispatchSpy.mockRestore();
   });
 
+  it("opens a workspace surface without re-navigating when already on session", () => {
+    const navigate = vi.fn();
+    const dispatchSpy = vi.spyOn(window, "dispatchEvent");
+
+    openWorkspaceSurface("/workspace/demo", { pathname: "/session", navigate });
+
+    expect(mockSafeSetItem).toHaveBeenCalledWith("projectPath_main", "/workspace/demo");
+    expect(mockSafeSetItem).toHaveBeenCalledWith("cortex_current_project_main", "/workspace/demo");
+    expect(mockSafeSetItem).toHaveBeenCalledWith("projectPath", "/workspace/demo");
+    expect(mockSafeSetItem).toHaveBeenCalledWith("cortex_current_project", "/workspace/demo");
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "workspace:open-folder", detail: { path: "/workspace/demo" } }),
+    );
+    expect(dispatchSpy).toHaveBeenCalledWith(expect.objectContaining({ type: "folder:did-open" }));
+    expect(navigate).not.toHaveBeenCalled();
+
+    dispatchSpy.mockRestore();
+  });
+
   it("clears persisted project keys and returns to welcome when closing a workspace surface", () => {
     const navigate = vi.fn();
 

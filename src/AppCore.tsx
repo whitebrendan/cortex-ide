@@ -21,7 +21,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useLocation, useNavigate } from "@solidjs/router";
 import { getWindowLabel } from "@/utils/windowStorage";
 import { listen } from "@tauri-apps/api/event";
-import { setProjectPath } from "@/utils/workspace";
+import { handleDeepLinkAction, type DeepLinkAction } from "@/utils/deepLink";
 import { gitClone, gitCloneRecursive } from "@/utils/tauri-api";
 import { openWorkspaceSurface } from "@/utils/workingSurface";
 import type { FeedbackType } from "@/components/FeedbackDialog";
@@ -156,18 +156,6 @@ const StepInTargetsMenuGlobal = lazy(() => import("@/components/debugger/StepInT
 const DebugKeyboardHandler = lazy(() => import("@/components/debugger/DebugKeyboardHandler").then(m => ({ default: m.DebugKeyboardHandler })));
 
 // ============================================================================
-// Deep Link Types — must match Rust DeepLinkAction in src-tauri/src/deep_link.rs
-// ============================================================================
-interface DeepLinkOpenFile { type: "OpenFile"; payload: { path: string }; }
-interface DeepLinkOpenFolder { type: "OpenFolder"; payload: { path: string; new_window: boolean }; }
-interface DeepLinkOpenGoto { type: "OpenGoto"; payload: { path: string; line: number; column: number | null }; }
-interface DeepLinkOpenDiff { type: "OpenDiff"; payload: { left: string; right: string }; }
-interface DeepLinkAddFolder { type: "AddFolder"; payload: { path: string }; }
-interface DeepLinkOpenSettings { type: "OpenSettings"; payload: { section: string }; }
-interface DeepLinkUnknown { type: "Unknown"; payload: { raw_url: string }; }
-type DeepLinkAction = DeepLinkOpenFile | DeepLinkOpenFolder | DeepLinkOpenGoto | DeepLinkOpenDiff | DeepLinkAddFolder | DeepLinkOpenSettings | DeepLinkUnknown;
-
-// ============================================================================
 // MCP Listeners - Deferred initialization
 // ============================================================================
 let mcpCleanup: (() => void) | null = null;
@@ -247,6 +235,8 @@ function DeepLinkHandler(): null {
   const toast = useToast();
   const editor = useEditor();
   const workspace = useWorkspace();
+  const navigate = useNavigate();
+  const location = useLocation();
   let unlisten: (() => void) | undefined;
 
   onCleanup(() => unlisten?.());
@@ -255,62 +245,39 @@ function DeepLinkHandler(): null {
     unlisten = await listen<DeepLinkAction>("deep:link", async (event) => {
       const action = event.payload;
       if (import.meta.env.DEV) console.log("[DeepLink] Received:", action);
-
-      switch (action.type) {
-        case "OpenFile": {
-          try {
-            await editor.openFile(action.payload.path);
-            toast.info(`Opened: ${action.payload.path.split(/[\\/]/).pop()}`);
-          } catch (err) {
-            toast.error(`Failed to open: ${action.payload.path}`);
-          }
-          break;
-        }
-        case "OpenFolder": {
-          setProjectPath(action.payload.path);
-          localStorage.setItem(`cortex_current_project_${getWindowLabel()}`, action.payload.path);
-          window.dispatchEvent(new CustomEvent("workspace:change", { detail: { path: action.payload.path } }));
-          toast.info(`Opening: ${action.payload.path.split(/[\\/]/).pop()}`);
-          setTimeout(() => window.location.reload(), 100);
-          break;
-        }
-        case "OpenGoto": {
-          try {
-            await editor.openFile(action.payload.path);
+      await handleDeepLinkAction(action, {
+        openFile: (path) => editor.openFile(path),
+        openWorkspace: (path, openOptions) => openWorkspaceSurface(path, openOptions),
+        openAndGoto: (path, line, column) =>
+          editor.openFile(path).then(() => {
             window.dispatchEvent(new CustomEvent("editor:goto-line", {
-              detail: { line: action.payload.line, column: action.payload.column ?? 1 },
+              detail: {
+                line,
+                column: column ?? 1,
+              },
             }));
-            toast.info(`Opened: ${action.payload.path.split(/[\\/]/).pop()} at line ${action.payload.line}`);
-          } catch (err) {
-            toast.error(`Failed to open: ${action.payload.path}`);
-          }
-          break;
-        }
-        case "OpenDiff": {
+          }),
+        openDiff: ({ left, right }) => {
           window.dispatchEvent(new CustomEvent("diff:open", {
-            detail: { left: action.payload.left, right: action.payload.right },
+            detail: { left, right },
           }));
-          break;
-        }
-        case "AddFolder": {
-          try {
-            await workspace.addFolder(action.payload.path);
-            toast.info(`Added folder: ${action.payload.path.split(/[\\/]/).pop()}`);
-          } catch (err) {
-            toast.error(`Failed to add folder: ${action.payload.path}`);
-          }
-          break;
-        }
-        case "OpenSettings": {
+        },
+        addFolder: (path) => workspace.addFolder(path),
+        navigateOptions: {
+          pathname: location.pathname,
+          navigate,
+        },
+        notifyInfo: (message) => toast.info(message),
+        notifyError: (message) => toast.error(message),
+        openSettings: (section) => {
           window.dispatchEvent(new CustomEvent("settings:open-tab", {
-            detail: { section: action.payload.section },
+            detail: { section },
           }));
-          break;
-        }
-        case "Unknown": {
-          toast.error("Unknown deep link format");
-          break;
-        }
+        },
+      });
+
+      if (action.type === "Unknown") {
+        toast.error("Unknown deep link format");
       }
     });
   });
