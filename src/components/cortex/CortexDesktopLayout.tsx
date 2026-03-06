@@ -69,6 +69,67 @@ const VALID_MODES: ViewMode[] = ["vibe", "ide"];
 const VALID_SIDEBAR_TABS: SidebarTab[] = ["files", "search", "git", "debug", "extensions", "agents", "themes", "plugins", "account", "docs", "dashboard", "map"];
 const VALID_CHAT_STATES: ChatPanelState[] = ["minimized", "expanded", "home"];
 
+const SIDEBAR_TAB_ALIASES: Record<string, SidebarTab> = {
+  files: "files",
+  explorer: "files",
+  "workbench.view.explorer": "files",
+  search: "search",
+  "workbench.view.search": "search",
+  git: "git",
+  scm: "git",
+  "source-control": "git",
+  sourcecontrol: "git",
+  "workbench.view.scm": "git",
+  debug: "debug",
+  run: "debug",
+  "workbench.view.debug": "debug",
+  extensions: "extensions",
+  "workbench.view.extensions": "extensions",
+  agents: "agents",
+  agent: "agents",
+  ai: "agents",
+  assistant: "agents",
+  chat: "agents",
+  conversation: "agents",
+  composer: "agents",
+  "workbench.view.agents": "agents",
+  themes: "themes",
+  plugins: "plugins",
+  account: "account",
+  docs: "docs",
+  documentation: "docs",
+  factory: "files",
+};
+
+function normalizeSidebarToken(value: string | null | undefined): string | null {
+  const normalized = value?.trim().toLowerCase().replace(/\s+/g, "-");
+  return normalized && normalized.length > 0 ? normalized : null;
+}
+
+function resolveSidebarTab(value: string | null | undefined): SidebarTab {
+  const normalized = normalizeSidebarToken(value);
+  if (!normalized) return "files";
+
+  const mappedTab = SIDEBAR_TAB_ALIASES[normalized];
+  if (mappedTab) return mappedTab;
+
+  return VALID_SIDEBAR_TABS.includes(normalized as SidebarTab)
+    ? normalized as SidebarTab
+    : "files";
+}
+
+function resolveSidebarView(value: string | null | undefined): SidebarTab | null {
+  const normalized = normalizeSidebarToken(value);
+  if (!normalized) return null;
+
+  const mappedTab = SIDEBAR_TAB_ALIASES[normalized];
+  if (mappedTab) return mappedTab;
+
+  return VALID_SIDEBAR_TABS.includes(normalized as SidebarTab)
+    ? normalized as SidebarTab
+    : null;
+}
+
 function loadLayoutState() {
   const rawMode = safeGetItem(STORAGE_KEYS.mode);
   const rawTab = safeGetItem(STORAGE_KEYS.sidebarTab);
@@ -83,7 +144,7 @@ function loadLayoutState() {
   return {
     mode: hasProject ? "ide" as ViewMode
       : (VALID_MODES.includes(rawMode as ViewMode) ? (rawMode as ViewMode) : "vibe" as ViewMode),
-    sidebarTab: VALID_SIDEBAR_TABS.includes(rawTab as SidebarTab) ? (rawTab as SidebarTab) : "files" as SidebarTab,
+    sidebarTab: resolveSidebarTab(rawTab),
     sidebarCollapsed: safeGetItem(STORAGE_KEYS.sidebarCollapsed) === "true",
     sidebarWidth: Number.isFinite(rawWidth) ? Math.max(SIDEBAR_MIN_WIDTH, Math.min(SIDEBAR_MAX_WIDTH, rawWidth)) : SIDEBAR_DEFAULT_WIDTH,
     chatState: VALID_CHAT_STATES.includes(rawChat as ChatPanelState) ? (rawChat as ChatPanelState) : "minimized" as ChatPanelState,
@@ -230,24 +291,52 @@ export function CortexDesktopLayout(props: ParentProps) {
   const handleStatusBarTogglePanel = () => window.dispatchEvent(new CustomEvent("layout:toggle-panel"));
   const handleStatusBarToggleTerminal = () => window.dispatchEvent(new CustomEvent("terminal:toggle"));
 
+  const applyModeChange = (nextMode: ViewMode | null | undefined) => {
+    if (!VALID_MODES.includes(nextMode as ViewMode)) return;
+    if (mode() === nextMode) return;
+
+    setMode(nextMode as ViewMode);
+    setChatState(nextMode === "vibe" ? "home" : "minimized");
+  };
+
+  const openSidebarTab = (tab: SidebarTab) => {
+    applyModeChange("ide");
+    setSidebarTab(tab);
+    setSidebarCollapsed(false);
+  };
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed((collapsed) => !collapsed);
+  };
+
+  const focusSidebarView = (view: string | null | undefined) => {
+    const tab = resolveSidebarView(view);
+    if (!tab) return;
+    openSidebarTab(tab);
+  };
+
   createEffect(() => { saveLayoutState({ mode: mode(), sidebarTab: sidebarTab(), sidebarCollapsed: sidebarCollapsed(), sidebarWidth: sidebarWidth(), chatState: chatState() }); });
 
   onMount(async () => {
     try { appWindow = await getCurrentWindow(); invoke("show_window").catch(() => {}); } catch { /* not in Tauri */ }
 
     const evMap: Record<string, EventListener> = {
-      "viewmode:change": ((e: Event) => setMode((e as CustomEvent<{ mode: ViewMode }>).detail.mode)) as EventListener,
+      "viewmode:change": ((e: Event) => applyModeChange((e as CustomEvent<{ mode?: ViewMode }>).detail?.mode)) as EventListener,
       "chat:toggle": (() => setChatState(p => p === "expanded" ? "minimized" : "expanded")) as EventListener,
-      "folder:did-open": (() => { setMode("ide"); setSidebarTab("files"); setSidebarCollapsed(false); }) as EventListener,
+      "folder:did-open": (() => openSidebarTab("files")) as EventListener,
       "settings:open-tab": (() => editor.openVirtualFile("Settings", "", "plaintext")) as EventListener,
-      "view:explorer": (() => { setSidebarTab("files"); setSidebarCollapsed(false); }) as EventListener,
-      "view:search": (() => { setSidebarTab("search"); setSidebarCollapsed(false); }) as EventListener,
-      "view:git": (() => { setSidebarTab("git"); setSidebarCollapsed(false); }) as EventListener,
-      "view:extensions": (() => { setSidebarTab("extensions"); setSidebarCollapsed(false); }) as EventListener,
-      "view:agents": (() => { setSidebarTab("agents"); setSidebarCollapsed(false); }) as EventListener,
-      "sidebar:toggle": (() => setSidebarCollapsed(!sidebarCollapsed())) as EventListener,
+      "view:explorer": (() => openSidebarTab("files")) as EventListener,
+      "view:search": (() => openSidebarTab("search")) as EventListener,
+      "view:git": (() => openSidebarTab("git")) as EventListener,
+      "view:extensions": (() => openSidebarTab("extensions")) as EventListener,
+      "view:agents": (() => openSidebarTab("agents")) as EventListener,
+      "layout:focus-explorer": (() => openSidebarTab("files")) as EventListener,
+      "layout:focus-debug": (() => openSidebarTab("debug")) as EventListener,
+      "layout:focus-view": ((e: Event) => focusSidebarView((e as CustomEvent<{ view?: string }>).detail?.view)) as EventListener,
+      "sidebar:toggle": (() => toggleSidebar()) as EventListener,
+      "layout:toggle-sidebar": (() => toggleSidebar()) as EventListener,
       "selection:select-all": (() => document.execCommand("selectAll")) as EventListener,
-      "help:docs": (() => { setSidebarTab("docs"); setSidebarCollapsed(false); }) as EventListener,
+      "help:docs": (() => openSidebarTab("docs")) as EventListener,
       "terminal:toggle": (() => { if (bottomPanelCollapsed()) { setBottomPanelCollapsed(false); setBottomPanelTab("terminal"); } else if (bottomPanelTab() === "terminal") { setBottomPanelCollapsed(true); } else { setBottomPanelTab("terminal"); } }) as EventListener,
       "layout:toggle-panel": (() => setBottomPanelCollapsed(!bottomPanelCollapsed())) as EventListener,
       "ai:modifications:toggle": (() => setShowAIModifications((prev) => !prev)) as EventListener,
@@ -286,15 +375,14 @@ export function CortexDesktopLayout(props: ParentProps) {
   const handleClose = async () => { if (appWindow) await appWindow.close(); };
 
   const handleModeChange = (newMode: ViewMode) => {
-    if (mode() === newMode) return;
-    setMode(newMode);
-    setChatState(newMode === "vibe" ? "home" : "minimized");
+    applyModeChange(newMode);
   };
 
   const handleNavItemClick = (id: string) => {
-    if (id === "home") { setMode("vibe"); setChatState("home"); return; }
+    if (id === "home") { applyModeChange("vibe"); setChatState("home"); return; }
     if (id === "new") { window.dispatchEvent(new CustomEvent("file:new")); return; }
-    const tabId = id as SidebarTab;
+    const tabId = resolveSidebarView(id);
+    if (!tabId) return;
     if (sidebarCollapsed()) { setSidebarCollapsed(false); setSidebarTab(tabId); }
     else if (sidebarTab() === tabId) { setSidebarCollapsed(true); }
     else { setSidebarTab(tabId); }
@@ -422,6 +510,7 @@ export function CortexDesktopLayout(props: ParentProps) {
         setShowCommandPalette={commands.setShowCommandPalette}
         setShowFileFinder={commands.setShowFileFinder}
         setShowGoToLine={commands.setShowGoToLine}
+        openSidebarTab={openSidebarTab}
         setSidebarTab={setSidebarTab}
         setSidebarCollapsed={setSidebarCollapsed}
         bottomPanelTab={bottomPanelTab}

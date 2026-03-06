@@ -19,6 +19,7 @@ export interface ViewNavigationHandlersProps {
   setShowFileFinder: (show: boolean) => void;
   setShowGoToLine: (show: boolean) => void;
 
+  openSidebarTab?: (tab: SidebarTab) => void;
   setSidebarTab: (tab: SidebarTab) => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
 
@@ -31,6 +32,16 @@ export interface ViewNavigationHandlersProps {
 }
 
 export function ViewNavigationHandlers(props: ViewNavigationHandlersProps) {
+  const openSidebarTab = (tab: SidebarTab) => {
+    if (props.openSidebarTab) {
+      props.openSidebarTab(tab);
+      return;
+    }
+
+    props.setSidebarTab(tab);
+    props.setSidebarCollapsed(false);
+  };
+
   onMount(() => {
     const handlers: Record<string, EventListener> = {
       // ── View events ──────────────────────────────────────────────────
@@ -43,8 +54,7 @@ export function ViewNavigationHandlers(props: ViewNavigationHandlersProps) {
       }) as EventListener,
 
       "view:toggle-agent-panel": (() => {
-        props.setSidebarTab("agents");
-        props.setSidebarCollapsed(false);
+        openSidebarTab("agents");
       }) as EventListener,
 
       // ── Go events ────────────────────────────────────────────────────
@@ -90,18 +100,15 @@ export function ViewNavigationHandlers(props: ViewNavigationHandlersProps) {
 
       // ── Run / Debug events ───────────────────────────────────────────
       "debug:start": (() => {
-        props.setSidebarTab("debug");
-        props.setSidebarCollapsed(false);
+        openSidebarTab("debug");
       }) as EventListener,
 
       "debug:stop": (() => {
-        props.setSidebarTab("debug");
-        props.setSidebarCollapsed(false);
+        openSidebarTab("debug");
       }) as EventListener,
 
       "debug:restart": (() => {
-        props.setSidebarTab("debug");
-        props.setSidebarCollapsed(false);
+        openSidebarTab("debug");
       }) as EventListener,
 
       "debug:run-no-debug": (() => {
@@ -117,8 +124,7 @@ export function ViewNavigationHandlers(props: ViewNavigationHandlersProps) {
         }
         try {
           await invoke("git_init", { path: cwd });
-          props.setSidebarTab("git");
-          props.setSidebarCollapsed(false);
+          openSidebarTab("git");
           window.dispatchEvent(
             new CustomEvent("notification", {
               detail: { type: "success", message: "Git repository initialized" },
@@ -139,8 +145,7 @@ export function ViewNavigationHandlers(props: ViewNavigationHandlersProps) {
       }) as EventListener,
 
       "git:commit": (() => {
-        props.setSidebarTab("git");
-        props.setSidebarCollapsed(false);
+        openSidebarTab("git");
         window.dispatchEvent(new CustomEvent("git:open-commit-dialog"));
       }) as EventListener,
 

@@ -366,6 +366,14 @@ describe("CortexDesktopLayout", () => {
       const ideLayout = queryByTestId("ide-layout");
       expect(ideLayout?.getAttribute("data-sidebar-tab")).toBe("files");
     });
+
+    it("should fall back to agents when a legacy AI tab is in localStorage", () => {
+      localStorage.setItem("figma_layout_mode", "ide");
+      localStorage.setItem("figma_layout_sidebar_tab", "assistant");
+      const { queryByTestId } = render(() => <CortexDesktopLayout />);
+      const ideLayout = queryByTestId("ide-layout");
+      expect(ideLayout?.getAttribute("data-sidebar-tab")).toBe("agents");
+    });
   });
 
   describe("handleNavItemClick", () => {
@@ -533,6 +541,33 @@ describe("CortexDesktopLayout", () => {
       });
     });
 
+    it("should normalize chat state when mode changes via events", async () => {
+      localStorage.setItem("figma_layout_mode", "ide");
+      localStorage.setItem("figma_layout_chat_state", "expanded");
+
+      render(() => <CortexDesktopLayout />);
+
+      await waitForMount();
+
+      window.dispatchEvent(
+        new CustomEvent("viewmode:change", { detail: { mode: "vibe" } })
+      );
+
+      await vi.waitFor(() => {
+        expect(localStorage.getItem("figma_layout_mode")).toBe("vibe");
+        expect(localStorage.getItem("figma_layout_chat_state")).toBe("home");
+      });
+
+      window.dispatchEvent(
+        new CustomEvent("viewmode:change", { detail: { mode: "ide" } })
+      );
+
+      await vi.waitFor(() => {
+        expect(localStorage.getItem("figma_layout_mode")).toBe("ide");
+        expect(localStorage.getItem("figma_layout_chat_state")).toBe("minimized");
+      });
+    });
+
     it("should save sidebarTab to localStorage on change", async () => {
       localStorage.setItem("figma_layout_mode", "ide");
       localStorage.setItem("figma_layout_sidebar_collapsed", "false");
@@ -578,8 +613,13 @@ describe("CortexDesktopLayout", () => {
       expect(registeredEvents).toContain("view:explorer");
       expect(registeredEvents).toContain("view:search");
       expect(registeredEvents).toContain("view:git");
+      expect(registeredEvents).toContain("view:agents");
       expect(registeredEvents).toContain("view:extensions");
+      expect(registeredEvents).toContain("layout:focus-explorer");
+      expect(registeredEvents).toContain("layout:focus-debug");
+      expect(registeredEvents).toContain("layout:focus-view");
       expect(registeredEvents).toContain("sidebar:toggle");
+      expect(registeredEvents).toContain("layout:toggle-sidebar");
       expect(registeredEvents).toContain("selection:select-all");
       expect(registeredEvents).toContain("help:docs");
       expect(registeredEvents).toContain("terminal:toggle");
@@ -695,6 +735,50 @@ describe("CortexDesktopLayout", () => {
       });
     });
 
+    it("should handle layout:focus-view by switching to the mapped mounted sidebar in ide mode", async () => {
+      localStorage.setItem("figma_layout_mode", "vibe");
+      localStorage.setItem("figma_layout_chat_state", "expanded");
+
+      render(() => <CortexDesktopLayout />);
+
+      await vi.waitFor(() => {
+        const events = addEventSpy.mock.calls.map((c: any) => c[0]);
+        expect(events).toContain("layout:focus-view");
+      });
+
+      window.dispatchEvent(new CustomEvent("layout:focus-view", { detail: { view: "scm" } }));
+
+      await vi.waitFor(() => {
+        const carousel = document.querySelector('[data-testid="mode-carousel"]');
+        const layout = document.querySelector('[data-testid="ide-layout"]');
+        expect(carousel?.getAttribute("data-mode")).toBe("ide");
+        expect(layout?.getAttribute("data-sidebar-tab")).toBe("git");
+        expect(layout?.getAttribute("data-sidebar-collapsed")).toBe("false");
+        expect(layout?.getAttribute("data-chat-state")).toBe("minimized");
+      });
+    });
+
+    it("should handle layout:focus-explorer by opening the files sidebar", async () => {
+      localStorage.setItem("figma_layout_mode", "ide");
+      localStorage.setItem("figma_layout_sidebar_collapsed", "true");
+      localStorage.setItem("figma_layout_sidebar_tab", "git");
+
+      render(() => <CortexDesktopLayout />);
+
+      await vi.waitFor(() => {
+        const events = addEventSpy.mock.calls.map((c: any) => c[0]);
+        expect(events).toContain("layout:focus-explorer");
+      });
+
+      window.dispatchEvent(new CustomEvent("layout:focus-explorer"));
+
+      await vi.waitFor(() => {
+        const layout = document.querySelector('[data-testid="ide-layout"]');
+        expect(layout?.getAttribute("data-sidebar-tab")).toBe("files");
+        expect(layout?.getAttribute("data-sidebar-collapsed")).toBe("false");
+      });
+    });
+
     it("should handle sidebar:toggle event by toggling sidebar collapsed", async () => {
       localStorage.setItem("figma_layout_mode", "ide");
       localStorage.setItem("figma_layout_sidebar_collapsed", "false");
@@ -707,6 +791,25 @@ describe("CortexDesktopLayout", () => {
       });
 
       window.dispatchEvent(new CustomEvent("sidebar:toggle"));
+
+      await vi.waitFor(() => {
+        const layout = document.querySelector('[data-testid="ide-layout"]');
+        expect(layout?.getAttribute("data-sidebar-collapsed")).toBe("true");
+      });
+    });
+
+    it("should handle layout:toggle-sidebar event by toggling sidebar collapsed", async () => {
+      localStorage.setItem("figma_layout_mode", "ide");
+      localStorage.setItem("figma_layout_sidebar_collapsed", "false");
+
+      render(() => <CortexDesktopLayout />);
+
+      await vi.waitFor(() => {
+        const events = addEventSpy.mock.calls.map((c: any) => c[0]);
+        expect(events).toContain("layout:toggle-sidebar");
+      });
+
+      window.dispatchEvent(new CustomEvent("layout:toggle-sidebar"));
 
       await vi.waitFor(() => {
         const layout = document.querySelector('[data-testid="ide-layout"]');
