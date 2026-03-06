@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, fireEvent, cleanup } from "@solidjs/testing-library";
-import type { JSX } from "solid-js";
+import { Show, type JSX } from "solid-js";
 import { CortexGitPanel } from "../CortexGitPanel";
 
 const mockMultiRepo = {
@@ -22,6 +22,11 @@ const mockGitStashListEnhanced = vi.fn().mockResolvedValue([]);
 const mockGitStashCreate = vi.fn().mockResolvedValue(undefined);
 const mockGitStashPop = vi.fn().mockResolvedValue(undefined);
 const mockGitStashDrop = vi.fn().mockResolvedValue(undefined);
+const mockGitMergeAbort = vi.fn().mockResolvedValue(undefined);
+const mockGitWorktreeList = vi.fn().mockResolvedValue([]);
+const mockGitWorktreeRemove = vi.fn().mockResolvedValue(undefined);
+const mockGitWorktreePrune = vi.fn().mockResolvedValue([]);
+const mockGitStatus = vi.fn().mockResolvedValue({ staged: [], unstaged: [], untracked: [] });
 
 vi.mock("@/context/MultiRepoContext", () => ({
   useMultiRepo: () => mockMultiRepo,
@@ -32,6 +37,44 @@ vi.mock("@/utils/tauri-api", () => ({
   gitStashCreate: (...args: unknown[]) => mockGitStashCreate(...args),
   gitStashPop: (...args: unknown[]) => mockGitStashPop(...args),
   gitStashDrop: (...args: unknown[]) => mockGitStashDrop(...args),
+  gitMergeAbort: (...args: unknown[]) => mockGitMergeAbort(...args),
+  gitWorktreeList: (...args: unknown[]) => mockGitWorktreeList(...args),
+  gitWorktreeRemove: (...args: unknown[]) => mockGitWorktreeRemove(...args),
+  gitWorktreePrune: (...args: unknown[]) => mockGitWorktreePrune(...args),
+  gitStatus: (...args: unknown[]) => mockGitStatus(...args),
+}));
+
+vi.mock("../git/CortexGitWorktreeDialog", () => ({
+  CortexGitWorktreeDialog: (props: { open: boolean; onClose?: () => void }) => (
+    <Show when={props.open}>
+      <div data-testid="worktree-dialog">
+        <span>Mounted Worktrees</span>
+        <button onClick={props.onClose}>Close Worktrees</button>
+      </div>
+    </Show>
+  ),
+}));
+
+vi.mock("@/components/ui/DestructiveActionDialog", () => ({
+  DestructiveActionDialog: (props: {
+    open: boolean;
+    title: string;
+    message: JSX.Element | string;
+    detail?: JSX.Element | string;
+    confirmLabel: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+  }) => (
+    <Show when={props.open}>
+      <div data-testid="destructive-dialog">
+        <div>{props.title}</div>
+        <div>{props.message}</div>
+        <div>{props.detail}</div>
+        <button onClick={props.onCancel}>Cancel</button>
+        <button onClick={props.onConfirm}>{props.confirmLabel}</button>
+      </div>
+    </Show>
+  ),
 }));
 
 vi.mock("../primitives/CortexIcon", () => ({
@@ -419,6 +462,64 @@ describe("CortexGitPanel", () => {
       await vi.waitFor(() => {
         expect(mockGitStashCreate).toHaveBeenCalledWith("/test/repo", "", true);
       });
+    });
+
+    it("shows mounted merge and worktree affordances from the live sidebar menu", async () => {
+      mockMultiRepo.activeRepository.mockReturnValue(
+        createMockRepo({
+          isMerging: true,
+          conflictFiles: [{ path: "src/conflict.ts", status: "conflict", staged: false }],
+        })
+      );
+
+      const { container } = render(() => <CortexGitPanel />);
+
+      const moreTooltip = container.querySelector("[data-tooltip='More Actions']");
+      await fireEvent.click(moreTooltip!.querySelector("button")!);
+
+      expect(container.querySelector("[data-testid='dropdown-item-Abort Merge']")).toBeTruthy();
+      expect(container.querySelector("[data-testid='dropdown-item-Manage Worktrees']")).toBeTruthy();
+    });
+
+    it("opens an explicit abort-merge confirmation and stays cancel-safe", async () => {
+      mockMultiRepo.activeRepository.mockReturnValue(
+        createMockRepo({
+          isMerging: true,
+          conflictFiles: [{ path: "src/conflict.ts", status: "conflict", staged: false }],
+        })
+      );
+
+      const { container, findByText, getByText } = render(() => <CortexGitPanel />);
+
+      const moreTooltip = container.querySelector("[data-tooltip='More Actions']");
+      await fireEvent.click(moreTooltip!.querySelector("button")!);
+      await fireEvent.click(container.querySelector("[data-testid='dropdown-item-Abort Merge']")!);
+
+      expect(await findByText("Abort Merge?")).toBeTruthy();
+      expect(mockGitMergeAbort).not.toHaveBeenCalled();
+
+      await fireEvent.click(getByText(/^Cancel$/));
+      expect(mockGitMergeAbort).not.toHaveBeenCalled();
+
+      await fireEvent.click(moreTooltip!.querySelector("button")!);
+      await fireEvent.click(container.querySelector("[data-testid='dropdown-item-Abort Merge']")!);
+      await findByText("Abort Merge?");
+      await fireEvent.click(getByText(/^Abort Merge$/));
+
+      await vi.waitFor(() => {
+        expect(mockGitMergeAbort).toHaveBeenCalledWith("/test/repo");
+      });
+      expect(mockMultiRepo.refreshRepository).toHaveBeenCalledWith("repo-1");
+    });
+
+    it("opens the mounted worktree dialog from More Actions", async () => {
+      const { container, findByText } = render(() => <CortexGitPanel />);
+
+      const moreTooltip = container.querySelector("[data-tooltip='More Actions']");
+      await fireEvent.click(moreTooltip!.querySelector("button")!);
+      await fireEvent.click(container.querySelector("[data-testid='dropdown-item-Manage Worktrees']")!);
+
+      expect(await findByText("Mounted Worktrees")).toBeTruthy();
     });
   });
 

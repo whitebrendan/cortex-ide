@@ -1,12 +1,21 @@
 import { Component, createSignal, createMemo, Show, For, JSX, onCleanup, onMount } from "solid-js";
 import { useMultiRepo, type GitFile, type GitFileStatus } from "@/context/MultiRepoContext";
+import { DestructiveActionDialog } from "@/components/ui/DestructiveActionDialog";
 import { CortexIcon } from "./primitives/CortexIcon";
 import { CortexIconButton } from "./primitives/CortexIconButton";
 import { CortexDropdown } from "./primitives/CortexDropdown";
 import { CortexDropdownMenu } from "./primitives/CortexDropdownMenu";
 import { CortexDropdownItem } from "./primitives/CortexDropdownItem";
 import { CortexTooltip } from "./primitives/CortexTooltip";
-import { gitStashListEnhanced, gitStashCreate, gitStashPop, gitStashDrop, type StashEntry } from "@/utils/tauri-api";
+import { CortexGitWorktreeDialog } from "./git/CortexGitWorktreeDialog";
+import {
+  gitMergeAbort,
+  gitStashCreate,
+  gitStashDrop,
+  gitStashListEnhanced,
+  gitStashPop,
+  type StashEntry,
+} from "@/utils/tauri-api";
 
 const STATUS_LETTER: Record<GitFileStatus, string> = {
   modified: "M", added: "A", deleted: "D", renamed: "R", untracked: "?", conflict: "U",
@@ -79,6 +88,9 @@ export const CortexGitPanel: Component = () => {
   const [commitMsg, setCommitMsg] = createSignal("");
   const [amend, setAmend] = createSignal(false);
   const [showDotsMenu, setShowDotsMenu] = createSignal(false);
+  const [showAbortMergeDialog, setShowAbortMergeDialog] = createSignal(false);
+  const [showWorktreeDialog, setShowWorktreeDialog] = createSignal(false);
+  const [mergeAbortLoading, setMergeAbortLoading] = createSignal(false);
   const [expandStaged, setExpandStaged] = createSignal(true);
   const [expandChanges, setExpandChanges] = createSignal(true);
   const [expandStash, setExpandStash] = createSignal(false);
@@ -92,6 +104,7 @@ export const CortexGitPanel: Component = () => {
   const staged = () => repo()?.stagedFiles ?? [];
   const unstaged = () => repo()?.unstagedFiles ?? [];
   const currentBranch = () => repo()?.branch ?? "main";
+  const mergeIsActive = createMemo(() => Boolean(repo()?.isMerging || (repo()?.conflictFiles?.length ?? 0) > 0));
   const totalChanges = createMemo(() => staged().length + unstaged().length);
 
   const branchOptions = createMemo(() =>
@@ -143,6 +156,22 @@ export const CortexGitPanel: Component = () => {
     try { await gitStashDrop(r.path, index); await fetchStashes(); } catch (err) { setError(`Stash drop failed: ${err}`); }
   };
 
+  const handleAbortMerge = async () => {
+    const r = repo();
+    if (!r || mergeAbortLoading()) return;
+    setError(null);
+    setMergeAbortLoading(true);
+    try {
+      await gitMergeAbort(r.path);
+      setShowAbortMergeDialog(false);
+      refresh();
+    } catch (err) {
+      setError(`Abort merge failed: ${err}`);
+    } finally {
+      setMergeAbortLoading(false);
+    }
+  };
+
   const dotsAction = (action: string) => {
     setShowDotsMenu(false);
     const id = repoId();
@@ -151,6 +180,8 @@ export const CortexGitPanel: Component = () => {
     else if (action === "push") multiRepo?.push(id);
     else if (action === "fetch") multiRepo?.fetch(id);
     else if (action === "stash") handleStashCreate();
+    else if (action === "abort-merge") setShowAbortMergeDialog(true);
+    else if (action === "worktrees") setShowWorktreeDialog(true);
     else window.dispatchEvent(new CustomEvent("cortex:git:" + action, { detail: { repoId: id } }));
   };
 
@@ -181,6 +212,10 @@ export const CortexGitPanel: Component = () => {
                 <CortexDropdownItem label="Push" onClick={() => dotsAction("push")} />
                 <CortexDropdownItem label="Fetch" onClick={() => dotsAction("fetch")} />
                 <CortexDropdownItem label="Stash" onClick={() => dotsAction("stash")} />
+                <Show when={mergeIsActive()}>
+                  <CortexDropdownItem label="Abort Merge" onClick={() => dotsAction("abort-merge")} />
+                </Show>
+                <CortexDropdownItem label="Manage Worktrees" onClick={() => dotsAction("worktrees")} />
                 <CortexDropdownItem label="Show History" onClick={() => dotsAction("history")} />
               </CortexDropdownMenu>
             </Show>
@@ -283,6 +318,25 @@ export const CortexGitPanel: Component = () => {
           <span style={{ "margin-left": "auto", color: "var(--cortex-text-inactive)", "font-size": "12px" }}>Total Changes: {totalChanges()}</span>
         </Show>
       </div>
+
+      <DestructiveActionDialog
+        open={showAbortMergeDialog()}
+        title="Abort Merge?"
+        message={`Abort the in-progress merge on ${currentBranch()}?`}
+        detail="This will discard the current merge state. Cancel keeps the mounted sidebar unchanged until you explicitly confirm."
+        confirmLabel={mergeAbortLoading() ? "Aborting…" : "Abort Merge"}
+        onConfirm={() => void handleAbortMerge()}
+        onCancel={() => {
+          if (!mergeAbortLoading()) setShowAbortMergeDialog(false);
+        }}
+      />
+
+      <CortexGitWorktreeDialog
+        open={showWorktreeDialog()}
+        repoPath={repo()?.path}
+        onClose={() => setShowWorktreeDialog(false)}
+        onRefresh={refresh}
+      />
 
       <style>{`
         .cortex-git-file-row:hover { background: rgba(255,255,255,0.05); }
