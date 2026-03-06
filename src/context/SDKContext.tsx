@@ -88,6 +88,7 @@ interface SDKState {
   config: Config;
   isStreaming: boolean;
   pendingApproval: ApprovalRequest | null;
+  pendingApprovalQueue: ApprovalRequest[];
   reasoning: string;
   error: string | null;
 }
@@ -170,6 +171,7 @@ export function SDKProvider(props: ParentProps) {
     config: defaultConfig,
     isStreaming: false,
     pendingApproval: null,
+    pendingApprovalQueue: [],
     reasoning: "",
     error: null,
   });
@@ -426,7 +428,7 @@ export function SDKProvider(props: ParentProps) {
         break;
 
       case "approval_request":
-        setState("pendingApproval", {
+        enqueueApproval({
           callId: data.call_id as string,
           command: data.command as string[],
           cwd: data.cwd as string,
@@ -572,7 +574,7 @@ export function SDKProvider(props: ParentProps) {
         setState("messages", []);
         setState("isStreaming", false);
         setState("reasoning", "");
-        setState("pendingApproval", null);
+        clearApprovals();
         setState("error", null);
         setState("currentSession", newSession);
         setState(produce((s) => {
@@ -651,7 +653,7 @@ export function SDKProvider(props: ParentProps) {
       setState("messages", []);
       setState("isStreaming", false);
       setState("reasoning", "");
-      setState("pendingApproval", null);
+      clearApprovals();
     });
   };
 
@@ -667,7 +669,7 @@ export function SDKProvider(props: ParentProps) {
       setState("messages", []);
       setState("isStreaming", false);
       setState("reasoning", "");
-      setState("pendingApproval", null);
+      clearApprovals();
       setState("error", null);
       setState("currentSession", session);
     });
@@ -747,7 +749,7 @@ export function SDKProvider(props: ParentProps) {
         callId,
         approved,
       });
-      setState("pendingApproval", null);
+      resolveApproval(callId);
     } catch (e) {
       cortexLogger.error("Failed to approve:", e);
     }
@@ -817,6 +819,42 @@ export function SDKProvider(props: ParentProps) {
       projectWatchCleanup = null;
     }
   });
+
+  const enqueueApproval = (approval: ApprovalRequest) => {
+    setState(produce((s) => {
+      if (
+        s.pendingApproval?.callId === approval.callId ||
+        s.pendingApprovalQueue.some((pending) => pending.callId === approval.callId)
+      ) {
+        return;
+      }
+
+      if (!s.pendingApproval) {
+        s.pendingApproval = approval;
+        return;
+      }
+
+      s.pendingApprovalQueue.push(approval);
+    }));
+  };
+
+  const clearApprovals = () => {
+    batch(() => {
+      setState("pendingApproval", null);
+      setState("pendingApprovalQueue", []);
+    });
+  };
+
+  const resolveApproval = (callId: string) => {
+    setState(produce((s) => {
+      if (s.pendingApproval?.callId === callId) {
+        s.pendingApproval = s.pendingApprovalQueue.shift() ?? null;
+        return;
+      }
+
+      s.pendingApprovalQueue = s.pendingApprovalQueue.filter((approval) => approval.callId !== callId);
+    }));
+  };
 
   // Listen for Tauri cortex events (Primary AI Pipeline)
   // Event: "cortex:event" — emitted by session.rs via convert_event_to_ws()

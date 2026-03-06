@@ -1,5 +1,7 @@
-import { Show, createSignal, onMount, onCleanup, createEffect } from "solid-js";
+import { Show, createSignal, onCleanup, createEffect } from "solid-js";
+import { Portal } from "solid-js/web";
 import { useSDK } from "@/context/SDKContext";
+import { useModalActiveOptional } from "@/context/ModalActiveContext";
 import { Button } from "./ui";
 import { Icon } from "./ui/Icon";
 
@@ -39,7 +41,7 @@ function DialogIcon(props: { type: DialogType }) {
 
   return (
     <Show when={props.type !== "none"}>
-      <div 
+      <div
         class={`modal-icon ${iconClass()}`}
         aria-label={ariaLabel()}
         id="modal-dialog-icon"
@@ -66,215 +68,311 @@ function DialogIcon(props: { type: DialogType }) {
 
 export function ApprovalDialog() {
   const { state, approve } = useSDK();
+  const { registerModal, unregisterModal } = useModalActiveOptional();
   const [dialogRef, setDialogRef] = createSignal<HTMLDivElement | null>(null);
   const platform = getPlatform();
 
+  let focusTimer: ReturnType<typeof setTimeout> | null = null;
+  let previousActiveElement: HTMLElement | null = null;
+  let previousBodyOverflow = "";
+  let isDialogOpen = false;
+  let isModalRegistered = false;
+
+  const currentApproval = () => state.pendingApproval;
+
   const handleApprove = () => {
-    if (state.pendingApproval) {
-      approve(state.pendingApproval.callId, true);
+    const approval = currentApproval();
+    if (approval) {
+      void approve(approval.callId, true);
     }
   };
 
   const handleDeny = () => {
-    if (state.pendingApproval) {
-      approve(state.pendingApproval.callId, false);
+    const approval = currentApproval();
+    if (approval) {
+      void approve(approval.callId, false);
     }
   };
 
-  const command = () => {
-    const cmd = state.pendingApproval?.command || [];
-    return cmd.join(" ");
-  };
+  const command = () => currentApproval()?.command.join(" ") ?? "";
 
-  // Focus trapping implementation
   const getFocusableElements = () => {
     const dialog = dialogRef();
     if (!dialog) return [];
+
     return Array.from(
       dialog.querySelectorAll<HTMLElement>(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
       )
-    ).filter(el => !el.hasAttribute('disabled') && el.offsetParent !== null);
+    ).filter((element) => {
+      if (element.hasAttribute("disabled") || element.getAttribute("aria-hidden") === "true") {
+        return false;
+      }
+
+      if (typeof window === "undefined") {
+        return true;
+      }
+
+      const style = window.getComputedStyle(element);
+      return style.display !== "none" && style.visibility !== "hidden";
+    });
   };
 
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (!state.pendingApproval) return;
+  const clearFocusTimer = () => {
+    if (focusTimer) {
+      clearTimeout(focusTimer);
+      focusTimer = null;
+    }
+  };
 
-    // Escape key closes dialog (deny action)
-    if (e.key === "Escape") {
-      e.preventDefault();
+  const focusPrimaryElement = () => {
+    clearFocusTimer();
+    focusTimer = setTimeout(() => {
+      const dialog = dialogRef();
+      if (!dialog) return;
+
+      const focusable = getFocusableElements();
+      const primaryButton = focusable.find((element) =>
+        element.classList.contains("modal-button-primary") ||
+        element.getAttribute("data-primary") === "true"
+      );
+
+      (primaryButton ?? focusable[0] ?? dialog).focus();
+    }, 0);
+  };
+
+  const restoreFocus = () => {
+    const focusTarget = previousActiveElement;
+    previousActiveElement = null;
+
+    if (!focusTarget || !focusTarget.isConnected || focusTarget.hasAttribute("disabled")) {
+      return;
+    }
+
+    setTimeout(() => {
+      if (focusTarget.isConnected) {
+        focusTarget.focus();
+      }
+    }, 0);
+  };
+
+  const stopKeyEvent = (event: KeyboardEvent) => {
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+  };
+
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (!currentApproval()) return;
+
+    if (event.key === "Escape") {
+      stopKeyEvent(event);
+      event.preventDefault();
       handleDeny();
       return;
     }
 
-    // Tab key focus trapping with circular navigation
-    if (e.key === "Tab") {
+    if (event.key === "Tab") {
+      stopKeyEvent(event);
       const focusable = getFocusableElements();
       if (focusable.length === 0) return;
 
       const firstElement = focusable[0];
       const lastElement = focusable[focusable.length - 1];
-      const activeElement = document.activeElement;
+      const activeElement = document.activeElement as HTMLElement | null;
 
-      if (e.shiftKey) {
-        // Shift+Tab: go backwards
-        if (activeElement === firstElement || !focusable.includes(activeElement as HTMLElement)) {
-          e.preventDefault();
+      if (event.shiftKey) {
+        if (activeElement === firstElement || !activeElement || !focusable.includes(activeElement)) {
+          event.preventDefault();
           lastElement.focus();
         }
-      } else {
-        // Tab: go forwards
-        if (activeElement === lastElement || !focusable.includes(activeElement as HTMLElement)) {
-          e.preventDefault();
-          firstElement.focus();
-        }
+        return;
       }
+
+      if (activeElement === lastElement || !activeElement || !focusable.includes(activeElement)) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+      return;
     }
 
-    // Arrow key navigation
-    if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+    if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+      stopKeyEvent(event);
       const focusable = getFocusableElements();
       if (focusable.length === 0) return;
 
       const currentIndex = focusable.indexOf(document.activeElement as HTMLElement);
-      if (currentIndex === -1) return;
+      const baseIndex = currentIndex === -1 ? 0 : currentIndex;
+      const direction = event.key === "ArrowRight" ? 1 : -1;
+      const nextIndex = (baseIndex + direction + focusable.length) % focusable.length;
 
-      e.preventDefault();
-      const direction = e.key === "ArrowRight" ? 1 : -1;
-      const nextIndex = (currentIndex + direction + focusable.length) % focusable.length;
+      event.preventDefault();
       focusable[nextIndex].focus();
+      return;
     }
 
-    // Prevent Alt key shortcuts
-    if (e.altKey) {
-      e.preventDefault();
+    if (event.altKey) {
+      stopKeyEvent(event);
+      event.preventDefault();
     }
   };
 
-  // Handle backdrop click - return focus to dialog
-  const handleBackdropClick = (e: MouseEvent) => {
+  const handleFocusIn = (event: FocusEvent) => {
     const dialog = dialogRef();
-    if (e.target === e.currentTarget && dialog) {
-      dialog.focus();
+    const target = event.target;
+    if (!currentApproval() || !dialog || !target || dialog.contains(target as Node)) {
+      return;
+    }
+
+    focusPrimaryElement();
+  };
+
+  const openDialog = () => {
+    if (typeof document === "undefined" || isDialogOpen) {
+      focusPrimaryElement();
+      return;
+    }
+
+    isDialogOpen = true;
+    previousActiveElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    if (!isModalRegistered) {
+      registerModal();
+      isModalRegistered = true;
+    }
+
+    window.addEventListener("keydown", handleKeyDown, true);
+    document.addEventListener("focusin", handleFocusIn, true);
+    focusPrimaryElement();
+  };
+
+  const closeDialog = () => {
+    if (typeof document === "undefined" || !isDialogOpen) {
+      clearFocusTimer();
+      return;
+    }
+
+    isDialogOpen = false;
+    clearFocusTimer();
+    window.removeEventListener("keydown", handleKeyDown, true);
+    document.removeEventListener("focusin", handleFocusIn, true);
+    document.body.style.overflow = previousBodyOverflow;
+
+    if (isModalRegistered) {
+      unregisterModal();
+      isModalRegistered = false;
+    }
+
+    restoreFocus();
+  };
+
+  const handleBackdropPointer = (event: MouseEvent) => {
+    if (event.target === event.currentTarget) {
+      event.preventDefault();
+      focusPrimaryElement();
     }
   };
 
-  // Set up focus management when dialog opens
   createEffect(() => {
-    if (state.pendingApproval) {
-      // Focus the primary button when dialog opens
-      setTimeout(() => {
-        const focusable = getFocusableElements();
-        const primaryButton = focusable.find(el => 
-          el.classList.contains('modal-button-primary') || 
-          el.getAttribute('data-primary') === 'true'
-        );
-        if (primaryButton) {
-          primaryButton.focus();
-        } else if (focusable.length > 0) {
-          focusable[0].focus();
-        }
-      }, 0);
+    const approval = currentApproval();
+    if (approval) {
+      openDialog();
+      return;
     }
-  });
 
-  // Set up keyboard event listener
-  onMount(() => {
-    window.addEventListener("keydown", handleKeyDown);
+    closeDialog();
   });
 
   onCleanup(() => {
-    window.removeEventListener("keydown", handleKeyDown);
+    clearFocusTimer();
+    closeDialog();
   });
 
   return (
-    <Show when={state.pendingApproval}>
-      {/* Modal Backdrop - VS Code: z-index 2575, rgba(0,0,0,0.3) */}
-      <div 
-        class="modal-overlay dimmed"
-        onClick={handleBackdropClick}
-      >
-        {/* Dialog Shadow Wrapper */}
-        <div class="dialog-shadow">
-          {/* Dialog Box - VS Code structure with column-reverse */}
-          <div 
-            ref={setDialogRef}
-            class="modal dialog-type-question"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="modal-dialog-icon modal-dialog-message-text"
-            aria-describedby="modal-dialog-icon modal-dialog-message-text modal-dialog-message-detail"
-            tabIndex={-1}
-            data-focus-trap="true"
+    <Show when={currentApproval()}>
+      {(approval) => (
+        <Portal>
+          <div
+            data-testid="approval-dialog-overlay"
+            class="modal-overlay dimmed"
+            onMouseDown={handleBackdropPointer}
+            onClick={handleBackdropPointer}
           >
-            {/* 
-              VS Code uses flex-direction: column-reverse
-              DOM order: Footer -> Buttons -> Message -> Toolbar
-              Visual order: Toolbar -> Message -> Buttons -> Footer
-            */}
-            
-            {/* Buttons Row (appears at bottom visually) */}
-            <div class="modal-buttons-row">
-              <div class={`modal-buttons platform-${platform}`}>
-                <Button 
-                  variant="secondary" 
-                  size="sm" 
-                  onClick={handleDeny}
-                  class="modal-button modal-button-secondary"
-                >
-                  Deny
-                </Button>
-                <Button 
-                  variant="primary" 
-                  size="sm" 
-                  onClick={handleApprove}
-                  class="modal-button modal-button-primary"
-                  data-primary="true"
-                >
-                  Approve
-                </Button>
-              </div>
-            </div>
-
-            {/* Message Row (appears in middle visually) */}
-            <div class="modal-message-row">
-              <DialogIcon type="question" />
-              <div class="modal-message-container">
-                <div class="modal-title" id="modal-dialog-message-text">
-                  Approve Command
+            <div class="dialog-shadow">
+              <div
+                ref={setDialogRef}
+                data-testid="approval-dialog"
+                class="modal dialog-type-question"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="approval-dialog-title"
+                aria-describedby="approval-dialog-command approval-dialog-cwd"
+                tabIndex={-1}
+                data-focus-trap="true"
+              >
+                <div class="modal-buttons-row">
+                  <div class={`modal-buttons platform-${platform}`}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleDeny}
+                      class="modal-button modal-button-secondary"
+                    >
+                      Deny
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleApprove}
+                      class="modal-button modal-button-primary"
+                      data-primary="true"
+                    >
+                      Approve
+                    </Button>
+                  </div>
                 </div>
-                <div class="modal-detail" id="modal-dialog-message-detail">
-                  <pre 
-                    class="text-sm font-mono p-3 rounded overflow-x-auto"
-                    style={{ 
-                      background: "var(--background-base)",
-                      color: "var(--text-strong)"
-                    }}
-                  >
-                    $ {command()}
-                  </pre>
-                  <div class="mt-2 text-xs" style={{ color: "var(--text-weaker)" }}>
-                    {state.pendingApproval?.cwd}
+
+                <div class="modal-message-row">
+                  <DialogIcon type="question" />
+                  <div class="modal-message-container">
+                    <div class="modal-title" id="approval-dialog-title">
+                      Approve Command
+                    </div>
+                    <div class="modal-detail">
+                      <pre
+                        id="approval-dialog-command"
+                        class="text-sm font-mono p-3 rounded overflow-x-auto"
+                        style={{
+                          background: "var(--background-base)",
+                          color: "var(--text-strong)",
+                        }}
+                      >
+                        $ {command()}
+                      </pre>
+                      <div class="mt-2 text-xs" id="approval-dialog-cwd" style={{ color: "var(--text-weaker)" }}>
+                        {approval().cwd}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="modal-toolbar-row">
+                  <div class="actions-container">
+                    <button
+                      class="modal-close"
+                      onClick={handleDeny}
+                      aria-label="Close"
+                    >
+                      <Icon name="xmark" size={16} />
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* Toolbar Row (appears at top visually) */}
-            <div class="modal-toolbar-row">
-              <div class="actions-container">
-                <button
-                  class="modal-close"
-                  onClick={handleDeny}
-                  aria-label="Close"
-                >
-                  <Icon name="xmark" size={16} />
-                </button>
-              </div>
-            </div>
           </div>
-        </div>
-      </div>
+        </Portal>
+      )}
     </Show>
   );
 }
