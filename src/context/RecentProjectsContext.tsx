@@ -1,10 +1,10 @@
 import { createContext, useContext, createSignal, onMount, onCleanup, ParentProps } from "solid-js";
 import { createStore, produce } from "solid-js/store";
-import { useNavigate } from "@solidjs/router";
+import { useNavigate, useLocation } from "@solidjs/router";
 import { invoke } from "@tauri-apps/api/core";
-import { getWindowLabel } from "@/utils/windowStorage";
 import { showErrorNotification } from "@/utils/notifications";
 import { safeJsonParse } from "@/utils/json";
+import { openWorkspaceSurface } from "@/utils/workingSurface";
 
 export interface RecentProject {
   id: string;
@@ -109,6 +109,7 @@ function saveToStorage(projects: RecentProject[]): void {
 
 export function RecentProjectsProvider(props: ParentProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   
   const [state, setState] = createStore<RecentProjectsState>({
     projects: [],
@@ -233,19 +234,10 @@ export function RecentProjectsProvider(props: ParentProps) {
         showErrorNotification('Failed to open project', `Could not open ${project.name}: ${err}`);
       });
     } else {
-      const label = getWindowLabel();
-      localStorage.setItem(`cortex_current_project_${label}`, project.path);
-      if (label === "main") localStorage.setItem("cortex_current_project", project.path);
-      
-      // Notify WorkspaceContext
-      window.dispatchEvent(new CustomEvent("workspace:open-folder", { 
-        detail: { path: project.path } 
-      }));
-      
-      window.dispatchEvent(new CustomEvent("folder:did-open"));
-      localStorage.setItem("figma_layout_mode", "ide");
-      
-      navigate("/session");
+      openWorkspaceSurface(project.path, {
+        pathname: location.pathname,
+        navigate,
+      });
     }
     
     setShowRecentProjects(false);
@@ -259,19 +251,10 @@ export function RecentProjectsProvider(props: ParentProps) {
         showErrorNotification('Failed to open project', `Could not open project at ${path}: ${err}`);
       });
     } else {
-      const label = getWindowLabel();
-      localStorage.setItem(`cortex_current_project_${label}`, path);
-      if (label === "main") localStorage.setItem("cortex_current_project", path);
-      
-      // Notify WorkspaceContext
-      window.dispatchEvent(new CustomEvent("workspace:open-folder", { 
-        detail: { path } 
-      }));
-      
-      window.dispatchEvent(new CustomEvent("folder:did-open"));
-      localStorage.setItem("figma_layout_mode", "ide");
-      
-      navigate("/session");
+      openWorkspaceSurface(path, {
+        pathname: location.pathname,
+        navigate,
+      });
     }
     
     setShowRecentProjects(false);

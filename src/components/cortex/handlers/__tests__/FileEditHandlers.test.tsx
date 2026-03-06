@@ -4,6 +4,11 @@ import type { OpenFile } from "@/types";
 import { useEditor } from "@/context/editor/EditorProvider";
 import { FileEditHandlers } from "../FileEditHandlers";
 
+const { mockSafeSetItem, mockOpenDialog, mockLocation } = vi.hoisted(() => ({
+  mockSafeSetItem: vi.fn(),
+  mockOpenDialog: vi.fn().mockResolvedValue(null),
+  mockLocation: { pathname: "/session" },
+}));
 const mockUpdateConfig = vi.fn();
 const mockNavigate = vi.fn();
 
@@ -19,10 +24,11 @@ vi.mock("@/context/SDKContext", () => ({
 
 vi.mock("@solidjs/router", () => ({
   useNavigate: () => mockNavigate,
+  useLocation: () => mockLocation,
 }));
 
 vi.mock("@tauri-apps/plugin-dialog", () => ({
-  open: vi.fn().mockResolvedValue(null),
+  open: mockOpenDialog,
   save: vi.fn().mockResolvedValue(null),
 }));
 
@@ -39,7 +45,7 @@ vi.mock("@/utils/windowStorage", () => ({
 }));
 
 vi.mock("@/utils/safeStorage", () => ({
-  safeSetItem: vi.fn(),
+  safeSetItem: mockSafeSetItem,
 }));
 
 describe("FileEditHandlers", () => {
@@ -62,6 +68,9 @@ describe("FileEditHandlers", () => {
     vi.useFakeTimers();
     mockUpdateConfig.mockReset();
     mockNavigate.mockReset();
+    mockSafeSetItem.mockReset();
+    mockOpenDialog.mockReset().mockResolvedValue(null);
+    mockLocation.pathname = "/session";
 
     activeFile = {
       id: "file-1",
@@ -184,5 +193,58 @@ describe("FileEditHandlers", () => {
 
     expect(mockEditor.reloadFile).toHaveBeenCalledWith("file-1");
     expect(screen.queryByText("Reload File from Disk")).toBeNull();
+  });
+
+  it("opens an untitled file on the welcome route and converges to /session", async () => {
+    mockLocation.pathname = "/welcome";
+    renderHandlers();
+
+    window.dispatchEvent(new CustomEvent("file:new"));
+    await vi.runAllTimersAsync();
+
+    expect(mockEditor.openVirtualFile).toHaveBeenCalledWith("Untitled", "", "plaintext");
+    expect(mockSafeSetItem).toHaveBeenCalledWith("figma_layout_mode", "ide");
+    expect(mockNavigate).toHaveBeenCalledWith("/session");
+  });
+
+  it("does not re-navigate when opening a new file from /session", async () => {
+    renderHandlers();
+
+    window.dispatchEvent(new CustomEvent("file:new"));
+    await vi.runAllTimersAsync();
+
+    expect(mockEditor.openVirtualFile).toHaveBeenCalledWith("Untitled", "", "plaintext");
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it("opens a selected folder and converges to the session workspace from welcome", async () => {
+    mockLocation.pathname = "/welcome";
+    mockOpenDialog.mockResolvedValueOnce("/workspace/demo");
+    const dispatchSpy = vi.spyOn(window, "dispatchEvent");
+
+    renderHandlers();
+    window.dispatchEvent(new CustomEvent("folder:open"));
+    await vi.runAllTimersAsync();
+
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ cwd: "/workspace/demo" });
+    expect(mockSafeSetItem).toHaveBeenCalledWith("cortex_current_project_main", "/workspace/demo");
+    expect(mockSafeSetItem).toHaveBeenCalledWith("cortex_current_project", "/workspace/demo");
+    expect(mockSafeSetItem).toHaveBeenCalledWith("figma_layout_mode", "ide");
+    expect(dispatchSpy).toHaveBeenCalledWith(expect.objectContaining({ type: "workspace:open-folder", detail: { path: "/workspace/demo" } }));
+    expect(dispatchSpy).toHaveBeenCalledWith(expect.objectContaining({ type: "folder:did-open" }));
+    expect(mockNavigate).toHaveBeenCalledWith("/session");
+
+    dispatchSpy.mockRestore();
+  });
+
+  it("does not navigate again when opening a folder from /session", async () => {
+    mockOpenDialog.mockResolvedValueOnce("/workspace/demo");
+    renderHandlers();
+
+    window.dispatchEvent(new CustomEvent("folder:open"));
+    await vi.runAllTimersAsync();
+
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ cwd: "/workspace/demo" });
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 });

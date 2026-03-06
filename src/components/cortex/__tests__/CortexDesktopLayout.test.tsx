@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, cleanup } from "@solidjs/testing-library";
 
+const mockLocation = vi.hoisted(() => ({ pathname: "/session" }));
 const {
   mockSendMessage,
   mockInterrupt,
@@ -107,6 +108,10 @@ vi.mock("@/utils/windowStorage", () => ({
   getWindowLabel: () => "main",
 }));
 
+vi.mock("@solidjs/router", () => ({
+  useLocation: () => mockLocation,
+}));
+
 vi.mock("../CortexTitleBar", () => ({
   default: (props: Record<string, unknown>) => (
     <div data-testid="cortex-title-bar" data-mode={props.mode as string} />
@@ -207,6 +212,7 @@ describe("CortexDesktopLayout", () => {
     vi.clearAllMocks();
     cleanup();
     localStorage.clear();
+    mockLocation.pathname = "/session";
     mockGetCurrentWindow.mockResolvedValue(mockAppWindow);
     addEventSpy = vi.spyOn(window, "addEventListener");
     removeEventSpy = vi.spyOn(window, "removeEventListener");
@@ -251,6 +257,29 @@ describe("CortexDesktopLayout", () => {
         </CortexDesktopLayout>
       ));
       expect(queryByTestId("child-element")).toBeTruthy();
+    });
+
+    it("hides shell chrome on /welcome while keeping route children mounted", () => {
+      mockLocation.pathname = "/welcome";
+
+      const { queryByTestId } = render(() => (
+        <CortexDesktopLayout>
+          <div data-testid="child-element">Child Content</div>
+        </CortexDesktopLayout>
+      ));
+
+      expect(queryByTestId("child-element")).toBeTruthy();
+      expect(queryByTestId("cortex-title-bar")).toBeNull();
+      expect(queryByTestId("mode-carousel")).toBeNull();
+      expect(queryByTestId("approval-dialog")).toBeTruthy();
+      expect(queryByTestId("cortex-notifications")).toBeTruthy();
+    });
+
+    it("keeps the mounted shell visible on /session", () => {
+      const { queryByTestId } = render(() => <CortexDesktopLayout />);
+
+      expect(queryByTestId("cortex-title-bar")).toBeTruthy();
+      expect(queryByTestId("mode-carousel")).toBeTruthy();
     });
 
     it("removes startup listeners even if the Tauri window resolves after unmount", async () => {

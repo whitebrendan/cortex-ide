@@ -2,7 +2,7 @@ import { createSignal, onMount, onCleanup } from "solid-js";
 import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 
-import { useNavigate } from "@solidjs/router";
+import { useNavigate, useLocation } from "@solidjs/router";
 
 import { useEditor } from "@/context/editor/EditorProvider";
 import { useSDK } from "@/context/SDKContext";
@@ -10,8 +10,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DestructiveActionDialog } from "@/components/ui/DestructiveActionDialog";
 import { fsWriteFile } from "@/utils/tauri-api";
 import { createLogger } from "@/utils/logger";
-import { getWindowLabel } from "@/utils/windowStorage";
-import { safeSetItem } from "@/utils/safeStorage";
+import { openUntitledSurface, openWorkspaceSurface } from "@/utils/workingSurface";
 
 const logger = createLogger("FileEditHandlers");
 
@@ -35,6 +34,7 @@ export function FileEditHandlers() {
   const editor = useEditor();
   const sdk = useSDK();
   const navigate = useNavigate();
+  const location = useLocation();
   const [dirtyCloseState, setDirtyCloseState] = createSignal<{ fileId: string; fileName: string } | null>(null);
   const [reloadState, setReloadState] = createSignal<{ fileId: string; fileName: string } | null>(null);
 
@@ -98,7 +98,11 @@ export function FileEditHandlers() {
   onMount(() => {
     const handlers: Record<string, EventListener> = {
       "file:new": (() => {
-        editor.openVirtualFile("Untitled", "", "plaintext");
+        openUntitledSurface({
+          pathname: location.pathname,
+          navigate,
+          openVirtualFile: editor.openVirtualFile,
+        });
       }) as EventListener,
 
       "file:open": (() => {
@@ -178,17 +182,10 @@ export function FileEditHandlers() {
           if (selected) {
             const path = selected as string;
             sdk.updateConfig({ cwd: path });
-
-            const label = getWindowLabel();
-            safeSetItem("cortex_current_project_" + label, path);
-            if (label === "main") safeSetItem("cortex_current_project", path);
-
-            safeSetItem("figma_layout_mode", "ide");
-
-            window.dispatchEvent(new CustomEvent("workspace:open-folder", { detail: { path } }));
-            window.dispatchEvent(new CustomEvent("folder:did-open"));
-
-            navigate("/session");
+            openWorkspaceSurface(path, {
+              pathname: location.pathname,
+              navigate,
+            });
           }
         }).catch((e) => {
           logger.error("Failed to open folder:", e);

@@ -18,9 +18,12 @@ if (import.meta.env.DEV) console.log(`[STARTUP] AppCore.tsx module loading @ ${C
 import { ParentProps, createSignal, onMount, onCleanup, createEffect, Show, lazy, Suspense, batch } from "solid-js";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { invoke } from "@tauri-apps/api/core";
+import { useLocation, useNavigate } from "@solidjs/router";
 import { getWindowLabel } from "@/utils/windowStorage";
 import { listen } from "@tauri-apps/api/event";
 import { setProjectPath } from "@/utils/workspace";
+import { gitClone, gitCloneRecursive } from "@/utils/tauri-api";
+import { openWorkspaceSurface } from "@/utils/workingSurface";
 import type { FeedbackType } from "@/components/FeedbackDialog";
 import { DialogErrorBoundary } from "@/components/ErrorBoundary";
 
@@ -383,6 +386,8 @@ function AppContent(props: ParentProps) {
   const notifications = useNotifications();
   const output = useOutput();
   const { settings } = useSettings();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Window lifecycle events (close-requested with dirty file prompt, focus/blur,
   // beforeunload, visibilitychange, force-close cleanup)
@@ -464,16 +469,30 @@ function AppContent(props: ParentProps) {
     }
   };
 
-  const handleCloneRepository = async (url: string, targetDir: string, _openAfterClone: boolean) => {
+  const handleCloneRepository = async (url: string, targetDir: string, openAfterClone: boolean, recursive: boolean) => {
     setCloneLoading(true);
-    setTerminalUsed(true); // Enable terminal when cloning
     try {
-      window.dispatchEvent(new CustomEvent("terminal:new"));
-      await new Promise(r => setTimeout(r, 500));
-      window.dispatchEvent(new CustomEvent("terminal:write-active", { 
-        detail: { data: `git clone "${url}" "${targetDir}"\n` } 
-      }));
+      if (recursive) {
+        await gitCloneRecursive(url, targetDir);
+      } else {
+        await gitClone(url, targetDir);
+      }
+
+      if (openAfterClone) {
+        openWorkspaceSurface(targetDir, {
+          pathname: location.pathname,
+          navigate,
+        });
+      }
+
       setShowCloneRepository(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      notifications.notify({
+        title: "Clone repository failed",
+        message,
+        type: "error",
+      });
     } finally {
       setCloneLoading(false);
     }

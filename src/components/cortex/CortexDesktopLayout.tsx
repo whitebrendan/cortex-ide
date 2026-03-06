@@ -16,6 +16,7 @@ import {
   Suspense,
   lazy,
 } from "solid-js";
+import { useLocation } from "@solidjs/router";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
 import { getWindowLabel } from "@/utils/windowStorage";
@@ -49,6 +50,7 @@ import { CortexVibeLayout } from "./layout/CortexVibeLayout";
 import { CortexIDELayout } from "./layout/CortexIDELayout";
 import type { ViewMode, SidebarTab, BottomPanelTab } from "./layout/types";
 import { BOTTOM_PANEL_DEFAULT_HEIGHT, SIDEBAR_MIN_WIDTH, SIDEBAR_MAX_WIDTH, SIDEBAR_DEFAULT_WIDTH } from "./layout/types";
+import { isSessionRoute } from "@/utils/workingSurface";
 
 const logger = createLogger("DesktopLayout");
 
@@ -163,6 +165,7 @@ export function CortexDesktopLayout(props: ParentProps) {
   const editor = useEditor();
   const sdk = useSDK();
   const commands = useCommands();
+  const location = useLocation();
   const eventListenerCleanup = createAsyncCleanupRegistrar();
 
   let workspace: ReturnType<typeof useWorkspace> | null = null;
@@ -295,6 +298,7 @@ export function CortexDesktopLayout(props: ParentProps) {
   const handleStatusBarBranchClick = () => window.dispatchEvent(new CustomEvent("view:git"));
   const handleStatusBarTogglePanel = () => window.dispatchEvent(new CustomEvent("layout:toggle-panel"));
   const handleStatusBarToggleTerminal = () => window.dispatchEvent(new CustomEvent("terminal:toggle"));
+  const showShellChrome = createMemo(() => isSessionRoute(location.pathname));
 
   const applyModeChange = (nextMode: ViewMode | null | undefined) => {
     if (!VALID_MODES.includes(nextMode as ViewMode)) return;
@@ -417,106 +421,102 @@ export function CortexDesktopLayout(props: ParentProps) {
       overflow: "hidden", "font-family": "var(--cortex-font-sans)", color: "var(--cortex-text-primary)",
     }}>
       <FileEditHandlers />
-      <CortexTitleBar
-        appName={projectName()} currentPage={activeFile()?.name || "Home"} isDraft={activeFile()?.modified}
-        mode={mode()} onModeChange={handleModeChange} isDarkMode={true}
-        onMinimize={handleMinimize} onMaximize={handleMaximize} onClose={handleClose}
-        isMenuOpen={isMenuOpen()} onMenuToggle={() => setIsMenuOpen(!isMenuOpen())}
-        activeMenu={activeMenuLabel()} onMenuSelect={setActiveMenuLabel}
-        configLabel={dynamicModelName()}
-        isRunning={sdk.state.isStreaming}
-        onConfigClick={() => window.dispatchEvent(new CustomEvent("settings:open"))}
-        onStartPause={() => {
-          if (sdk.state.isStreaming) { sdk.interrupt(); }
-          else { const msg = chatInput().trim(); if (msg) handleChatSubmit(msg); }
-        }}
-        onProjectDropdownClick={() => window.dispatchEvent(new CustomEvent("folder:open"))}
-      />
 
-      <main style={{ display: "flex", flex: "1", overflow: "hidden", position: "relative" }}>
-        <CortexModeCarousel
-          mode={mode()}
-          vibeContent={() =>
-            <CortexVibeLayout
-              projectName={projectName()} agents={agents()} selectedConversationId={selectedConversationId()} selectedAgentId={selectedAgentId()}
-              vibeMessages={vibeMessages()} fileChanges={fileChanges()} terminalOutput={terminalOutput()}
-              chatInput={chatInput()} isProcessing={isChatProcessing()} modelName={dynamicModelName()}
-              onConversationSelect={(aId, cId) => { setSelectedAgentId(aId); setSelectedConversationId(cId); }}
-              onAgentToggle={(aId) => { setLocalAgents(prev => prev.map(a => a.id === aId ? { ...a, isExpanded: !a.isExpanded } : a)); }}
-              onNewWorkspace={() => {
-                const id = `agent-${Date.now()}`, n = agents().length + 1;
-                setLocalAgents(prev => [...prev, { id, name: `Agent ${n}`, branch: "main", status: "idle", isExpanded: true, conversations: [] }]);
-                setSelectedAgentId(id); setSelectedConversationId(null);
-                window.dispatchEvent(new CustomEvent("notification", { detail: { type: "success", message: `New agent workspace "Agent ${n}" created.` } }));
-              }}
-              onInputChange={setChatInput} onSubmit={handleChatSubmit} onFileSelect={handleFileSelect}
-              onRunCommand={(cmd) => setTerminalOutput(prev => [...prev, `$ ${cmd}`, "Running..."])}
-              onRun={() => setTerminalOutput(prev => [...prev, "$ npm run dev", "Starting..."])}
-              workspaceFolders={workspaceFolders()} activeFolder={activeWorkspaceFolder()} onFolderChange={handleFolderChange}
-            />
-          }
-          ideContent={() =>
-            <CortexIDELayout
-              sidebarTab={sidebarTab()} sidebarCollapsed={sidebarCollapsed()} sidebarWidth={sidebarWidth()} isResizing={isResizing()}
-              projectPath={projectPath()} bottomPanelTab={bottomPanelTab()} bottomPanelCollapsed={bottomPanelCollapsed()} bottomPanelHeight={bottomPanelHeight()}
-              chatState={chatState()} chatMessages={chatMessages()} chatInput={chatInput()} isProcessing={isChatProcessing()} modelName={dynamicModelName()}
-              onNavItemClick={handleNavItemClick}
-              onAvatarClick={() => { if (!sidebarCollapsed() && sidebarTab() === "account") setSidebarCollapsed(true); else { setSidebarCollapsed(false); setSidebarTab("account"); } }}
-              onFileSelect={handleFileSelect} onSidebarWidthChange={setSidebarWidth} onResizingChange={setIsResizing}
-              onBottomPanelTabChange={showBottomPanelTab} onBottomPanelCollapse={() => setBottomPanelCollapsed(true)} onBottomPanelHeightChange={setBottomPanelHeight}
-              onChatInputChange={setChatInput} onChatSubmit={handleChatSubmit}
-              branchName={statusBarBranch()} isSyncing={statusBarIsSyncing()} hasChanges={statusBarHasChanges()}
-              languageName={statusBarLanguage()}
-              onBranchClick={handleStatusBarBranchClick}
-              onTogglePanel={handleStatusBarTogglePanel} onToggleTerminal={handleStatusBarToggleTerminal}
-            />
-          }
-        />
+      <Show when={showShellChrome()}>
+        <>
+          <CortexTitleBar
+            appName={projectName()} currentPage={activeFile()?.name || "Home"} isDraft={activeFile()?.modified}
+            mode={mode()} onModeChange={handleModeChange} isDarkMode={true}
+            onMinimize={handleMinimize} onMaximize={handleMaximize} onClose={handleClose}
+            isMenuOpen={isMenuOpen()} onMenuToggle={() => setIsMenuOpen(!isMenuOpen())}
+            activeMenu={activeMenuLabel()} onMenuSelect={setActiveMenuLabel}
+            onProjectDropdownClick={() => window.dispatchEvent(new CustomEvent("folder:open"))}
+          />
 
-        {/* AI Modifications Panel Overlay */}
-        <Show when={showAIModifications()}>
-          <Suspense>
-            <CortexAIModificationsPanel
-              onReviewFile={(filePath) => handleFileSelect(filePath)}
-              onClose={() => setShowAIModifications(false)}
-              style={{
-                position: "absolute",
-                right: "16px",
-                top: "16px",
-                bottom: "44px",
-                width: "400px",
-                "z-index": "90",
-              }}
-            />
-          </Suspense>
-        </Show>
-
-        {/* Token Limit Display in IDE mode header area */}
-        <Show when={mode() === "ide"}>
-          <div style={{ position: "absolute", top: "8px", right: "16px", "z-index": "80" }}>
-            <Suspense>
-              <CortexTokenLimitDisplay modelName={dynamicModelName()} />
-            </Suspense>
-          </div>
-        </Show>
-      </main>
-
-      {/* Update File View Modal */}
-      <Show when={activeUpdateFile()}>
-        {(update) => (
-          <div style={{ position: "fixed", inset: "0", "z-index": "1000", display: "flex", "align-items": "center", "justify-content": "center", background: "var(--cortex-bg-overlay)" }} onClick={() => setActiveUpdateFile(null)}>
-            <div style={{ width: "var(--cortex-width-modal-lg)", "max-height": "80vh" }} onClick={(e) => e.stopPropagation()}>
-              <Suspense>
-                <CortexUpdateFileViewPanel
-                  update={update()}
-                  onAccept={() => setActiveUpdateFile(null)}
-                  onReject={() => setActiveUpdateFile(null)}
-                  onClose={() => setActiveUpdateFile(null)}
+          <main style={{ display: "flex", flex: "1", overflow: "hidden", position: "relative" }}>
+            <CortexModeCarousel
+              mode={mode()}
+              vibeContent={() =>
+                <CortexVibeLayout
+                  projectName={projectName()} agents={agents()} selectedConversationId={selectedConversationId()} selectedAgentId={selectedAgentId()}
+                  vibeMessages={vibeMessages()} fileChanges={fileChanges()} terminalOutput={terminalOutput()}
+                  chatInput={chatInput()} isProcessing={isChatProcessing()} modelName={dynamicModelName()}
+                  onConversationSelect={(aId, cId) => { setSelectedAgentId(aId); setSelectedConversationId(cId); }}
+                  onAgentToggle={(aId) => { setLocalAgents(prev => prev.map(a => a.id === aId ? { ...a, isExpanded: !a.isExpanded } : a)); }}
+                  onNewWorkspace={() => {
+                    const id = `agent-${Date.now()}`;
+                    const nextIndex = agents().length + 1;
+                    setLocalAgents(prev => [...prev, { id, name: `Agent ${nextIndex}`, branch: "main", status: "idle", isExpanded: true, conversations: [] }]);
+                    setSelectedAgentId(id);
+                    setSelectedConversationId(null);
+                    window.dispatchEvent(new CustomEvent("notification", { detail: { type: "success", message: `New agent workspace \"Agent ${nextIndex}\" created.` } }));
+                  }}
+                  onInputChange={setChatInput}
+                  onSubmit={handleChatSubmit}
+                  onFileSelect={handleFileSelect}
+                  onRunCommand={(cmd) => setTerminalOutput(prev => [...prev, `$ ${cmd}`, "Running..."])}
+                  onRun={() => setTerminalOutput(prev => [...prev, "$ npm run dev", "Starting..."])}
+                  workspaceFolders={workspaceFolders()}
+                  activeFolder={activeWorkspaceFolder()}
+                  onFolderChange={handleFolderChange}
                 />
-              </Suspense>
-            </div>
-          </div>
-        )}
+              }
+              ideContent={() =>
+                <CortexIDELayout
+                  sidebarTab={sidebarTab()} sidebarCollapsed={sidebarCollapsed()} sidebarWidth={sidebarWidth()} isResizing={isResizing()}
+                  projectPath={projectPath()} bottomPanelTab={bottomPanelTab()} bottomPanelCollapsed={bottomPanelCollapsed()} bottomPanelHeight={bottomPanelHeight()}
+                  chatState={chatState()} chatMessages={chatMessages()} chatInput={chatInput()} isProcessing={isChatProcessing()} modelName={dynamicModelName()}
+                  onNavItemClick={handleNavItemClick}
+                  onAvatarClick={() => { if (!sidebarCollapsed() && sidebarTab() === "account") setSidebarCollapsed(true); else { setSidebarCollapsed(false); setSidebarTab("account"); } }}
+                  onFileSelect={handleFileSelect}
+                  onSidebarWidthChange={setSidebarWidth}
+                  onResizingChange={setIsResizing}
+                  onBottomPanelTabChange={(tab) => { setBottomPanelTab(tab); setBottomPanelCollapsed(false); }}
+                  onBottomPanelCollapse={() => setBottomPanelCollapsed(p => !p)}
+                  onBottomPanelHeightChange={setBottomPanelHeight}
+                  onChatInputChange={setChatInput}
+                  onChatSubmit={handleChatSubmit}
+                  branchName={statusBarBranch()}
+                  isSyncing={statusBarIsSyncing()}
+                  hasChanges={statusBarHasChanges()}
+                  languageName={statusBarLanguage()}
+                  onBranchClick={handleStatusBarBranchClick}
+                  onTogglePanel={handleStatusBarTogglePanel}
+                  onToggleTerminal={handleStatusBarToggleTerminal}
+                />
+              }
+            />
+
+            <Show when={showAIModifications()}>
+              <div style={{ position: "absolute", top: "48px", right: "16px", width: "320px", height: "400px", "z-index": "90" }}>
+                <Suspense>
+                  <CortexAIModificationsPanel onClose={() => setShowAIModifications(false)} />
+                </Suspense>
+              </div>
+            </Show>
+
+            <Show when={activeUpdateFile()}>
+              <div style={{ position: "absolute", top: "48px", left: "50%", transform: "translateX(-50%)", width: "min(90vw, 1200px)", height: "min(80vh, 800px)", "z-index": "95" }}>
+                <Suspense>
+                  <CortexUpdateFileViewPanel
+                    update={activeUpdateFile()!}
+                    onAccept={() => setActiveUpdateFile(null)}
+                    onReject={() => setActiveUpdateFile(null)}
+                    onClose={() => setActiveUpdateFile(null)}
+                  />
+                </Suspense>
+              </div>
+            </Show>
+
+            <Show when={mode() === "ide"}>
+              <div style={{ position: "absolute", top: "8px", right: "16px", "z-index": "80" }}>
+                <Suspense>
+                  <CortexTokenLimitDisplay modelName={dynamicModelName()} />
+                </Suspense>
+              </div>
+            </Show>
+          </main>
+        </>
       </Show>
 
       <ViewNavigationHandlers
@@ -537,7 +537,9 @@ export function CortexDesktopLayout(props: ParentProps) {
       <CortexNotifications />
       <NotificationHandler />
 
-      <WindowResizers />
+      <Show when={showShellChrome()}>
+        <WindowResizers />
+      </Show>
 
       {props.children}
     </div>
