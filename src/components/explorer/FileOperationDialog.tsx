@@ -183,6 +183,7 @@ export const FileOperationDialog: Component<FileOperationDialogProps> = (props) 
         title={isDelete() ? deleteTitle() : createTitle()}
         size="sm"
         closeOnOverlay={false}
+        showFooter={true}
         footer={
           <div style={footerStyle}>
             <CortexButton variant="ghost" onClick={handleClose}>

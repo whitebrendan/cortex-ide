@@ -60,6 +60,7 @@ export interface EditorContextValue {
   setActiveFile: (fileId: string) => void;
   updateFileContent: (fileId: string, content: string) => void;
   saveFile: (fileId: string) => Promise<void>;
+  reloadFile: (fileId: string) => Promise<boolean>;
   closeAllFiles: (includePinned?: boolean) => void;
   splitEditor: (direction: SplitDirection) => void;
   closeGroup: (groupId: string) => void;

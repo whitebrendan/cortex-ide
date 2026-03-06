@@ -82,12 +82,21 @@ export const CortexModal: Component<CortexModalProps> = (props) => {
   let modalRef: HTMLDivElement | undefined;
   let previousActiveElement: HTMLElement | null = null;
   let isRegistered = false;
+  let closeAnimationTimeout: ReturnType<typeof setTimeout> | undefined;
+  let openAnimationFrame: number | undefined;
 
   const size = () => local.size ?? "md";
   const closable = () => local.closable ?? true;
   const closeOnOverlay = () => local.closeOnOverlay ?? true;
   const closeOnEscape = () => local.closeOnEscape ?? true;
   const showFooter = () => local.showFooter ?? (local.onConfirm !== undefined || local.onCancel !== undefined);
+
+  const restoreDocumentState = () => {
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = "";
+    }
+    previousActiveElement?.focus();
+  };
 
   const handleClose = () => {
     if (!closable()) return;
@@ -146,23 +155,29 @@ export const CortexModal: Component<CortexModalProps> = (props) => {
 
   createEffect(() => {
     if (local.open) {
-      previousActiveElement = document.activeElement as HTMLElement;
+      if (closeAnimationTimeout) {
+        clearTimeout(closeAnimationTimeout);
+        closeAnimationTimeout = undefined;
+      }
+      previousActiveElement = typeof document !== "undefined" ? (document.activeElement as HTMLElement) : null;
       setIsAnimating(true);
-      requestAnimationFrame(() => {
+      openAnimationFrame = requestAnimationFrame(() => {
         setIsVisible(true);
         modalRef?.focus();
       });
-      document.body.style.overflow = "hidden";
+      if (typeof document !== "undefined") {
+        document.body.style.overflow = "hidden";
+      }
       if (!isRegistered) {
         registerModal();
         isRegistered = true;
       }
     } else {
       setIsVisible(false);
-      setTimeout(() => {
+      closeAnimationTimeout = setTimeout(() => {
         setIsAnimating(false);
-        document.body.style.overflow = "";
-        previousActiveElement?.focus();
+        restoreDocumentState();
+        closeAnimationTimeout = undefined;
       }, 200);
       if (isRegistered) {
         unregisterModal();
@@ -172,7 +187,13 @@ export const CortexModal: Component<CortexModalProps> = (props) => {
   });
 
   onCleanup(() => {
-    document.body.style.overflow = "";
+    if (openAnimationFrame !== undefined) {
+      cancelAnimationFrame(openAnimationFrame);
+    }
+    if (closeAnimationTimeout) {
+      clearTimeout(closeAnimationTimeout);
+    }
+    restoreDocumentState();
     if (isRegistered) {
       unregisterModal();
       isRegistered = false;

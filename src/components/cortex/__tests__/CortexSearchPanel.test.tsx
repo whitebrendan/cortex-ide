@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, fireEvent, cleanup } from "@solidjs/testing-library";
+import { render, fireEvent, cleanup, screen, within } from "@solidjs/testing-library";
 import { invoke } from "@tauri-apps/api/core";
 import { CortexSearchPanel } from "../CortexSearchPanel";
 
@@ -489,6 +489,108 @@ describe("CortexSearchPanel", () => {
       await vi.waitFor(() => {
         expect(container.textContent).toContain("Search failed");
       });
+    });
+  });
+
+  describe("Replace All confirmation", () => {
+    const searchResponse = {
+      results: [
+        {
+          file: "/workspace/project/src/main.ts",
+          root: "/workspace/project",
+          matches: [
+            { line: 10, column: 5, text: "const test = 1;", matchStart: 6, matchEnd: 10 },
+            { line: 20, column: 3, text: "let test = 2;", matchStart: 4, matchEnd: 8 },
+          ],
+        },
+      ],
+      totalMatches: 2,
+      filesSearched: 50,
+      rootsSearched: 1,
+    };
+
+    const openReplaceAllDialog = async () => {
+      vi.mocked(invoke).mockResolvedValueOnce(searchResponse);
+
+      const view = render(() => <CortexSearchPanel />);
+      const searchInput = view.container.querySelector('input[placeholder="Search"]') as HTMLInputElement;
+      await fireEvent.input(searchInput, { target: { value: "test" } });
+      await fireEvent.keyDown(searchInput, { key: "Enter" });
+
+      await vi.waitFor(() => {
+        expect(view.container.textContent).toContain("main.ts");
+      });
+
+      const replaceToggle = Array.from(view.container.querySelectorAll("button")).find(
+        (button) => button.textContent?.includes("Replace") && !button.textContent?.includes("All")
+      ) as HTMLButtonElement;
+      await fireEvent.click(replaceToggle);
+
+      const replaceInput = view.container.querySelector('input[placeholder="Replace"]') as HTMLInputElement;
+      await fireEvent.input(replaceInput, { target: { value: "updated" } });
+
+      const replaceAllButton = Array.from(view.container.querySelectorAll("button")).find(
+        (button) => button.textContent?.trim() === "Replace All"
+      ) as HTMLButtonElement;
+      await fireEvent.click(replaceAllButton);
+
+      await vi.waitFor(() => {
+        expect(screen.getByText("Replace All Matches")).toBeTruthy();
+      });
+
+      return view;
+    };
+
+    it("opens an explicit confirmation before mutating files", async () => {
+      await openReplaceAllDialog();
+
+      const dialog = screen.getByRole("dialog", { name: "Replace All Matches" });
+      expect(invoke).toHaveBeenCalledTimes(1);
+      expect(dialog.textContent).toContain("2");
+      expect(dialog.textContent).toContain("main.ts");
+    });
+
+    it("keeps cancel and Escape paths mutation-free", async () => {
+      await openReplaceAllDialog();
+      const firstDialog = screen.getByRole("dialog", { name: "Replace All Matches" });
+      await fireEvent.click(within(firstDialog).getByRole("button", { name: "Cancel" }));
+      await vi.waitFor(() => {
+        expect(screen.queryByRole("dialog", { name: "Replace All Matches" })).toBeNull();
+      });
+
+      expect(invoke).toHaveBeenCalledTimes(1);
+
+      await openReplaceAllDialog();
+      const dialog = screen.getByRole("dialog", { name: "Replace All Matches" });
+      await fireEvent.keyDown(dialog, { key: "Escape" });
+      await vi.waitFor(() => {
+        expect(screen.queryByRole("dialog", { name: "Replace All Matches" })).toBeNull();
+      });
+
+      expect(invoke).toHaveBeenCalledTimes(2);
+    });
+
+    it("only replaces after confirming in the destructive dialog", async () => {
+      await openReplaceAllDialog();
+      vi.mocked(invoke).mockResolvedValueOnce(undefined);
+
+      const dialog = screen.getByRole("dialog", { name: "Replace All Matches" });
+      await fireEvent.click(within(dialog).getByRole("button", { name: "Replace All" }));
+
+      expect(invoke).toHaveBeenNthCalledWith(
+        2,
+        "replace_in_files",
+        expect.objectContaining({
+          dryRun: false,
+          replacements: [
+            expect.objectContaining({
+              filePath: "/workspace/project/src/main.ts",
+              searchText: "test",
+              replaceText: "updated",
+            }),
+          ],
+        })
+      );
     });
   });
 });

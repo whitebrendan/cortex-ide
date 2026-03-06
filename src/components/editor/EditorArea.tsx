@@ -49,8 +49,12 @@ export function EditorArea(props: EditorAreaProps) {
   const handleSave = async () => {
     const { fileId } = confirmState();
     await editor.saveFile(fileId);
-    editor.closeFile(fileId);
-    setConfirmState({ open: false, fileId: "", fileName: "" });
+
+    const file = editor.state.openFiles.find((openFile) => openFile.id === fileId);
+    if (file && !file.modified) {
+      editor.closeFile(fileId);
+      setConfirmState({ open: false, fileId: "", fileName: "" });
+    }
   };
 
   const handleDontSave = () => {

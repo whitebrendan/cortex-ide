@@ -1,6 +1,7 @@
-import { Component, createSignal, Show, For, onMount, onCleanup, JSX } from "solid-js";
+import { Component, createSignal, Show, For, onMount, onCleanup, JSX, createMemo } from "solid-js";
 import { invoke } from "@tauri-apps/api/core";
 import { useWorkspace } from "@/context/WorkspaceContext";
+import { DestructiveActionDialog } from "@/components/ui/DestructiveActionDialog";
 
 interface SearchMatch {
   line: number;
@@ -66,8 +67,36 @@ export const CortexSearchPanel: Component = () => {
   const [expanded, setExpanded] = createSignal<Set<string>>(new Set());
   const [searching, setSearching] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
+  const [showReplaceAllDialog, setShowReplaceAllDialog] = createSignal(false);
 
   const totalMatches = () => results().reduce((s, r) => s + r.matches.length, 0);
+  const replaceAllTargetMessage = createMemo(() => {
+    const fileResults = results();
+    const matchCount = totalMatches();
+
+    if (fileResults.length === 1) {
+      const targetFile = getFilename(fileResults[0].file);
+      return (
+        <>
+          Replace <strong>{matchCount}</strong> {matchCount === 1 ? "occurrence" : "occurrences"} in <strong>{targetFile}</strong>?
+        </>
+      );
+    }
+
+    return (
+      <>
+        Replace <strong>{matchCount}</strong> {matchCount === 1 ? "occurrence" : "occurrences"} across <strong>{fileResults.length}</strong> {fileResults.length === 1 ? "file" : "files"}?
+      </>
+    );
+  });
+
+  const replaceAllDetail = createMemo(() => {
+    const replacement = replace();
+    if (!replacement) {
+      return "Every listed match will be updated.";
+    }
+    return `Every listed match will be replaced with \"${replacement}\".`;
+  });
 
   const toggleFile = (f: string) => {
     setExpanded(prev => {
@@ -120,7 +149,13 @@ export const CortexSearchPanel: Component = () => {
       }));
       await invoke("replace_in_files", { replacements, dryRun: false });
       setResults([]);
+      setShowReplaceAllDialog(false);
     } catch (err) { setError(`Replace failed: ${String(err)}`); }
+  };
+
+  const requestReplaceAll = () => {
+    if (!results().length || !replace()) return;
+    setShowReplaceAllDialog(true);
   };
 
   const handleReplaceInFile = async (file: string) => {
@@ -188,7 +223,7 @@ export const CortexSearchPanel: Component = () => {
           <div style={{ display: "flex", "align-items": "center", gap: "6px", "margin-top": "8px" }}>
             <input type="text" value={replace()} onInput={e => setReplace(e.currentTarget.value)}
               placeholder="Replace" style={{ ...inputStyle, padding: "8px", flex: "1" }} />
-            <button onClick={handleReplaceAll} title="Replace All" style={{ background: "var(--cortex-bg-elevated)", border: "1px solid var(--cortex-border-default)", color: "var(--cortex-text-primary)", padding: "6px 10px", "border-radius": "var(--cortex-radius-md)", cursor: "pointer", "font-size": "12px", "white-space": "nowrap" }}>
+            <button onClick={requestReplaceAll} title="Replace All" style={{ background: "var(--cortex-bg-hover)", border: "none", color: "var(--cortex-text-primary)", padding: "6px 10px", "border-radius": "var(--cortex-radius-sm)", cursor: "pointer", "font-size": "12px", "white-space": "nowrap" }}>
               Replace All
             </button>
           </div>
@@ -261,6 +296,18 @@ export const CortexSearchPanel: Component = () => {
         .sp-file-row:hover .sp-file-actions { opacity: 1 !important; }
         .sp-match-row:hover { background: var(--cortex-interactive-hover, rgba(255,255,255,0.05)); }
       `}</style>
+
+      <DestructiveActionDialog
+        open={showReplaceAllDialog()}
+        title="Replace All Matches"
+        message={replaceAllTargetMessage()}
+        detail={replaceAllDetail()}
+        confirmLabel="Replace All"
+        onConfirm={() => {
+          void handleReplaceAll();
+        }}
+        onCancel={() => setShowReplaceAllDialog(false)}
+      />
     </div>
   );
 };

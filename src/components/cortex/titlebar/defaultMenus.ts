@@ -23,6 +23,7 @@ export const DEFAULT_MENUS: Record<string, MenuItem[]> = {
     { label: "Save", shortcut: "⌘S", action: emit("file:save") },
     { label: "Save As...", shortcut: "⌘⇧S", action: emit("file:save-as") },
     { label: "Save All", shortcut: "⌘K S", action: emit("file:save-all") },
+    { label: "Revert File", action: emit("file:revert") },
     { separator: true, label: "" },
     { label: "Close", shortcut: "⌘W", action: emit("file:close") },
     { label: "Close Folder", action: emit("folder:close") },

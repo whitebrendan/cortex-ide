@@ -73,6 +73,20 @@ export function createFileOperations(
   state: EditorState,
   setState: SetStoreFunction<EditorState>,
 ) {
+  const getDisplayName = (path: string) => path.split(/[/\\]/).pop() || path;
+
+  const dispatchFileError = (title: string, path: string, errorMessage: string) => {
+    window.dispatchEvent(
+      new CustomEvent("notification", {
+        detail: {
+          type: "error",
+          title,
+          message: `Could not ${title.toLowerCase().replace("failed to ", "")} \"${getDisplayName(path)}\": ${errorMessage}`,
+        },
+      })
+    );
+  };
+
   const openFile = async (path: string, groupId?: string) => {
     const perfStart = performance.now();
     const targetGroupId = groupId || state.activeGroupId;
@@ -140,16 +154,7 @@ export function createFileOperations(
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : String(e);
       console.error("Failed to open file:", errorMessage);
-      
-      window.dispatchEvent(
-        new CustomEvent("notification", {
-          detail: {
-            type: "error",
-            title: "Failed to open file",
-            message: `Could not open "${path.split("/").pop() || path.split("\\").pop() || path}": ${errorMessage}`,
-          },
-        })
-      );
+      dispatchFileError("Failed to open file", path, errorMessage);
     } finally {
       setState("isOpening", false);
     }
@@ -319,6 +324,35 @@ export function createFileOperations(
     }
   };
 
+  const reloadFile = async (fileId: string): Promise<boolean> => {
+    const file = state.openFiles.find((f) => f.id === fileId);
+    if (!file || !file.path || file.path.startsWith("virtual://")) {
+      return false;
+    }
+
+    try {
+      const content = await invoke<string>("fs_read_file", { path: file.path });
+
+      batch(() => {
+        setState("openFiles", (f) => f.id === fileId, "content", content);
+        setState("openFiles", (f) => f.id === fileId, "modified", false);
+      });
+
+      window.dispatchEvent(
+        new CustomEvent("file:reload", {
+          detail: { path: file.path },
+        })
+      );
+
+      return true;
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      console.error("Failed to reload file:", errorMessage);
+      dispatchFileError("Failed to reload file", file.path, errorMessage);
+      return false;
+    }
+  };
+
   const closeAllFiles = (includePinned: boolean = false) => {
     batch(() => {
       if (includePinned) {
@@ -368,6 +402,7 @@ export function createFileOperations(
     setActiveFile,
     updateFileContent,
     saveFile,
+    reloadFile,
     closeAllFiles,
   };
 }

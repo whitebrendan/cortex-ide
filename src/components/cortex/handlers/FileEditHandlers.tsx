@@ -1,4 +1,4 @@
-import { onMount, onCleanup } from "solid-js";
+import { createSignal, onMount, onCleanup } from "solid-js";
 import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -6,6 +6,8 @@ import { useNavigate } from "@solidjs/router";
 
 import { useEditor } from "@/context/editor/EditorProvider";
 import { useSDK } from "@/context/SDKContext";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { DestructiveActionDialog } from "@/components/ui/DestructiveActionDialog";
 import { fsWriteFile } from "@/utils/tauri-api";
 import { createLogger } from "@/utils/logger";
 import { getWindowLabel } from "@/utils/windowStorage";
@@ -33,6 +35,65 @@ export function FileEditHandlers() {
   const editor = useEditor();
   const sdk = useSDK();
   const navigate = useNavigate();
+  const [dirtyCloseState, setDirtyCloseState] = createSignal<{ fileId: string; fileName: string } | null>(null);
+  const [reloadState, setReloadState] = createSignal<{ fileId: string; fileName: string } | null>(null);
+
+  const getFileById = (fileId: string) => editor.state.openFiles.find((file) => file.id === fileId);
+  const getFileByPath = (path: string) => editor.state.openFiles.find((file) => file.path === path);
+
+  const requestFileClose = (fileId: string) => {
+    const file = getFileById(fileId);
+    if (!file) return;
+
+    if (file.modified) {
+      setDirtyCloseState({ fileId: file.id, fileName: file.name });
+      return;
+    }
+
+    editor.closeFile(fileId);
+  };
+
+  const performReload = async (fileId: string) => {
+    const reloaded = await editor.reloadFile(fileId);
+    if (reloaded) {
+      setReloadState(null);
+    }
+  };
+
+  const requestFileReload = (fileId: string) => {
+    const file = getFileById(fileId);
+    if (!file || !file.path || file.path.startsWith("virtual://")) {
+      return;
+    }
+
+    if (file.modified) {
+      setReloadState({ fileId: file.id, fileName: file.name });
+      return;
+    }
+
+    void performReload(fileId);
+  };
+
+  const handleSaveAndClose = async () => {
+    const state = dirtyCloseState();
+    if (!state) return;
+
+    await editor.saveFile(state.fileId);
+
+    const file = getFileById(state.fileId);
+    if (file && !file.modified) {
+      editor.closeFile(state.fileId);
+      setDirtyCloseState(null);
+    }
+  };
+
+  const handleDontSave = () => {
+    const state = dirtyCloseState();
+    if (!state) return;
+
+    editor.closeFile(state.fileId);
+    setDirtyCloseState(null);
+  };
 
   onMount(() => {
     const handlers: Record<string, EventListener> = {
@@ -89,8 +150,22 @@ export function FileEditHandlers() {
 
       "file:close": (() => {
         const id = editor.state.activeFileId;
-        if (id) editor.closeFile(id);
+        if (id) requestFileClose(id);
       }) as EventListener,
+
+      "file:revert": (() => {
+        const id = editor.state.activeFileId;
+        if (id) requestFileReload(id);
+      }) as EventListener,
+
+      "file:reload-request": ((event: CustomEvent<{ path?: string }>) => {
+        const path = event.detail?.path;
+        if (!path) return;
+        const file = getFileByPath(path);
+        if (file) {
+          void performReload(file.id);
+        }
+      }) as unknown as EventListener,
 
       "folder:open": (() => {
         if ((window as any).__folderOpenPending) return;
@@ -197,7 +272,36 @@ export function FileEditHandlers() {
     });
   });
 
-  return null;
+  return (
+    <>
+      <ConfirmDialog
+        open={dirtyCloseState() !== null}
+        fileName={dirtyCloseState()?.fileName ?? ""}
+        onSave={handleSaveAndClose}
+        onDontSave={handleDontSave}
+        onCancel={() => setDirtyCloseState(null)}
+      />
+
+      <DestructiveActionDialog
+        open={reloadState() !== null}
+        title="Reload File from Disk"
+        message={
+          <>
+            Reload <strong>{reloadState()?.fileName}</strong> from disk and discard your unsaved changes?
+          </>
+        }
+        detail="Your editor contents will be replaced with the version currently on disk."
+        confirmLabel="Reload"
+        onConfirm={() => {
+          const state = reloadState();
+          if (state) {
+            void performReload(state.fileId);
+          }
+        }}
+        onCancel={() => setReloadState(null)}
+      />
+    </>
+  );
 }
 
 export default FileEditHandlers;

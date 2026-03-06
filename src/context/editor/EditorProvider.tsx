@@ -418,6 +418,7 @@ export function EditorProvider(props: ParentProps) {
         setActiveFile: fileOps.setActiveFile,
         updateFileContent: fileOps.updateFileContent,
         saveFile: fileOps.saveFile,
+        reloadFile: fileOps.reloadFile,
         closeAllFiles: fileOps.closeAllFiles,
         splitEditor,
         closeGroup,

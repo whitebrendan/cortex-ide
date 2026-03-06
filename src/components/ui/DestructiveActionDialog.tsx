@@ -1,26 +1,20 @@
-/**
- * ConfirmDialog - Dirty file close confirmation dialog
- *
- * Shows a modal with Save / Don't Save / Cancel buttons when
- * the user attempts to close a file with unsaved changes.
- * Built on CortexModal from the Cortex UI Design System.
- */
+import { Component, JSX, Show } from "solid-js";
+import { CortexModal } from "@/components/cortex/primitives/CortexModal";
+import { CortexButton } from "@/components/cortex/primitives/CortexButton";
+import { CortexIcon } from "@/components/cortex/primitives/CortexIcon";
 
-import { Component, JSX } from "solid-js";
-import { CortexModal } from "../cortex/primitives/CortexModal";
-import { CortexButton } from "../cortex/primitives/CortexButton";
-import { CortexIcon } from "../cortex/primitives/CortexIcon";
-
-export interface ConfirmDialogProps {
+export interface DestructiveActionDialogProps {
   open: boolean;
-  fileName: string;
-  message?: string;
-  onSave: () => void;
-  onDontSave: () => void;
+  title: string;
+  message: JSX.Element | string;
+  detail?: JSX.Element | string;
+  confirmLabel: string;
+  confirmVariant?: "primary" | "danger";
+  onConfirm: () => void;
   onCancel: () => void;
 }
 
-export const ConfirmDialog: Component<ConfirmDialogProps> = (props) => {
+export const DestructiveActionDialog: Component<DestructiveActionDialogProps> = (props) => {
   const bodyStyle: JSX.CSSProperties = {
     display: "flex",
     "align-items": "flex-start",
@@ -70,7 +64,7 @@ export const ConfirmDialog: Component<ConfirmDialogProps> = (props) => {
     <CortexModal
       open={props.open}
       onClose={props.onCancel}
-      title="Unsaved Changes"
+      title={props.title}
       size="sm"
       closeOnOverlay={false}
       showFooter={true}
@@ -79,11 +73,11 @@ export const ConfirmDialog: Component<ConfirmDialogProps> = (props) => {
           <CortexButton variant="ghost" onClick={props.onCancel}>
             Cancel
           </CortexButton>
-          <CortexButton variant="secondary" onClick={props.onDontSave}>
-            Don't Save
-          </CortexButton>
-          <CortexButton variant="primary" onClick={props.onSave}>
-            Save
+          <CortexButton
+            variant={props.confirmVariant ?? "danger"}
+            onClick={props.onConfirm}
+          >
+            {props.confirmLabel}
           </CortexButton>
         </div>
       }
@@ -97,17 +91,14 @@ export const ConfirmDialog: Component<ConfirmDialogProps> = (props) => {
           />
         </div>
         <div style={textStyle}>
-          <p style={messageStyle}>
-            {props.message ??
-              `Do you want to save the changes you made to ${props.fileName}?`}
-          </p>
-          <p style={detailStyle}>
-            Your changes will be lost if you don't save them.
-          </p>
+          <p style={messageStyle}>{props.message}</p>
+          <Show when={props.detail}>
+            <p style={detailStyle}>{props.detail}</p>
+          </Show>
         </div>
       </div>
     </CortexModal>
   );
 };
 
-export default ConfirmDialog;
+export default DestructiveActionDialog;
