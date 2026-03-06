@@ -177,6 +177,10 @@ fn reconstruct_content(content: &str, side: &str) -> String {
     result.join("\n")
 }
 
+fn content_has_conflict_markers(content: &str) -> bool {
+    !parse_conflict_markers(content).regions.is_empty()
+}
+
 // ============================================================================
 // Merge Editor Commands
 // ============================================================================
@@ -282,6 +286,13 @@ pub async fn git_resolve_conflict(
     resolved_content: String,
 ) -> Result<(), String> {
     tokio::task::spawn_blocking(move || {
+        if content_has_conflict_markers(&resolved_content) {
+            return Err(
+                "Resolved content still contains conflict markers. Resolve every conflict before saving."
+                    .to_string(),
+            );
+        }
+
         let repo = find_repo(&path)?;
         let repo_root = repo
             .workdir()
@@ -292,19 +303,7 @@ pub async fn git_resolve_conflict(
         std::fs::write(&full_path, &resolved_content)
             .map_err(|e| format!("Failed to write resolved content: {}", e))?;
 
-        let mut index = repo
-            .index()
-            .map_err(|e| format!("Failed to get index: {}", e))?;
-
-        index
-            .add_path(Path::new(&file_path))
-            .map_err(|e| format!("Failed to stage resolved file: {}", e))?;
-
-        index
-            .write()
-            .map_err(|e| format!("Failed to write index: {}", e))?;
-
-        info!("Resolved and staged conflict for: {}", file_path);
+        info!("Resolved conflict file written without staging: {}", file_path);
         Ok(())
     })
     .await
@@ -330,4 +329,81 @@ pub async fn git_abort_merge(path: String) -> Result<(), String> {
     })
     .await
     .map_err(|e| format!("Task join error: {}", e))?
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
+mod tests {
+    use super::*;
+
+    const CONFLICT_CONTENT: &str = "<<<<<<< HEAD\nours\n=======\ntheirs\n>>>>>>> feature\n";
+
+    fn create_repo_with_file() -> tempfile::TempDir {
+        let dir = tempfile::tempdir().unwrap();
+        let repo = git2::Repository::init(dir.path()).unwrap();
+
+        let file_path = dir.path().join("test.txt");
+        std::fs::write(&file_path, "initial\n").unwrap();
+
+        let mut index = repo.index().unwrap();
+        index.add_path(Path::new("test.txt")).unwrap();
+        index.write().unwrap();
+
+        let sig = git2::Signature::now("Test User", "test@example.com").unwrap();
+        let tree_id = index.write_tree().unwrap();
+        let tree = repo.find_tree(tree_id).unwrap();
+        repo.commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[])
+            .unwrap();
+
+        dir
+    }
+
+    fn block_on<T>(future: impl std::future::Future<Output = T>) -> T {
+        tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(future)
+    }
+
+    #[test]
+    fn git_resolve_conflict_rejects_unresolved_markers() {
+        let dir = create_repo_with_file();
+        std::fs::write(dir.path().join("test.txt"), CONFLICT_CONTENT).unwrap();
+
+        let error = block_on(git_resolve_conflict(
+            dir.path().to_string_lossy().to_string(),
+            "test.txt".to_string(),
+            CONFLICT_CONTENT.to_string(),
+        ))
+        .expect_err("expected unresolved merge markers to be rejected");
+
+        assert!(error.contains("still contains conflict markers"));
+
+        let contents = std::fs::read_to_string(dir.path().join("test.txt")).unwrap();
+        assert_eq!(contents, CONFLICT_CONTENT);
+    }
+
+    #[test]
+    fn git_resolve_conflict_writes_without_staging() {
+        let dir = create_repo_with_file();
+        std::fs::write(dir.path().join("test.txt"), CONFLICT_CONTENT).unwrap();
+
+        block_on(git_resolve_conflict(
+            dir.path().to_string_lossy().to_string(),
+            "test.txt".to_string(),
+            "resolved\ncontent\n".to_string(),
+        ))
+        .expect("resolved content should be written successfully");
+
+        let contents = std::fs::read_to_string(dir.path().join("test.txt")).unwrap();
+        assert_eq!(contents, "resolved\ncontent\n");
+
+        let status = git_command_with_timeout(&["status", "--short"], dir.path()).unwrap();
+        let stdout = String::from_utf8_lossy(&status.stdout);
+        assert!(
+            stdout.lines().any(|line| line == " M test.txt"),
+            "expected the resolved file to remain unstaged, got: {stdout}"
+        );
+    }
 }

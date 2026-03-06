@@ -416,6 +416,7 @@ export function MergeEditor(props: MergeEditorProps) {
   );
   const [isFullscreen, setIsFullscreen] = createSignal(false);
   const [isSaving, setIsSaving] = createSignal(false);
+  const [showDiscardDialog, setShowDiscardDialog] = createSignal(false);
   const [syncScrolling, setSyncScrolling] = createSignal(true);
   const [showInlineActions, _setShowInlineActions] = createSignal(true);
   const [_showDiffDecorations, _setShowDiffDecorations] = createSignal(true);
@@ -425,6 +426,7 @@ export function MergeEditor(props: MergeEditorProps) {
   const [oursContent, setOursContent] = createSignal("");
   const [theirsContent, setTheirsContent] = createSignal("");
   const [resultContent, setResultContent] = createSignal("");
+  const [savedContent, setSavedContent] = createSignal("");
 
   // Track if scroll sync is in progress to prevent loops
   let isScrollSyncing = false;
@@ -448,6 +450,11 @@ export function MergeEditor(props: MergeEditorProps) {
 
   /** Number of remaining unresolved conflicts */
   const remainingCount = createMemo(() => conflictCount() - resolvedCount());
+
+  /** Whether the result pane has unsaved edits */
+  const hasUnsavedChanges = createMemo(
+    () => resultContent() !== savedContent()
+  );
 
   /** Current conflict being viewed */
   const currentConflict = createMemo(() => {
@@ -532,6 +539,10 @@ export function MergeEditor(props: MergeEditorProps) {
 
       // Parse initial content
       const parsed = parseConflictMarkers(props.conflictedContent);
+      const initialResult = buildResultContent(
+        props.conflictedContent,
+        parsed.conflicts
+      );
       batch(() => {
         setConflicts(parsed.conflicts);
         setOursContent(
@@ -540,9 +551,8 @@ export function MergeEditor(props: MergeEditorProps) {
         setTheirsContent(
           extractSideContent(props.conflictedContent, parsed.conflicts, "theirs")
         );
-        setResultContent(
-          buildResultContent(props.conflictedContent, parsed.conflicts)
-        );
+        setResultContent(initialResult);
+        setSavedContent(initialResult);
         setHasBaseContent(parsed.hasBaseContent);
       });
 
@@ -1364,10 +1374,13 @@ export function MergeEditor(props: MergeEditorProps) {
 
   /** Save the merged result */
   async function handleSave() {
+    if (isSaving() || !allResolved()) return;
+
     setIsSaving(true);
     try {
       const mergedContent = resultContent();
       await props.onSave?.(mergedContent);
+      setSavedContent(mergedContent);
     } finally {
       setIsSaving(false);
     }
@@ -1380,6 +1393,15 @@ export function MergeEditor(props: MergeEditorProps) {
 
   /** Cancel the merge */
   function handleCancel() {
+    if (hasUnsavedChanges()) {
+      setShowDiscardDialog(true);
+      return;
+    }
+    props.onCancel?.();
+  }
+
+  function discardUnsavedChanges() {
+    setShowDiscardDialog(false);
     props.onCancel?.();
   }
 
@@ -2303,10 +2325,79 @@ export function MergeEditor(props: MergeEditorProps) {
             </button>
           </Show>
 
+          <Show when={showDiscardDialog()}>
+            <div
+              style={{
+                position: "fixed",
+                inset: "0",
+                display: "flex",
+                "align-items": "center",
+                "justify-content": "center",
+                background: "rgba(0, 0, 0, 0.5)",
+                "z-index": "120",
+              }}
+            >
+              <div
+                style={{
+                  width: "min(420px, calc(100vw - 32px))",
+                  padding: "20px",
+                  background: "var(--cortex-bg-secondary, #1f1f1f)",
+                  border: "1px solid var(--cortex-border, #333)",
+                  "border-radius": "12px",
+                  display: "flex",
+                  "flex-direction": "column",
+                  gap: "12px",
+                }}
+              >
+                <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+                  <Icon name="triangle-exclamation" style={{ width: "16px", height: "16px", color: "var(--cortex-warning)" }} />
+                  <span style={{ "font-size": "14px", "font-weight": "600" }}>
+                    Discard unsaved merge changes?
+                  </span>
+                </div>
+                <span style={{ "font-size": "13px", color: "var(--text-weak, #aaa)" }}>
+                  Your merge edits have not been saved yet. Closing now will lose the current result pane content.
+                </span>
+                <div style={{ display: "flex", "justify-content": "flex-end", gap: "8px" }}>
+                  <button
+                    class="merge-btn merge-btn-cancel-discard"
+                    onClick={() => setShowDiscardDialog(false)}
+                    style={{
+                      padding: "8px 14px",
+                      "border-radius": "var(--cortex-radius-sm)",
+                      background: "transparent",
+                      border: "1px solid var(--cortex-border, #333)",
+                      color: "var(--text-base, #ccc)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Keep Editing
+                  </button>
+                  <button
+                    class="merge-btn merge-btn-confirm-discard"
+                    onClick={discardUnsavedChanges}
+                    style={{
+                      padding: "8px 14px",
+                      "border-radius": "var(--cortex-radius-sm)",
+                      background: "var(--cortex-error, #c93c37)",
+                      border: "none",
+                      color: "white",
+                      cursor: "pointer",
+                      "font-weight": "500",
+                    }}
+                  >
+                    Discard Changes
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Show>
+
           <button
             class="merge-btn merge-btn-save"
             onClick={handleSave}
-            disabled={isSaving()}
+            disabled={isSaving() || !allResolved()}
+            title={allResolved() ? undefined : "Resolve every conflict before saving the merged result"}
             style={{
               display: "flex",
               "align-items": "center",
@@ -2318,7 +2409,7 @@ export function MergeEditor(props: MergeEditorProps) {
                 : "var(--surface-active, #333)",
               border: "none",
               color: allResolved() ? "white" : "var(--text-weak, #888)",
-              cursor: isSaving() ? "wait" : "pointer",
+              cursor: isSaving() ? "wait" : allResolved() ? "pointer" : "not-allowed",
               "font-size": "13px",
               "font-weight": "500",
             }}

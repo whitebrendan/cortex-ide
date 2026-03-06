@@ -46,6 +46,8 @@ export function WorktreeManager(props: WorktreeManagerProps) {
   const [expandedWorktree, setExpandedWorktree] = createSignal<string | null>(null);
   const [showAddDialog, setShowAddDialog] = createSignal(false);
   const [operationLoading, setOperationLoading] = createSignal<string | null>(null);
+  const [showPruneDialog, setShowPruneDialog] = createSignal(false);
+  const [prunePreview, setPrunePreview] = createSignal<string[]>([]);
 
   // Confirmation dialogs
   const [confirmRemove, setConfirmRemove] = createSignal<GitWorktree | null>(null);
@@ -208,10 +210,26 @@ export function WorktreeManager(props: WorktreeManagerProps) {
     }
   };
 
-  const pruneWorktrees = async () => {
+  const previewPruneWorktrees = async () => {
+    setOperationLoading("prune-preview");
+    try {
+      const preview = await gitWorktreePrune(props.repoPath, true);
+      setPrunePreview(preview);
+      setShowPruneDialog(true);
+    } catch (err) {
+      console.error("Failed to prune worktrees:", err);
+      setError(`Failed to prune worktrees: ${err}`);
+    } finally {
+      setOperationLoading(null);
+    }
+  };
+
+  const confirmPruneWorktrees = async () => {
     setOperationLoading("prune");
     try {
-      await gitWorktreePrune(props.repoPath);
+      await gitWorktreePrune(props.repoPath, false);
+      setShowPruneDialog(false);
+      setPrunePreview([]);
       await fetchWorktrees();
     } catch (err) {
       console.error("Failed to prune worktrees:", err);
@@ -220,6 +238,16 @@ export function WorktreeManager(props: WorktreeManagerProps) {
       setOperationLoading(null);
     }
   };
+
+  const closePruneDialog = () => {
+    setShowPruneDialog(false);
+    setPrunePreview([]);
+  };
+
+  const pruneCountLabel = createMemo(() => {
+    const count = prunePreview().length;
+    return count === 1 ? "Prune 1 Stale Worktree" : `Prune ${count} Stale Worktrees`;
+  });
 
   const openInNewWindow = (worktree: GitWorktree) => {
     props.onOpenInNewWindow?.(worktree);
@@ -301,11 +329,11 @@ export function WorktreeManager(props: WorktreeManagerProps) {
           </IconButton>
           <IconButton
             tooltip="Prune Stale Worktrees"
-            onClick={pruneWorktrees}
+            onClick={previewPruneWorktrees}
             disabled={!!operationLoading()}
           >
             <Show
-              when={operationLoading() !== "prune"}
+              when={operationLoading() !== "prune" && operationLoading() !== "prune-preview"}
               fallback={<Icon name="spinner" size={16} style={{ animation: "spin 1s linear infinite" }} />}
             >
               <Icon name="trash" size={16} />
@@ -818,6 +846,63 @@ export function WorktreeManager(props: WorktreeManagerProps) {
             </Show>
           </div>
         </Show>
+      </Modal>
+
+      <Modal
+        open={showPruneDialog()}
+        onClose={closePruneDialog}
+        title="Prune Stale Worktrees?"
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={closePruneDialog}>
+              {prunePreview().length > 0 ? "Cancel" : "Close"}
+            </Button>
+            <Show when={prunePreview().length > 0}>
+              <Button
+                variant="primary"
+                onClick={confirmPruneWorktrees}
+                loading={operationLoading() === "prune"}
+                style={{ background: tokens.colors.semantic.error }}
+              >
+                {pruneCountLabel()}
+              </Button>
+            </Show>
+          </>
+        }
+      >
+        <div style={{ display: "flex", "flex-direction": "column", gap: tokens.spacing.md }}>
+          <Text style={{ color: tokens.colors.text.primary }}>
+            Preview the stale worktree entries that will be removed before running prune.
+          </Text>
+          <Show
+            when={prunePreview().length > 0}
+            fallback={
+              <Text style={{ "font-size": "12px", color: tokens.colors.text.muted }}>
+                No stale worktrees are currently eligible for pruning.
+              </Text>
+            }
+          >
+            <div
+              style={{
+                padding: tokens.spacing.md,
+                background: tokens.colors.surface.canvas,
+                "border-radius": tokens.radius.md,
+                display: "flex",
+                "flex-direction": "column",
+                gap: tokens.spacing.sm,
+              }}
+            >
+              <For each={prunePreview()}>
+                {(entry) => (
+                  <Text style={{ "font-size": "11px", "font-family": tokens.typography.fontFamily.mono, color: tokens.colors.text.primary }}>
+                    {entry}
+                  </Text>
+                )}
+              </For>
+            </div>
+          </Show>
+        </div>
       </Modal>
 
       {/* Move Worktree Dialog */}

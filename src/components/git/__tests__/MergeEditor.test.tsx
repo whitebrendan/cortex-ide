@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, cleanup } from "@/test/utils";
+import { render, cleanup, nextTick } from "@/test/utils";
 import { parseConflictMarkers, MergeEditor } from "../MergeEditor";
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -32,6 +32,7 @@ vi.mock("@/utils/monacoManager", () => ({
     getInstance: () => ({
       ensureLoaded: vi.fn().mockResolvedValue({
         editor: {
+          defineTheme: vi.fn(),
           create: vi.fn().mockReturnValue({
             setModel: vi.fn(),
             dispose: vi.fn(),
@@ -50,6 +51,8 @@ vi.mock("@/utils/monacoManager", () => ({
             layout: vi.fn(),
             focus: vi.fn(),
             getPosition: vi.fn().mockReturnValue({ lineNumber: 1, column: 1 }),
+            setPosition: vi.fn(),
+            addCommand: vi.fn(),
           }),
           createDiffEditor: vi.fn().mockReturnValue({
             setModel: vi.fn(),
@@ -64,11 +67,22 @@ vi.mock("@/utils/monacoManager", () => ({
             setValue: vi.fn(),
           }),
           getModel: vi.fn().mockReturnValue(null),
+          OverviewRulerLane: { Left: 1, Right: 2 },
         },
         languages: {
           registerCodeLensProvider: vi.fn().mockReturnValue({ dispose: vi.fn() }),
         },
         Uri: { parse: vi.fn().mockReturnValue({}) },
+        Range: class {
+          constructor(
+            public startLineNumber: number,
+            public startColumn: number,
+            public endLineNumber: number,
+            public endColumn: number,
+          ) {}
+        },
+        KeyCode: { F7: 118, F8: 119, Escape: 9 },
+        KeyMod: { Shift: 1024, Alt: 512 },
       }),
     }),
   },
@@ -318,6 +332,69 @@ describe("MergeEditor", () => {
         <MergeEditor filePath="test.ts" conflictedContent={multipleConflicts} />
       ));
       expect(container.textContent).toContain("2");
+    });
+  });
+
+  describe("Destructive guardrails", () => {
+    it("disables saving while conflicts remain unresolved", async () => {
+      const onSave = vi.fn();
+      const { getByRole } = render(() => (
+        <MergeEditor filePath="test.ts" conflictedContent={standardConflict} onSave={onSave} />
+      ));
+
+      await nextTick();
+
+      const saveButton = getByRole("button", { name: /Save Merged Result/ });
+      expect(saveButton.getAttribute("disabled")).not.toBeNull();
+
+      saveButton.click();
+      await nextTick();
+
+      expect(onSave).not.toHaveBeenCalled();
+    });
+
+    it("allows saving after every conflict is explicitly resolved", async () => {
+      const onSave = vi.fn();
+      const { getByRole } = render(() => (
+        <MergeEditor filePath="test.ts" conflictedContent={standardConflict} onSave={onSave} />
+      ));
+
+      await nextTick();
+
+      getByRole("button", { name: /^Current$/ }).click();
+      await nextTick();
+
+      const saveButton = getByRole("button", { name: /Save Merged Result/ });
+      expect(saveButton.getAttribute("disabled")).toBeNull();
+
+      saveButton.click();
+      await nextTick();
+
+      expect(onSave).toHaveBeenCalledTimes(1);
+      expect(onSave.mock.calls[0]?.[0]).toContain('const x = "ours";');
+    });
+
+    it("confirms before cancelling when merge edits would be lost", async () => {
+      const onCancel = vi.fn();
+      const { getByRole, queryByText } = render(() => (
+        <MergeEditor filePath="test.ts" conflictedContent={standardConflict} onCancel={onCancel} />
+      ));
+
+      await nextTick();
+
+      getByRole("button", { name: /^Current$/ }).click();
+      await nextTick();
+
+      getByRole("button", { name: /^Cancel$/ }).click();
+      await nextTick();
+
+      expect(onCancel).not.toHaveBeenCalled();
+      expect(queryByText(/Discard unsaved merge changes\?/)).toBeTruthy();
+
+      getByRole("button", { name: /^Discard Changes$/ }).click();
+      await nextTick();
+
+      expect(onCancel).toHaveBeenCalledTimes(1);
     });
   });
 });
