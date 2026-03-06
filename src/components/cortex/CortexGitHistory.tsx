@@ -11,8 +11,31 @@ export interface CortexGitHistoryProps {
   onCommitSelect?: (hash: string) => void;
 }
 
-const relativeDate = (dateStr: string): string => {
-  const date = new Date(dateStr);
+const GIT_UNIX_SECONDS_THRESHOLD = 10_000_000_000;
+
+const parseGitCommitDate = (dateValue: string | number): Date => {
+  if (typeof dateValue === "number") {
+    return new Date(
+      Math.abs(dateValue) < GIT_UNIX_SECONDS_THRESHOLD ? dateValue * 1000 : dateValue,
+    );
+  }
+
+  const trimmedValue = dateValue.trim();
+  if (/^-?\d+$/.test(trimmedValue)) {
+    const numericValue = Number(trimmedValue);
+    return new Date(
+      Math.abs(numericValue) < GIT_UNIX_SECONDS_THRESHOLD
+        ? numericValue * 1000
+        : numericValue,
+    );
+  }
+
+  return new Date(trimmedValue);
+};
+
+const relativeDate = (dateValue: string | number): string => {
+  const date = parseGitCommitDate(dateValue);
+  if (Number.isNaN(date.getTime())) return "";
   const now = Date.now();
   const diff = now - date.getTime();
   const mins = Math.floor(diff / 60000);
