@@ -1,5 +1,5 @@
 import { safeSetItem } from "@/utils/safeStorage";
-import { getWindowLabel } from "@/utils/windowStorage";
+import { clearProjectPath, setProjectPath } from "@/utils/workspace";
 
 export interface SessionNavigationOptions {
   pathname: string;
@@ -11,21 +11,32 @@ export function isSessionRoute(pathname: string): boolean {
 }
 
 export function persistCurrentProject(path: string): void {
-  const label = getWindowLabel();
-  safeSetItem(`cortex_current_project_${label}`, path);
-  if (label === "main") {
-    safeSetItem("cortex_current_project", path);
-  }
+  setProjectPath(path);
+}
+
+export function resetProjectScopedTransientState(): void {
+  safeSetItem("figma_layout_mode", "ide");
+  safeSetItem("figma_layout_sidebar_tab", "files");
+  safeSetItem("figma_layout_sidebar_collapsed", "false");
+  safeSetItem("figma_layout_chat_state", "minimized");
 }
 
 export function openWorkspaceSurface(path: string, options: SessionNavigationOptions): void {
   persistCurrentProject(path);
-  safeSetItem("figma_layout_mode", "ide");
+  resetProjectScopedTransientState();
   window.dispatchEvent(new CustomEvent("workspace:open-folder", { detail: { path } }));
   window.dispatchEvent(new CustomEvent("folder:did-open"));
 
   if (!isSessionRoute(options.pathname)) {
     options.navigate("/session");
+  }
+}
+
+export function closeWorkspaceSurface(options: SessionNavigationOptions): void {
+  clearProjectPath();
+
+  if (options.pathname !== "/welcome") {
+    options.navigate("/welcome");
   }
 }
 

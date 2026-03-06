@@ -15,6 +15,7 @@ import {
   Show,
   Suspense,
   lazy,
+  batch,
 } from "solid-js";
 import { useLocation } from "@solidjs/router";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -295,6 +296,17 @@ export function CortexDesktopLayout(props: ParentProps) {
     setBottomPanelCollapsed(false);
   };
 
+  const resetProjectScopedShellState = () => {
+    batch(() => {
+      setMode("ide");
+      setSidebarTab("files");
+      setSidebarCollapsed(false);
+      setChatState("minimized");
+      setBottomPanelTab("terminal");
+      setBottomPanelCollapsed(true);
+    });
+  };
+
   const handleStatusBarBranchClick = () => window.dispatchEvent(new CustomEvent("view:git"));
   const handleStatusBarTogglePanel = () => window.dispatchEvent(new CustomEvent("layout:toggle-panel"));
   const handleStatusBarToggleTerminal = () => window.dispatchEvent(new CustomEvent("terminal:toggle"));
@@ -332,7 +344,7 @@ export function CortexDesktopLayout(props: ParentProps) {
     const evMap: Record<string, EventListener> = {
       "viewmode:change": ((e: Event) => applyModeChange((e as CustomEvent<{ mode?: ViewMode }>).detail?.mode)) as EventListener,
       "chat:toggle": (() => setChatState(p => p === "expanded" ? "minimized" : "expanded")) as EventListener,
-      "folder:did-open": (() => openSidebarTab("files")) as EventListener,
+      "folder:did-open": (() => resetProjectScopedShellState()) as EventListener,
       "settings:open-tab": (() => editor.openVirtualFile("Settings", "", "plaintext")) as EventListener,
       "view:explorer": (() => openSidebarTab("files")) as EventListener,
       "view:search": (() => openSidebarTab("search")) as EventListener,

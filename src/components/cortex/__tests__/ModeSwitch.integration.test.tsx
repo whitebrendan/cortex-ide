@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, cleanup, fireEvent } from "@solidjs/testing-library";
 import type { ViewMode as _ViewMode } from "../layout/types";
 
+const mockLocation = vi.hoisted(() => ({ pathname: "/session" }));
+
 vi.mock("@tauri-apps/api/window", () => ({
   getCurrentWindow: vi.fn(() => ({
     minimize: vi.fn().mockResolvedValue(undefined),
@@ -36,6 +38,7 @@ vi.mock("@tauri-apps/plugin-os", () => ({
 
 vi.mock("@solidjs/router", () => ({
   useNavigate: () => vi.fn(),
+  useLocation: () => mockLocation,
 }));
 
 vi.mock("@/utils/logger", () => ({

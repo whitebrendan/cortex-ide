@@ -2,18 +2,25 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@solidjs/testing-library";
 import type { OpenFile } from "@/types";
 import { useEditor } from "@/context/editor/EditorProvider";
+import { useWorkspace } from "@/context/WorkspaceContext";
 import { FileEditHandlers } from "../FileEditHandlers";
 
-const { mockSafeSetItem, mockOpenDialog, mockLocation } = vi.hoisted(() => ({
+const { mockSafeSetItem, mockSafeRemoveItem, mockOpenDialog, mockLocation } = vi.hoisted(() => ({
   mockSafeSetItem: vi.fn(),
+  mockSafeRemoveItem: vi.fn(),
   mockOpenDialog: vi.fn().mockResolvedValue(null),
   mockLocation: { pathname: "/session" },
 }));
 const mockUpdateConfig = vi.fn();
 const mockNavigate = vi.fn();
+const mockCloseWorkspace = vi.fn();
 
 vi.mock("@/context/editor/EditorProvider", () => ({
   useEditor: vi.fn(),
+}));
+
+vi.mock("@/context/WorkspaceContext", () => ({
+  useWorkspace: vi.fn(),
 }));
 
 vi.mock("@/context/SDKContext", () => ({
@@ -46,6 +53,7 @@ vi.mock("@/utils/windowStorage", () => ({
 
 vi.mock("@/utils/safeStorage", () => ({
   safeSetItem: mockSafeSetItem,
+  safeRemoveItem: mockSafeRemoveItem,
 }));
 
 describe("FileEditHandlers", () => {
@@ -68,7 +76,9 @@ describe("FileEditHandlers", () => {
     vi.useFakeTimers();
     mockUpdateConfig.mockReset();
     mockNavigate.mockReset();
+    mockCloseWorkspace.mockReset();
     mockSafeSetItem.mockReset();
+    mockSafeRemoveItem.mockReset();
     mockOpenDialog.mockReset().mockResolvedValue(null);
     mockLocation.pathname = "/session";
 
@@ -100,6 +110,7 @@ describe("FileEditHandlers", () => {
     };
 
     vi.mocked(useEditor).mockReturnValue(mockEditor as never);
+    vi.mocked(useWorkspace).mockReturnValue({ closeWorkspace: mockCloseWorkspace } as never);
   });
 
   afterEach(() => {
@@ -227,9 +238,14 @@ describe("FileEditHandlers", () => {
     await vi.runAllTimersAsync();
 
     expect(mockUpdateConfig).toHaveBeenCalledWith({ cwd: "/workspace/demo" });
+    expect(mockSafeSetItem).toHaveBeenCalledWith("projectPath_main", "/workspace/demo");
     expect(mockSafeSetItem).toHaveBeenCalledWith("cortex_current_project_main", "/workspace/demo");
+    expect(mockSafeSetItem).toHaveBeenCalledWith("projectPath", "/workspace/demo");
     expect(mockSafeSetItem).toHaveBeenCalledWith("cortex_current_project", "/workspace/demo");
     expect(mockSafeSetItem).toHaveBeenCalledWith("figma_layout_mode", "ide");
+    expect(mockSafeSetItem).toHaveBeenCalledWith("figma_layout_sidebar_tab", "files");
+    expect(mockSafeSetItem).toHaveBeenCalledWith("figma_layout_sidebar_collapsed", "false");
+    expect(mockSafeSetItem).toHaveBeenCalledWith("figma_layout_chat_state", "minimized");
     expect(dispatchSpy).toHaveBeenCalledWith(expect.objectContaining({ type: "workspace:open-folder", detail: { path: "/workspace/demo" } }));
     expect(dispatchSpy).toHaveBeenCalledWith(expect.objectContaining({ type: "folder:did-open" }));
     expect(mockNavigate).toHaveBeenCalledWith("/session");
@@ -246,5 +262,20 @@ describe("FileEditHandlers", () => {
 
     expect(mockUpdateConfig).toHaveBeenCalledWith({ cwd: "/workspace/demo" });
     expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it("clears workspace state and returns to welcome on Close Folder", async () => {
+    renderHandlers();
+
+    window.dispatchEvent(new CustomEvent("folder:close"));
+    await vi.runAllTimersAsync();
+
+    expect(mockCloseWorkspace).toHaveBeenCalledTimes(1);
+    expect(mockUpdateConfig).toHaveBeenCalledWith({ cwd: "." });
+    expect(mockSafeRemoveItem).toHaveBeenCalledWith("projectPath_main");
+    expect(mockSafeRemoveItem).toHaveBeenCalledWith("cortex_current_project_main");
+    expect(mockSafeRemoveItem).toHaveBeenCalledWith("projectPath");
+    expect(mockSafeRemoveItem).toHaveBeenCalledWith("cortex_current_project");
+    expect(mockNavigate).toHaveBeenCalledWith("/welcome");
   });
 });

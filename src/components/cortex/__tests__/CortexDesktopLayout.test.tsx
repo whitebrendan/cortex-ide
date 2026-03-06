@@ -539,21 +539,29 @@ describe("CortexDesktopLayout", () => {
       });
     });
 
-    it("should set sidebar to files and uncollapse on folder:did-open", async () => {
+    it("should set the mounted shell back to the project baseline on folder:did-open", async () => {
       localStorage.setItem("figma_layout_mode", "ide");
       localStorage.setItem("figma_layout_sidebar_collapsed", "true");
       localStorage.setItem("figma_layout_sidebar_tab", "search");
+      localStorage.setItem("figma_layout_chat_state", "expanded");
 
-      render(() => <CortexDesktopLayout />);
+      const { queryByTestId } = render(() => <CortexDesktopLayout />);
+
+      queryByTestId("bottom-tab-history")!.click();
 
       await waitForMount();
 
       window.dispatchEvent(new CustomEvent("folder:did-open"));
 
       await vi.waitFor(() => {
+        const carousel = document.querySelector('[data-testid="mode-carousel"]');
         const layout = document.querySelector('[data-testid="ide-layout"]');
+        expect(carousel?.getAttribute("data-mode")).toBe("ide");
         expect(layout?.getAttribute("data-sidebar-tab")).toBe("files");
         expect(layout?.getAttribute("data-sidebar-collapsed")).toBe("false");
+        expect(layout?.getAttribute("data-chat-state")).toBe("minimized");
+        expect(layout?.getAttribute("data-bottom-panel-tab")).toBe("terminal");
+        expect(layout?.getAttribute("data-bottom-panel-collapsed")).toBe("true");
       });
     });
   });

@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, cleanup } from "@solidjs/testing-library";
 import { onMount, onCleanup } from "solid-js";
 
+const mockLocation = vi.hoisted(() => ({ pathname: "/session" }));
+
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn().mockResolvedValue(undefined),
 }));
@@ -34,6 +36,7 @@ vi.mock("@tauri-apps/plugin-os", () => ({
 
 vi.mock("@solidjs/router", () => ({
   useNavigate: () => vi.fn(),
+  useLocation: () => mockLocation,
 }));
 
 vi.mock("@/utils/logger", () => ({
@@ -74,7 +77,7 @@ function setupCommonDoMocks() {
   vi.doMock("@tauri-apps/api/window", () => ({ getCurrentWindow: vi.fn(() => ({ minimize: vi.fn(), maximize: vi.fn(), close: vi.fn(), isMaximized: vi.fn().mockResolvedValue(false), label: "main" })) }));
   vi.doMock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn().mockResolvedValue(null), save: vi.fn().mockResolvedValue(null) }));
   vi.doMock("@tauri-apps/plugin-os", () => ({ platform: vi.fn().mockResolvedValue("linux") }));
-  vi.doMock("@solidjs/router", () => ({ useNavigate: () => vi.fn() }));
+  vi.doMock("@solidjs/router", () => ({ useNavigate: () => vi.fn(), useLocation: () => mockLocation }));
   vi.doMock("@/utils/logger", () => ({ createLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }), cortexLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
   vi.doMock("@/utils/windowStorage", () => ({ getWindowLabel: () => "main" }));
   vi.doMock("@/utils/tauri-api", () => ({ fsWriteFile: vi.fn().mockResolvedValue(undefined), fsReadTextFile: vi.fn().mockResolvedValue("") }));

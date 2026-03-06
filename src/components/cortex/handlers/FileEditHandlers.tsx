@@ -6,11 +6,12 @@ import { useNavigate, useLocation } from "@solidjs/router";
 
 import { useEditor } from "@/context/editor/EditorProvider";
 import { useSDK } from "@/context/SDKContext";
+import { useWorkspace } from "@/context/WorkspaceContext";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DestructiveActionDialog } from "@/components/ui/DestructiveActionDialog";
 import { fsWriteFile } from "@/utils/tauri-api";
 import { createLogger } from "@/utils/logger";
-import { openUntitledSurface, openWorkspaceSurface } from "@/utils/workingSurface";
+import { closeWorkspaceSurface, openUntitledSurface, openWorkspaceSurface } from "@/utils/workingSurface";
 
 const logger = createLogger("FileEditHandlers");
 
@@ -33,6 +34,12 @@ function getActiveMonacoEditor() {
 export function FileEditHandlers() {
   const editor = useEditor();
   const sdk = useSDK();
+  let workspace: ReturnType<typeof useWorkspace> | null = null;
+  try {
+    workspace = useWorkspace();
+  } catch {
+    workspace = null;
+  }
   const navigate = useNavigate();
   const location = useLocation();
   const [dirtyCloseState, setDirtyCloseState] = createSignal<{ fileId: string; fileName: string } | null>(null);
@@ -195,7 +202,15 @@ export function FileEditHandlers() {
       }) as EventListener,
 
       "folder:close": (() => {
+        workspace?.closeWorkspace();
+        if (!workspace) {
+          window.dispatchEvent(new CustomEvent("workspace:closed"));
+        }
         sdk.updateConfig({ cwd: "." });
+        closeWorkspaceSurface({
+          pathname: location.pathname,
+          navigate,
+        });
       }) as EventListener,
 
       "window:new": (async () => {

@@ -351,6 +351,7 @@ function detectWorkspaceFormat(filePath: string): WorkspaceFormat {
 const WorkspaceContext = createContext<WorkspaceContextValue>();
 
 import { getWindowLabel } from "@/utils/windowStorage";
+import { clearProjectPath } from "@/utils/workspace";
 
 const STORAGE_KEY_BASE = "cortex_workspace_state";
 const RECENT_WORKSPACES_KEY = "cortex_recent_workspaces";
@@ -469,6 +470,7 @@ export function WorkspaceProvider(props: ParentProps) {
           setFolders([]);
           setWorkspaceFilePath(null);
           setActiveFolder(null);
+          setSettings({});
         });
         addFolder(newPath);
       }
@@ -493,6 +495,7 @@ export function WorkspaceProvider(props: ParentProps) {
             setFolders([]);
             setWorkspaceFilePath(null);
             setActiveFolder(null);
+            setSettings({});
           });
           addFolder(currentProject);
         }
@@ -749,9 +752,9 @@ export function WorkspaceProvider(props: ParentProps) {
       setActiveFolder(null);
       setSettings({});
     });
-    
-    localStorage.removeItem("cortex_current_project");
-    
+
+    clearProjectPath();
+
     window.dispatchEvent(new CustomEvent("workspace:closed"));
   };
 
@@ -1039,6 +1042,7 @@ export function WorkspaceProvider(props: ParentProps) {
           setFolders([]);
           setWorkspaceFilePath(null);
           setActiveFolder(null);
+          setSettings({});
         });
         await addFolder(workspace.path, workspace.name);
       }
