@@ -303,7 +303,19 @@ pub async fn git_resolve_conflict(
         std::fs::write(&full_path, &resolved_content)
             .map_err(|e| format!("Failed to write resolved content: {}", e))?;
 
-        info!("Resolved conflict file written without staging: {}", file_path);
+        let mut index = repo
+            .index()
+            .map_err(|e| format!("Failed to get index: {}", e))?;
+
+        index
+            .add_path(Path::new(&file_path))
+            .map_err(|e| format!("Failed to stage resolved file: {}", e))?;
+
+        index
+            .write()
+            .map_err(|e| format!("Failed to write index: {}", e))?;
+
+        info!("Resolved and staged conflict for: {}", file_path);
         Ok(())
     })
     .await
@@ -335,6 +347,7 @@ pub async fn git_abort_merge(path: String) -> Result<(), String> {
 #[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
+    use git2::build::CheckoutBuilder;
 
     const CONFLICT_CONTENT: &str = "<<<<<<< HEAD\nours\n=======\ntheirs\n>>>>>>> feature\n";
 
@@ -354,6 +367,70 @@ mod tests {
         let tree = repo.find_tree(tree_id).unwrap();
         repo.commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[])
             .unwrap();
+
+        let mut config = repo.config().unwrap();
+        config.set_str("user.name", "Test User").unwrap();
+        config.set_str("user.email", "test@example.com").unwrap();
+
+        dir
+    }
+
+    fn checkout_branch(repo: &git2::Repository, branch: &str) {
+        let reference = format!("refs/heads/{branch}");
+        repo.set_head(&reference).unwrap();
+
+        let object = repo.revparse_single(&reference).unwrap();
+        repo.checkout_tree(&object, Some(CheckoutBuilder::new().force()))
+            .unwrap();
+    }
+
+    fn commit_file(repo: &git2::Repository, path: &Path, contents: &str, message: &str) {
+        std::fs::write(path, contents).unwrap();
+
+        let mut index = repo.index().unwrap();
+        index.add_path(Path::new("test.txt")).unwrap();
+        index.write().unwrap();
+
+        let sig = git2::Signature::now("Test User", "test@example.com").unwrap();
+        let tree_id = index.write_tree().unwrap();
+        let tree = repo.find_tree(tree_id).unwrap();
+        let parent = repo.head().unwrap().peel_to_commit().unwrap();
+
+        repo.commit(Some("HEAD"), &sig, &sig, message, &tree, &[&parent])
+            .unwrap();
+    }
+
+    fn create_repo_with_merge_conflict() -> tempfile::TempDir {
+        let dir = create_repo_with_file();
+        let repo = git2::Repository::open(dir.path()).unwrap();
+        let base_branch = repo.head().unwrap().shorthand().unwrap().to_string();
+        let base_commit = repo.head().unwrap().peel_to_commit().unwrap();
+
+        repo.branch("feature", &base_commit, false).unwrap();
+
+        checkout_branch(&repo, "feature");
+        commit_file(
+            &repo,
+            &dir.path().join("test.txt"),
+            "feature change\n",
+            "Feature change",
+        );
+
+        checkout_branch(&repo, &base_branch);
+        commit_file(
+            &repo,
+            &dir.path().join("test.txt"),
+            "main change\n",
+            "Main change",
+        );
+
+        let merge_output = git_command_with_timeout(&["merge", "feature"], dir.path()).unwrap();
+        assert!(
+            !merge_output.status.success(),
+            "expected merge to conflict, got stdout={} stderr={}",
+            String::from_utf8_lossy(&merge_output.stdout),
+            String::from_utf8_lossy(&merge_output.stderr)
+        );
 
         dir
     }
@@ -385,9 +462,8 @@ mod tests {
     }
 
     #[test]
-    fn git_resolve_conflict_writes_without_staging() {
-        let dir = create_repo_with_file();
-        std::fs::write(dir.path().join("test.txt"), CONFLICT_CONTENT).unwrap();
+    fn git_resolve_conflict_stages_file_and_clears_merge_conflict_listing() {
+        let dir = create_repo_with_merge_conflict();
 
         block_on(git_resolve_conflict(
             dir.path().to_string_lossy().to_string(),
@@ -402,8 +478,18 @@ mod tests {
         let status = git_command_with_timeout(&["status", "--short"], dir.path()).unwrap();
         let stdout = String::from_utf8_lossy(&status.stdout);
         assert!(
-            stdout.lines().any(|line| line == " M test.txt"),
-            "expected the resolved file to remain unstaged, got: {stdout}"
+            stdout.lines().any(|line| line == "M  test.txt"),
+            "expected the resolved file to be staged after resolution, got: {stdout}"
+        );
+
+        let conflicts = block_on(git_get_merge_conflicts(
+            dir.path().to_string_lossy().to_string(),
+        ))
+        .expect("expected merge conflict listing to refresh");
+
+        assert!(
+            conflicts.is_empty(),
+            "expected resolved file to disappear from merge conflicts, got: {conflicts:?}"
         );
     }
 }

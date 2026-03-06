@@ -161,3 +161,150 @@ pub async fn git_merge_continue(path: String) -> Result<MergeResult, String> {
     .await
     .map_err(|e| format!("Task join error: {}", e))?
 }
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
+mod tests {
+    use super::*;
+    use crate::git::merge_editor::git_resolve_conflict;
+    use git2::build::CheckoutBuilder;
+
+    fn block_on<T>(future: impl std::future::Future<Output = T>) -> T {
+        tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(future)
+    }
+
+    fn create_repo_with_file() -> tempfile::TempDir {
+        let dir = tempfile::tempdir().unwrap();
+        let repo = git2::Repository::init(dir.path()).unwrap();
+
+        let file_path = dir.path().join("test.txt");
+        std::fs::write(&file_path, "base\n").unwrap();
+
+        let mut index = repo.index().unwrap();
+        index.add_path(Path::new("test.txt")).unwrap();
+        index.write().unwrap();
+
+        let sig = git2::Signature::now("Test User", "test@example.com").unwrap();
+        let tree_id = index.write_tree().unwrap();
+        let tree = repo.find_tree(tree_id).unwrap();
+        repo.commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[])
+            .unwrap();
+
+        let mut config = repo.config().unwrap();
+        config.set_str("user.name", "Test User").unwrap();
+        config.set_str("user.email", "test@example.com").unwrap();
+
+        dir
+    }
+
+    fn checkout_branch(repo: &git2::Repository, branch: &str) {
+        let reference = format!("refs/heads/{branch}");
+        repo.set_head(&reference).unwrap();
+
+        let object = repo.revparse_single(&reference).unwrap();
+        repo.checkout_tree(&object, Some(CheckoutBuilder::new().force()))
+            .unwrap();
+    }
+
+    fn commit_file(repo: &git2::Repository, path: &Path, contents: &str, message: &str) {
+        std::fs::write(path, contents).unwrap();
+
+        let mut index = repo.index().unwrap();
+        index.add_path(Path::new("test.txt")).unwrap();
+        index.write().unwrap();
+
+        let sig = git2::Signature::now("Test User", "test@example.com").unwrap();
+        let tree_id = index.write_tree().unwrap();
+        let tree = repo.find_tree(tree_id).unwrap();
+        let parent = repo.head().unwrap().peel_to_commit().unwrap();
+
+        repo.commit(Some("HEAD"), &sig, &sig, message, &tree, &[&parent])
+            .unwrap();
+    }
+
+    fn create_repo_with_merge_conflict() -> tempfile::TempDir {
+        let dir = create_repo_with_file();
+        let repo = git2::Repository::open(dir.path()).unwrap();
+        let base_branch = repo.head().unwrap().shorthand().unwrap().to_string();
+        let base_commit = repo.head().unwrap().peel_to_commit().unwrap();
+
+        repo.branch("feature", &base_commit, false).unwrap();
+
+        checkout_branch(&repo, "feature");
+        commit_file(
+            &repo,
+            &dir.path().join("test.txt"),
+            "feature change\n",
+            "Feature change",
+        );
+
+        checkout_branch(&repo, &base_branch);
+        commit_file(
+            &repo,
+            &dir.path().join("test.txt"),
+            "main change\n",
+            "Main change",
+        );
+
+        let merge_output = git_command_with_timeout(&["merge", "feature"], dir.path()).unwrap();
+        assert!(
+            !merge_output.status.success(),
+            "expected merge to conflict, got stdout={} stderr={}",
+            String::from_utf8_lossy(&merge_output.stdout),
+            String::from_utf8_lossy(&merge_output.stderr)
+        );
+
+        dir
+    }
+
+    #[test]
+    fn git_merge_continue_succeeds_after_resolved_file_is_staged_through_contract() {
+        let dir = create_repo_with_merge_conflict();
+
+        block_on(git_resolve_conflict(
+            dir.path().to_string_lossy().to_string(),
+            "test.txt".to_string(),
+            "resolved\ncontent\n".to_string(),
+        ))
+        .expect("expected conflict resolution to succeed");
+
+        let result = block_on(git_merge_continue(dir.path().to_string_lossy().to_string()))
+            .expect("expected merge continue to return a result");
+
+        assert!(
+            result.success,
+            "expected merge continue to succeed: {result:?}"
+        );
+        assert!(result.conflicts.is_empty());
+
+        let unresolved =
+            git_command_with_timeout(&["diff", "--name-only", "--diff-filter=U"], dir.path())
+                .unwrap();
+        assert!(
+            String::from_utf8_lossy(&unresolved.stdout)
+                .trim()
+                .is_empty(),
+            "expected no unmerged entries after merge continue"
+        );
+    }
+
+    #[test]
+    fn git_merge_continue_reports_unmerged_entries_when_file_was_only_saved() {
+        let dir = create_repo_with_merge_conflict();
+        std::fs::write(dir.path().join("test.txt"), "resolved\ncontent\n").unwrap();
+
+        let result = block_on(git_merge_continue(dir.path().to_string_lossy().to_string()))
+            .expect("expected merge continue to return unresolved conflicts");
+
+        assert!(!result.success);
+        assert_eq!(result.conflicts, vec!["test.txt".to_string()]);
+        assert_eq!(
+            result.message.as_deref(),
+            Some("There are still unresolved conflicts")
+        );
+    }
+}
