@@ -210,6 +210,18 @@ describe("CortexBottomPanelContainer", () => {
 
       expect(onTabChange).toHaveBeenCalledWith("terminal");
     });
+
+    it("should switch to history when the mounted git history event is dispatched", async () => {
+      const onTabChange = vi.fn();
+      const props = createDefaultProps({ bottomPanelCollapsed: true, onTabChange });
+
+      renderWithSuspense(props);
+
+      window.dispatchEvent(new CustomEvent("cortex:git:history"));
+      await Promise.resolve();
+
+      expect(onTabChange).toHaveBeenCalledWith("history");
+    });
   });
 
   describe("Active Tab Highlighting", () => {

@@ -287,6 +287,11 @@ export function CortexDesktopLayout(props: ParentProps) {
   });
   const statusBarLanguage = createMemo(() => activeFile()?.language ?? "Plain Text");
 
+  const showBottomPanelTab = (tab: BottomPanelTab) => {
+    setBottomPanelTab(tab);
+    setBottomPanelCollapsed(false);
+  };
+
   const handleStatusBarBranchClick = () => window.dispatchEvent(new CustomEvent("view:git"));
   const handleStatusBarTogglePanel = () => window.dispatchEvent(new CustomEvent("layout:toggle-panel"));
   const handleStatusBarToggleTerminal = () => window.dispatchEvent(new CustomEvent("terminal:toggle"));
@@ -337,7 +342,15 @@ export function CortexDesktopLayout(props: ParentProps) {
       "layout:toggle-sidebar": (() => toggleSidebar()) as EventListener,
       "selection:select-all": (() => document.execCommand("selectAll")) as EventListener,
       "help:docs": (() => openSidebarTab("docs")) as EventListener,
-      "terminal:toggle": (() => { if (bottomPanelCollapsed()) { setBottomPanelCollapsed(false); setBottomPanelTab("terminal"); } else if (bottomPanelTab() === "terminal") { setBottomPanelCollapsed(true); } else { setBottomPanelTab("terminal"); } }) as EventListener,
+      "terminal:toggle": (() => {
+        if (bottomPanelCollapsed()) {
+          showBottomPanelTab("terminal");
+        } else if (bottomPanelTab() === "terminal") {
+          setBottomPanelCollapsed(true);
+        } else {
+          showBottomPanelTab("terminal");
+        }
+      }) as EventListener,
       "layout:toggle-panel": (() => setBottomPanelCollapsed(!bottomPanelCollapsed())) as EventListener,
       "ai:modifications:toggle": (() => setShowAIModifications((prev) => !prev)) as EventListener,
       "file:update-view": ((e: Event) => {
@@ -450,7 +463,7 @@ export function CortexDesktopLayout(props: ParentProps) {
               onNavItemClick={handleNavItemClick}
               onAvatarClick={() => { if (!sidebarCollapsed() && sidebarTab() === "account") setSidebarCollapsed(true); else { setSidebarCollapsed(false); setSidebarTab("account"); } }}
               onFileSelect={handleFileSelect} onSidebarWidthChange={setSidebarWidth} onResizingChange={setIsResizing}
-              onBottomPanelTabChange={setBottomPanelTab} onBottomPanelCollapse={() => setBottomPanelCollapsed(true)} onBottomPanelHeightChange={setBottomPanelHeight}
+              onBottomPanelTabChange={showBottomPanelTab} onBottomPanelCollapse={() => setBottomPanelCollapsed(true)} onBottomPanelHeightChange={setBottomPanelHeight}
               onChatInputChange={setChatInput} onChatSubmit={handleChatSubmit}
               branchName={statusBarBranch()} isSyncing={statusBarIsSyncing()} hasChanges={statusBarHasChanges()}
               languageName={statusBarLanguage()}

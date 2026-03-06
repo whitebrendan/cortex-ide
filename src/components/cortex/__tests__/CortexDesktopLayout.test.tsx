@@ -139,6 +139,8 @@ vi.mock("../layout/CortexIDELayout", () => ({
       data-sidebar-collapsed={String(props.sidebarCollapsed)}
       data-sidebar-width={String(props.sidebarWidth)}
       data-chat-state={props.chatState as string}
+      data-bottom-panel-tab={props.bottomPanelTab as string}
+      data-bottom-panel-collapsed={String(props.bottomPanelCollapsed)}
     >
       <button data-testid="nav-item-files" onClick={() => (props.onNavItemClick as (id: string) => void)("files")} />
       <button data-testid="nav-item-search" onClick={() => (props.onNavItemClick as (id: string) => void)("search")} />
@@ -146,6 +148,7 @@ vi.mock("../layout/CortexIDELayout", () => ({
       <button data-testid="nav-item-home" onClick={() => (props.onNavItemClick as (id: string) => void)("home")} />
       <button data-testid="nav-item-new" onClick={() => (props.onNavItemClick as (id: string) => void)("new")} />
       <button data-testid="nav-item-factory" onClick={() => (props.onNavItemClick as (id: string) => void)("factory")} />
+      <button data-testid="bottom-tab-history" onClick={() => (props.onBottomPanelTabChange as (id: string) => void)("history")} />
     </div>
   ),
 }));
@@ -595,6 +598,21 @@ describe("CortexDesktopLayout", () => {
 
       await vi.waitFor(() => {
         expect(localStorage.getItem("figma_layout_sidebar_collapsed")).toBe("true");
+      });
+    });
+
+    it("should uncollapse the bottom panel when selecting a bottom tab", async () => {
+      localStorage.setItem("figma_layout_mode", "ide");
+
+      const { queryByTestId } = render(() => <CortexDesktopLayout />);
+
+      const historyTab = queryByTestId("bottom-tab-history");
+      historyTab!.click();
+
+      await vi.waitFor(() => {
+        const layout = document.querySelector('[data-testid="ide-layout"]');
+        expect(layout?.getAttribute("data-bottom-panel-tab")).toBe("history");
+        expect(layout?.getAttribute("data-bottom-panel-collapsed")).toBe("false");
       });
     });
   });
