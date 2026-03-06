@@ -129,6 +129,14 @@ function getFileName(path: string): string {
   return lastSlash >= 0 ? path.slice(lastSlash + 1) : path;
 }
 
+function resolveSearchResultPath(projectPath: string | null | undefined, filePath: string): string {
+  if (/^(?:[a-zA-Z]:[\\/]|\/)/.test(filePath)) {
+    return filePath;
+  }
+
+  return projectPath ? `${projectPath}/${filePath}` : filePath;
+}
+
 function applyPreserveCase(original: string, replacement: string): string {
   // Detect case pattern of original
   const isAllUpper = original === original.toUpperCase() && original !== original.toLowerCase();
@@ -197,6 +205,7 @@ export function SearchSidebar() {
   const [results, setResults] = createSignal<SearchResult[]>([]);
   const [loading, setLoading] = createSignal(false);
   const [searchError, setSearchError] = createSignal<string | null>(null);
+  const normalizedQuery = createMemo(() => parseSearchQuery(query()).query);
   
   // Search options
   const [caseSensitive, setCaseSensitive] = createSignal(false);
@@ -827,7 +836,7 @@ export function SearchSidebar() {
 
   const replaceInFile = async (filePath: string) => {
     const projectPath = getProjectPath();
-    const fullPath = projectPath ? `${projectPath}/${filePath}` : filePath;
+    const fullPath = resolveSearchResultPath(projectPath, filePath);
     
     try {
       const content = await fsReadFile(fullPath);
@@ -877,7 +886,7 @@ export function SearchSidebar() {
     try {
       const projectPath = getProjectPath();
       const backendResults = allResults.map((r) => ({
-        uri: projectPath ? `${projectPath}/${r.file}` : r.file,
+        uri: resolveSearchResultPath(projectPath, r.file),
         matches: r.matches.map((m) => ({
           id: `${r.file}:${m.line}:${m.column}`,
           line: m.line,
@@ -897,7 +906,7 @@ export function SearchSidebar() {
       });
 
       for (const result of allResults) {
-        const fullPath = projectPath ? `${projectPath}/${result.file}` : result.file;
+        const fullPath = resolveSearchResultPath(projectPath, result.file);
         const openFileEntry = editorState.openFiles.find(
           (f) => f.path.replace(/\\/g, "/") === fullPath.replace(/\\/g, "/")
         );
@@ -1501,6 +1510,7 @@ export function SearchSidebar() {
         title="Replace All"
         size="sm"
         closeOnOverlay={false}
+        showFooter={true}
         footer={
           <div style={{ display: "flex", "align-items": "center", "justify-content": "flex-end", gap: "8px", width: "100%" }}>
             <CortexButton variant="ghost" onClick={() => setShowReplaceAllConfirm(false)}>
@@ -1534,7 +1544,7 @@ export function SearchSidebar() {
               Replace <strong>{totalMatches()}</strong> occurrences across <strong>{results().length}</strong> files?
             </p>
             <p style={{ margin: "0", "font-size": "13px", color: "var(--cortex-text-muted)", "line-height": "1.5" }}>
-              "{query()}" → "{replaceText()}"
+              "{normalizedQuery()}" → "{replaceText()}"
             </p>
             <p style={{ margin: "0", "font-size": "13px", color: "var(--cortex-text-muted)", "line-height": "1.5" }}>
               This action cannot be undone.
