@@ -522,6 +522,10 @@ fn renderer_permission_mutation_denied(operation: &str) -> String {
     )
 }
 
+fn deny_renderer_permission_mutation<T>(operation: &str) -> Result<T, String> {
+    Err(renderer_permission_mutation_denied(operation))
+}
+
 // ============================================================================
 // Tauri Commands
 // ============================================================================
@@ -562,9 +566,7 @@ pub async fn plugin_grant_permission(
     scope: String,
 ) -> Result<PermissionGrant, String> {
     let _ = (app, extension_id, permission, scope);
-    Err(renderer_permission_mutation_denied(
-        "Extension permission grants",
-    ))
+    deny_renderer_permission_mutation("Extension permission grants")
 }
 
 /// Revoke a specific permission from an extension.
@@ -574,9 +576,8 @@ pub async fn plugin_revoke_permission(
     extension_id: String,
     permission: PermissionKind,
 ) -> Result<(), String> {
-    let state = app.state::<PermissionsState>();
-    state.0.revoke_permission(&extension_id, &permission);
-    Ok(())
+    let _ = (app, extension_id, permission);
+    deny_renderer_permission_mutation("Extension permission revocations")
 }
 
 /// Respond to a pending permission request from the frontend.
@@ -634,9 +635,7 @@ pub async fn plugin_set_workspace_folders(
     folders: Vec<String>,
 ) -> Result<(), String> {
     let _ = (app, folders);
-    Err(renderer_permission_mutation_denied(
-        "Workspace permission roots",
-    ))
+    deny_renderer_permission_mutation("Workspace permission roots")
 }
 
 // ============================================================================
@@ -675,6 +674,26 @@ mod tests {
     fn test_renderer_permission_mutation_denied_message() {
         let message = renderer_permission_mutation_denied("Extension permission grants");
         assert!(message.contains("backend-approved extension flows"));
+    }
+
+    #[test]
+    fn test_renderer_revoke_permission_command_returns_explicit_safe_error() {
+        let result = deny_renderer_permission_mutation::<()>("Extension permission revocations");
+
+        assert_eq!(
+            result.unwrap_err(),
+            renderer_permission_mutation_denied("Extension permission revocations")
+        );
+    }
+
+    #[test]
+    fn test_backend_owned_revoke_permission_still_succeeds() {
+        let manager = PermissionsManager::new();
+        manager.grant_permission("ext-backend", PermissionKind::StatusBarAccess, "*");
+
+        manager.revoke_permission("ext-backend", &PermissionKind::StatusBarAccess);
+
+        assert!(manager.get_grants("ext-backend").is_empty());
     }
 
     #[test]
