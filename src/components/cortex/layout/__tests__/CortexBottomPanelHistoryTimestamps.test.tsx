@@ -1,10 +1,22 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render } from "@solidjs/testing-library";
-import { Suspense } from "solid-js";
-import { CortexBottomPanelContainer } from "../CortexBottomPanelContainer";
-import type { CortexBottomPanelContainerProps } from "../CortexBottomPanelContainer";
+import { CortexGitHistory } from "../../CortexGitHistory";
 import { gitLog } from "@/utils/tauri-api";
 import { getProjectPath } from "@/utils/workspace";
+
+vi.mock("../../primitives", () => ({
+  CortexIconButton: (props: { title?: string; onClick?: () => void }) => (
+    <button onClick={() => props.onClick?.()}>{props.title ?? "Close"}</button>
+  ),
+  CortexInput: (props: { placeholder?: string; value?: string; onChange?: (value: string) => void }) => (
+    <input
+      aria-label={props.placeholder ?? "Filter commits"}
+      placeholder={props.placeholder}
+      value={props.value ?? ""}
+      onInput={(event) => props.onChange?.(event.currentTarget.value)}
+    />
+  ),
+}));
 
 vi.mock("@/utils/tauri-api", () => ({
   gitLog: vi.fn(),
@@ -20,29 +32,7 @@ vi.mock("@/utils/logger", () => ({
   }),
 }));
 
-function createProps(
-  overrides: Partial<CortexBottomPanelContainerProps> = {},
-): CortexBottomPanelContainerProps {
-  return {
-    bottomPanelTab: "history",
-    bottomPanelCollapsed: false,
-    bottomPanelHeight: 200,
-    onTabChange: vi.fn(),
-    onCollapse: vi.fn(),
-    onHeightChange: vi.fn(),
-    ...overrides,
-  };
-}
-
-function renderHistoryTab(props: CortexBottomPanelContainerProps) {
-  return render(() => (
-    <Suspense fallback={<div data-testid="history-loading">Loading...</div>}>
-      <CortexBottomPanelContainer {...props} />
-    </Suspense>
-  ));
-}
-
-describe("CortexBottomPanelContainer git history timestamps", () => {
+describe("CortexGitHistory mounted timestamp normalization", () => {
   beforeEach(() => {
     cleanup();
     vi.clearAllMocks();
@@ -75,9 +65,8 @@ describe("CortexBottomPanelContainer git history timestamps", () => {
     cleanup();
   });
 
-  it("renders git-log unix-second timestamps as normalized dates on the mounted history tab", async () => {
-    const props = createProps();
-    const { findByText, queryByText } = renderHistoryTab(props);
+  it("renders git-log unix-second timestamps as normalized dates on the mounted history panel", async () => {
+    const { findByText, queryByText } = render(() => <CortexGitHistory />);
 
     expect(
       await findByText("Normalize mounted history timestamps"),
