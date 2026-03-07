@@ -12,9 +12,10 @@ vi.mock("@tauri-apps/api/core", () => ({
   invoke: sdkHarness.invokeMock,
 }));
 
-vi.mock("../../hooks", () => ({
+vi.mock("../../hooks/useTauriListen", () => ({
   useTauriListen: (_event: string, handler: (payload: Record<string, unknown>) => void) => {
     sdkHarness.eventHandler = handler;
+    return Promise.resolve(() => {});
   },
 }));
 

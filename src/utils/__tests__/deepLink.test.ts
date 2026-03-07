@@ -46,9 +46,10 @@ describe("deepLink", () => {
       openSettings,
     });
 
-    expect(mockOpenWorkspaceSurface).toHaveBeenCalledWith("/workspace/demo-project", {
+    expect(openWorkspace).toHaveBeenCalledWith("/workspace/demo-project", {
       pathname: "/welcome",
       navigate,
+      newWindow: undefined,
     });
     expect(info).toHaveBeenCalledWith("Opening: demo-project");
     expect(openFile).not.toHaveBeenCalled();

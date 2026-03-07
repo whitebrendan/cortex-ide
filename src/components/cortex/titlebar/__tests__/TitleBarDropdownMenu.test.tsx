@@ -99,7 +99,7 @@ describe("TitleBarDropdownMenu", () => {
       expect(style).toContain("min-width:243px");
       expect(style).toContain("var(--cortex-bg-secondary)");
       expect(style).toContain("border-radius:8px");
-      expect(style).toContain("z-index:9999");
+      expect(style).toContain("z-index:var(--cortex-z-dropdown)");
     });
 
     it("should have correct item button styles", () => {

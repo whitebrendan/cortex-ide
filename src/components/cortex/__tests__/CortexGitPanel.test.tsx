@@ -228,13 +228,13 @@ describe("CortexGitPanel", () => {
   describe("Commit Message Input", () => {
     it("should have a commit message input with placeholder", () => {
       const { container } = render(() => <CortexGitPanel />);
-      const input = container.querySelector("input[placeholder*='Commit message']") as HTMLInputElement;
+      const input = container.querySelector("textarea[placeholder*='Commit message']") as HTMLTextAreaElement;
       expect(input).toBeTruthy();
     });
 
     it("should update commit message on input", async () => {
       const { container } = render(() => <CortexGitPanel />);
-      const input = container.querySelector("input[placeholder*='Commit message']") as HTMLInputElement;
+      const input = container.querySelector("textarea[placeholder*='Commit message']") as HTMLTextAreaElement;
       expect(input).toBeTruthy();
 
       await fireEvent.input(input, { target: { value: "fix: update tests" } });
@@ -253,7 +253,7 @@ describe("CortexGitPanel", () => {
       );
 
       const { container } = render(() => <CortexGitPanel />);
-      const input = container.querySelector("input[placeholder*='Commit message']") as HTMLInputElement;
+      const input = container.querySelector("textarea[placeholder*='Commit message']") as HTMLTextAreaElement;
       await fireEvent.input(input, { target: { value: "feat: add feature" } });
 
       const commitButton = Array.from(container.querySelectorAll("button")).find(
@@ -286,7 +286,7 @@ describe("CortexGitPanel", () => {
       mockMultiRepo.activeRepository.mockReturnValue(createMockRepo());
 
       const { container } = render(() => <CortexGitPanel />);
-      const input = container.querySelector("input[placeholder*='Commit message']") as HTMLInputElement;
+      const input = container.querySelector("textarea[placeholder*='Commit message']") as HTMLTextAreaElement;
       await fireEvent.input(input, { target: { value: "some message" } });
 
       const commitButton = Array.from(container.querySelectorAll("button")).find(
@@ -306,7 +306,7 @@ describe("CortexGitPanel", () => {
       );
 
       const { container } = render(() => <CortexGitPanel />);
-      const input = container.querySelector("input[placeholder*='Commit message']") as HTMLInputElement;
+      const input = container.querySelector("textarea[placeholder*='Commit message']") as HTMLTextAreaElement;
       await fireEvent.input(input, { target: { value: "feat: something" } });
 
       const commitButton = Array.from(container.querySelectorAll("button")).find(
@@ -656,13 +656,13 @@ describe("CortexGitPanel", () => {
     it("should change placeholder when amend is toggled", async () => {
       const { container } = render(() => <CortexGitPanel />);
 
-      let input = container.querySelector("input[placeholder*='Commit message']") as HTMLInputElement;
+      let input = container.querySelector("textarea[placeholder*='Commit message']") as HTMLTextAreaElement;
       expect(input).toBeTruthy();
 
       const amendCheckbox = container.querySelector("input[type='checkbox']") as HTMLInputElement;
       await fireEvent.click(amendCheckbox);
 
-      const amendInput = container.querySelector("input[placeholder*='Amend commit message']") as HTMLInputElement;
+      const amendInput = container.querySelector("textarea[placeholder*='Amend commit message']") as HTMLTextAreaElement;
       expect(amendInput).toBeTruthy();
     });
   });
@@ -805,7 +805,7 @@ describe("CortexGitPanel", () => {
       );
 
       const { container } = render(() => <CortexGitPanel />);
-      const input = container.querySelector("input[placeholder*='Commit message']") as HTMLInputElement;
+      const input = container.querySelector("textarea[placeholder*='Commit message']") as HTMLTextAreaElement;
       await fireEvent.input(input, { target: { value: "feat: shortcut commit" } });
 
       await fireEvent.keyDown(input, { key: "Enter", ctrlKey: true });
