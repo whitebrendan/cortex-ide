@@ -16,6 +16,10 @@ describe("deepLink", () => {
   const info = vi.fn();
   const error = vi.fn();
   const openSettings = vi.fn();
+  const openWorkspace = vi.fn();
+  const openAndGoto = vi.fn();
+  const openDiff = vi.fn();
+  const addFolder = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -29,6 +33,10 @@ describe("deepLink", () => {
 
     await handleDeepLinkAction(action, {
       openFile,
+      openWorkspace,
+      openAndGoto,
+      openDiff,
+      addFolder,
       navigateOptions: {
         pathname: "/welcome",
         navigate,

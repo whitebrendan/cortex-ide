@@ -5,7 +5,6 @@ import {
   type ExtensionsContextValue,
 } from "@/context/ExtensionsContext";
 import { CortexButton } from "./primitives/CortexButton";
-import { CortexIcon } from "./primitives/CortexIcon";
 import { CortexIconButton } from "./primitives/CortexIconButton";
 
 type TabType = "installed" | "marketplace" | "outdated";
