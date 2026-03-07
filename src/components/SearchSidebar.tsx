@@ -141,6 +141,11 @@ const SEARCH_CONTEXT_MENU_GUTTER = 8;
 const SEARCH_CONTEXT_MENU_WIDTH = 240;
 const SEARCH_CONTEXT_MENU_ITEM_HEIGHT = 32;
 const SEARCH_CONTEXT_MENU_DIVIDER_HEIGHT = 9;
+const SEARCH_FILTER_FLYOUT_MIN_WIDTH = 220;
+const SEARCH_FILTER_FLYOUT_MAX_WIDTH = 320;
+const SEARCH_FILTER_FLYOUT_HEADER_HEIGHT = 28;
+const SEARCH_FILTER_FLYOUT_FOOTER_HEIGHT = 24;
+const SEARCH_FILTER_FLYOUT_ITEM_HEIGHT = 36;
 
 function estimateContextMenuHeight(hasMatch: boolean, hasFile: boolean): number {
   let actionCount = 0;
@@ -163,6 +168,21 @@ function clampPopupPosition(x: number, y: number, width: number, height: number)
     x: Math.min(Math.max(SEARCH_CONTEXT_MENU_GUTTER, x), maxX),
     y: Math.min(Math.max(SEARCH_CONTEXT_MENU_GUTTER, y), maxY),
   };
+}
+
+function estimateFilterSuggestionsHeight(count: number) {
+  return SEARCH_FILTER_FLYOUT_HEADER_HEIGHT
+    + SEARCH_FILTER_FLYOUT_FOOTER_HEIGHT
+    + count * SEARCH_FILTER_FLYOUT_ITEM_HEIGHT;
+}
+
+function clampPopupWidth(preferredWidth: number, minWidth: number, maxWidth: number) {
+  if (typeof window === "undefined") {
+    return Math.min(Math.max(preferredWidth, minWidth), maxWidth);
+  }
+
+  const availableWidth = Math.max(0, window.innerWidth - SEARCH_CONTEXT_MENU_GUTTER * 2);
+  return Math.max(0, Math.min(maxWidth, Math.max(preferredWidth, minWidth), availableWidth));
 }
 
 function applyPreserveCase(original: string, replacement: string): string {
@@ -249,6 +269,11 @@ export function SearchSidebar() {
   // Filter autocomplete state
   const [showFilterSuggestions, setShowFilterSuggestions] = createSignal(false);
   const [filterSuggestionIndex, setFilterSuggestionIndex] = createSignal(0);
+  const [filterSuggestionsPosition, setFilterSuggestionsPosition] = createSignal({
+    left: SEARCH_CONTEXT_MENU_GUTTER,
+    top: SEARCH_CONTEXT_MENU_GUTTER,
+    width: SEARCH_FILTER_FLYOUT_MIN_WIDTH,
+  });
   
   // Get filtered suggestions based on current input
   const getFilteredSuggestions = () => {
@@ -260,6 +285,28 @@ export function SearchSidebar() {
     return FILTER_SUGGESTIONS.filter(s => 
       s.filter.toLowerCase().startsWith(filterText) && s.filter.toLowerCase() !== filterText
     );
+  };
+
+  const updateFilterSuggestionsPosition = () => {
+    if (typeof window === "undefined" || !inputRef) {
+      return;
+    }
+
+    const rect = inputRef.getBoundingClientRect();
+    const suggestions = getFilteredSuggestions();
+    const width = clampPopupWidth(
+      rect.width,
+      SEARCH_FILTER_FLYOUT_MIN_WIDTH,
+      SEARCH_FILTER_FLYOUT_MAX_WIDTH,
+    );
+    const estimatedHeight = filterSuggestionsRef?.offsetHeight ?? estimateFilterSuggestionsHeight(suggestions.length || 1);
+    const position = clampPopupPosition(rect.left, rect.bottom + 4, width, estimatedHeight);
+
+    setFilterSuggestionsPosition({
+      left: position.x,
+      top: position.y,
+      width,
+    });
   };
   
   // Helper to check if a file is dirty/modified
@@ -418,7 +465,26 @@ export function SearchSidebar() {
   let resultsContainerRef: HTMLDivElement | undefined;
   let searchTimeout: number | undefined;
   let abortController: AbortController | null = null;
+  let filterSuggestionsRef: HTMLDivElement | undefined;
 
+  createEffect(() => {
+    if (!showFilterSuggestions() || getFilteredSuggestions().length === 0) {
+      return;
+    }
+
+    const updatePosition = () => updateFilterSuggestionsPosition();
+    updatePosition();
+    const frameId = window.requestAnimationFrame(updatePosition);
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    onCleanup(() => {
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    });
+  });
+ 
   // Focus input on mount and setup ResizeObserver for virtual scrolling
   onMount(() => {
     setTimeout(() => inputRef?.focus(), 100);
@@ -477,12 +543,15 @@ export function SearchSidebar() {
     
     // Show filter suggestions when typing @
     const suggestions = getFilteredSuggestions();
-    if (q.includes('@') && suggestions.length > 0) {
+    const shouldKeepFilterSuggestionsOpen = q.lastIndexOf('@') !== -1 && suggestions.length > 0;
+    if (shouldKeepFilterSuggestionsOpen) {
       setShowFilterSuggestions(true);
       setFilterSuggestionIndex(0);
-    } else {
-      setShowFilterSuggestions(false);
+      setSearchError(null);
+      return;
     }
+
+    setShowFilterSuggestions(false);
     
     // Parse query to check minimum length requirement
     const { query: actualQuery, filters } = parseSearchQuery(q);
@@ -1388,16 +1457,26 @@ export function SearchSidebar() {
         {/* Filter Suggestions Dropdown */}
         <Show when={showFilterSuggestions() && (getFilteredSuggestions()?.length ?? 0) > 0}>
           <div
+            ref={filterSuggestionsRef}
             role="listbox"
             aria-label="Search filters"
-            style={mergeStyles(ui.popup, { "margin-top": "4px" })}
+            style={mergeStyles(ui.popup, {
+              position: "fixed",
+              left: `${filterSuggestionsPosition().left}px`,
+              top: `${filterSuggestionsPosition().top}px`,
+              width: `${filterSuggestionsPosition().width}px`,
+              "max-width": `calc(100vw - ${SEARCH_CONTEXT_MENU_GUTTER * 2}px)`,
+              "max-height": `calc(100vh - ${SEARCH_CONTEXT_MENU_GUTTER * 2}px)`,
+              overflow: "auto",
+              "z-index": "100",
+            })}
           >
             <div style={{
               padding: `${tokens.spacing.sm} ${tokens.spacing.md}`,
               "font-size": "9px",
               "border-bottom": `1px solid ${tokens.colors.border.divider}`,
               color: tokens.colors.text.muted,
-              background: tokens.colors.interactive.selected,
+              background: tokens.colors.surface.canvas,
             }}>
               Search Filters
             </div>

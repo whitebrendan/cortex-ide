@@ -607,8 +607,6 @@ async function findSubtypesInFile(
   try {
     const content = await fsReadFile(fullPath);
     const lines = content.split("\n");
-
-    // Pattern to find types that extend/implement the target
     const patterns = getInheritancePatterns(language, targetType);
 
     lines.forEach((line, lineIndex) => {
@@ -955,7 +953,6 @@ export function TypeHierarchyView() {
     registerCommand({
       id: "show-type-hierarchy",
       label: "Show Type Hierarchy",
-      shortcut: "Ctrl+Shift+H",
       category: "Navigation",
       action: () => showTypeHierarchy("both"),
     });
@@ -964,7 +961,6 @@ export function TypeHierarchyView() {
     registerCommand({
       id: "show-supertypes",
       label: "Show Supertypes",
-      shortcut: "Ctrl+Alt+H",
       category: "Navigation",
       action: () => showTypeHierarchy("supertypes"),
     });
@@ -973,7 +969,6 @@ export function TypeHierarchyView() {
     registerCommand({
       id: "show-subtypes",
       label: "Show Subtypes",
-      shortcut: "Ctrl+Alt+Shift+H",
       category: "Navigation",
       action: () => showTypeHierarchy("subtypes"),
     });
@@ -994,22 +989,6 @@ export function TypeHierarchyView() {
       handleContextMenuCommand as EventListener
     );
 
-    // Listen for keyboard shortcuts
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && !e.altKey && e.key.toLowerCase() === "h") {
-        e.preventDefault();
-        showTypeHierarchy("both");
-      } else if (e.ctrlKey && e.altKey && !e.shiftKey && e.key.toLowerCase() === "h") {
-        e.preventDefault();
-        showTypeHierarchy("supertypes");
-      } else if (e.ctrlKey && e.altKey && e.shiftKey && e.key.toLowerCase() === "h") {
-        e.preventDefault();
-        showTypeHierarchy("subtypes");
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-
     onCleanup(() => {
       unregisterCommand("show-type-hierarchy");
       unregisterCommand("show-supertypes");
@@ -1018,7 +997,6 @@ export function TypeHierarchyView() {
         "editor-context-command" as keyof WindowEventMap,
         handleContextMenuCommand as EventListener
       );
-      window.removeEventListener("keydown", handleKeyDown);
     });
   });
 

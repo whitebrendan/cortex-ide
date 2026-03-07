@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, fireEvent, screen, within, cleanup } from "@solidjs/testing-library";
 import { Show } from "solid-js";
+import { CommandProvider } from "@/context/CommandContext";
 import { SearchSidebar } from "../SearchSidebar";
 
 const hoisted = vi.hoisted(() => ({
@@ -23,6 +24,16 @@ const {
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: hoisted.mockInvoke,
+}));
+
+vi.mock("@tauri-apps/api/event", () => ({
+  listen: vi.fn().mockResolvedValue(() => {}),
+}));
+
+vi.mock("@/context/ModalActiveContext", () => ({
+  useModalActiveOptional: () => ({
+    isModalActive: () => false,
+  }),
 }));
 
 vi.mock("@/context/EditorContext", () => ({
@@ -162,6 +173,13 @@ const findButtonByText = (text: string) =>
 
 const renderSearchSidebar = () => render(() => <SearchSidebar />);
 
+const renderSearchSidebarWithCommands = () =>
+  render(() => (
+    <CommandProvider>
+      <SearchSidebar />
+    </CommandProvider>
+  ));
+
 const runSearch = async (query: string) => {
   const input = getSearchInput();
   await fireEvent.input(input, { target: { value: query } });
@@ -180,6 +198,10 @@ describe("SearchSidebar", () => {
     mockEditorState.activeFileId = null;
     mockOpenFile.mockResolvedValue(undefined);
     mockInvoke.mockImplementation((command: string, args?: { query?: string }) => {
+      if (command === "vscode_get_command_palette_items") {
+        return Promise.resolve([]);
+      }
+
       if (command === "fs_search_content") {
         if (args?.query === "first") {
           return Promise.resolve({
@@ -282,6 +304,55 @@ describe("SearchSidebar", () => {
     await fireEvent.keyDown(searchInput, { key: "Escape" });
 
     expect(screen.queryByRole("listbox", { name: "Search filters" })).toBeNull();
+  });
+
+  it("keeps the filter suggestions flyout inside the viewport", async () => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 260 });
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 150 });
+
+    renderSearchSidebar();
+
+    const searchInput = getSearchInput();
+    Object.defineProperty(searchInput, "getBoundingClientRect", {
+      configurable: true,
+      value: () => ({
+        x: 228,
+        y: 118,
+        left: 228,
+        top: 118,
+        right: 252,
+        bottom: 138,
+        width: 24,
+        height: 20,
+        toJSON: () => ({}),
+      }),
+    });
+
+    await fireEvent.input(searchInput, { target: { value: "@" } });
+
+    const flyout = await screen.findByRole("listbox", { name: "Search filters" });
+    await new Promise((resolve) => setTimeout(resolve, 350));
+
+    await vi.waitFor(() => {
+      expect(screen.getByRole("listbox", { name: "Search filters" })).toBe(flyout);
+      expect(flyout.style.position).toBe("fixed");
+      expect(Number.parseFloat(flyout.style.left)).toBeGreaterThanOrEqual(8);
+      expect(Number.parseFloat(flyout.style.top)).toBeGreaterThanOrEqual(8);
+    });
+  });
+
+  it("routes Ctrl+Shift+H through the mounted replace shortcut without extra UI setup", async () => {
+    renderSearchSidebarWithCommands();
+
+    await fireEvent.click(screen.getByRole("button", { name: "Hide Replace" }));
+    expect(screen.queryByRole("textbox", { name: "Replace" })).toBeNull();
+
+    await fireEvent.keyDown(window, { key: "H", ctrlKey: true, shiftKey: true });
+
+    await vi.waitFor(() => {
+      const replaceInput = screen.getByRole("textbox", { name: "Replace" });
+      expect(document.activeElement).toBe(replaceInput);
+    });
   });
 
   it("focuses the replace input when the Replace in Files command is invoked", async () => {

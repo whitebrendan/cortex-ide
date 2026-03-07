@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createRoot } from "solid-js";
+import { render, fireEvent, screen, cleanup } from "@solidjs/testing-library";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn().mockResolvedValue(undefined),
@@ -45,16 +46,13 @@ vi.mock("../utils/workspace", () => ({
 }));
 
 vi.mock("./ui/Icon", () => ({
-  Icon: (props: { name: string }) => {
-    const el = document.createElement("span");
-    el.setAttribute("data-icon", props.name);
-    return el;
-  },
+  Icon: (props: { name: string }) => <span data-icon={props.name} />,
 }));
 
 describe("TypeHierarchyView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    cleanup();
   });
 
   it("should export TypeHierarchyView component", async () => {
@@ -87,5 +85,15 @@ describe("TypeHierarchyView", () => {
   it("should export TypeKind type", async () => {
     const mod = await import("../TypeHierarchyView");
     expect(mod.TypeHierarchyView).toBeDefined();
+  });
+
+  it("does not open from the global Ctrl+Shift+H shortcut", async () => {
+    const { TypeHierarchyView } = await import("../TypeHierarchyView");
+
+    render(() => <TypeHierarchyView />);
+    await fireEvent.keyDown(window, { key: "H", ctrlKey: true, shiftKey: true });
+
+    expect(screen.queryByText("Type Hierarchy")).toBeNull();
+    expect(screen.queryByText("No file is currently open")).toBeNull();
   });
 });
