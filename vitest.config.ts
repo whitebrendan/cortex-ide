@@ -19,6 +19,8 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/__tests__/setup.ts", "./src/test/setup.ts"],
     globals: true,
+    allowOnly: false,
+    passWithNoTests: false,
     include: [
       "src/**/*.{test,spec}.{ts,tsx}",
       "src/**/__tests__/**/*.{ts,tsx}",
@@ -334,10 +336,12 @@ export default defineConfig({
         lines: 0,
       },
     },
-    deps: {
-      inline: [
-        "@solid-primitives",
-      ],
+    server: {
+      deps: {
+        inline: [
+          "@solid-primitives",
+        ],
+      },
     },
     reporters: ["default"],
     testTimeout: 30000,

@@ -108,7 +108,12 @@ We recommend using [nvm](https://github.com/nvm-sh/nvm) (or [nvm-windows](https:
 ```bash
 nvm install 24
 nvm use 24
+
+# or, after cloning the repo:
+nvm use
 ```
+
+The repository ships with a root `.nvmrc` pinned to the supported Node.js major used in CI.
 
 Verify:
 
@@ -169,13 +174,33 @@ This produces platform-specific installers in `src-tauri/target/release/bundle/`
 |---------|-------------|
 | `npm run dev` | Start Vite dev server only (frontend) |
 | `npm run build` | Build frontend for production |
+| `npm run build:analyze` | Build frontend with bundle analysis enabled |
 | `npm run tauri:dev` | Full development build (frontend + backend + launch app) |
 | `npm run tauri:build` | Full production build with installers |
-| `npm run typecheck` | Run TypeScript type checking |
+| `npm run lint` | Run the root ESLint baseline for frontend source and tooling files |
+| `npm run lint:fix` | Apply auto-fixable ESLint changes |
+| `npm run typecheck` | Run TypeScript checks for app code and root tooling configs |
 | `npm run test` | Run frontend unit tests (Vitest) |
 | `npm run test:watch` | Run tests in watch mode |
 | `npm run test:coverage` | Run tests with coverage report |
 | `npm run test:ui` | Open Vitest UI in browser |
+| `npm run check:frontend` | Run the root frontend quality gate (`lint`, `typecheck`, `test`, `build`) |
+
+---
+
+## Tooling Conventions
+
+- `.nvmrc` pins the supported Node.js major for local development and CI.
+- `npm run check:frontend` is the canonical root frontend quality gate used by hooks and CI.
+- `npm run lint` is intentionally conservative: it focuses on root frontend source and tooling files without forcing broad repo-wide refactors.
+
+### Deferred Tooling Debt
+
+- `semantic-release@25` still pulls `@semantic-release/npm`, which bundles an npm distribution that `npm audit` flags via `minimatch`/`tar`. Resolving that cleanly likely requires dedicated release-tooling validation rather than a root config-only pass.
+- `mcp-server/` dependency refreshes and advisories remain a separate workstream and are intentionally not changed in this root-only pass.
+- Stricter type-aware ESLint rules and stricter TypeScript flags (for example `no-floating-promises`, `consistent-type-imports`, `verbatimModuleSyntax`, or `exactOptionalPropertyTypes`) are deferred until dedicated cleanup work can address existing code patterns safely.
+- Coverage thresholds remain permissive and should be raised incrementally in focused follow-up work instead of this configuration pass.
+- Some advisories can still originate from the developer's globally installed npm CLI/runtime rather than this repository's lockfile and should be evaluated in the local environment separately.
 
 ---
 

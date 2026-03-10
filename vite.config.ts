@@ -317,6 +317,9 @@ export default defineConfig(async ({ command }): Promise<UserConfig> => {
             port: 1421,
           }
         : undefined,
+      fs: {
+        strict: true,
+      },
       watch: {
         ignored: ["**/src-tauri/**"],
       },
@@ -380,4 +383,3 @@ export default defineConfig(async ({ command }): Promise<UserConfig> => {
     },
   };
 });
-

@@ -17,20 +17,17 @@ if command -v cargo >/dev/null 2>&1; then
   }
 fi
 
-# TypeScript type checking
-if command -v npx >/dev/null 2>&1 && [ -f "package.json" ]; then
-  echo "[githook:pre-commit] Running TypeScript type check..."
-  npx tsc --noEmit --incremental --tsBuildInfoFile node_modules/.cache/tsbuildinfo || {
-    echo "[githook:pre-commit] TypeScript type check failed."
+# Frontend lint + type checking
+if command -v npm >/dev/null 2>&1 && [ -f "package.json" ]; then
+  echo "[githook:pre-commit] Running frontend lint..."
+  npm run lint || {
+    echo "[githook:pre-commit] Frontend lint failed."
     exit 1
   }
-fi
 
-# Frontend tests (full suite, same as CI)
-if command -v npx >/dev/null 2>&1 && [ -f "package.json" ]; then
-  echo "[githook:pre-commit] Running full frontend test suite..."
-  npm run test || {
-    echo "[githook:pre-commit] Frontend tests failed."
+  echo "[githook:pre-commit] Running TypeScript type check..."
+  npm run typecheck || {
+    echo "[githook:pre-commit] TypeScript type check failed."
     exit 1
   }
 fi

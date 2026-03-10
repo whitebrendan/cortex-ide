@@ -38,7 +38,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version-file: ".nvmrc"
 
       - name: Mount node_modules (sticky disk)
         uses: useblacksmith/stickydisk@v1
@@ -48,6 +48,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Lint frontend
+        run: npm run lint
 
       - name: TypeScript type check
         run: npm run typecheck
@@ -208,5 +211,3 @@ jobs:
             exit 1
           fi
           echo "All CI checks passed!"
-
-

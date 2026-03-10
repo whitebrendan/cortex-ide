@@ -8,34 +8,16 @@ fi
 
 echo "[githook:pre-push] Running pre-push quality gate..."
 
-# ── 1. TypeScript type check ──
-if command -v npx >/dev/null 2>&1 && [ -f "package.json" ]; then
-  echo "[githook:pre-push] Running TypeScript type check..."
-  npx tsc --noEmit || {
-    echo "[githook:pre-push] TypeScript type check failed."
+# ── 1. Frontend quality gate ──
+if command -v npm >/dev/null 2>&1 && [ -f "package.json" ]; then
+  echo "[githook:pre-push] Running frontend quality gate..."
+  npm run check:frontend || {
+    echo "[githook:pre-push] Frontend quality gate failed."
     exit 1
   }
 fi
 
-# ── 2. Frontend tests ──
-if command -v npx >/dev/null 2>&1 && [ -f "package.json" ]; then
-  echo "[githook:pre-push] Running frontend tests..."
-  npm run test || {
-    echo "[githook:pre-push] Frontend tests failed."
-    exit 1
-  }
-fi
-
-# ── 3. Frontend build (must run before Rust checks: tauri needs dist/) ──
-if command -v npx >/dev/null 2>&1 && [ -f "package.json" ]; then
-  echo "[githook:pre-push] Building frontend (required by tauri)..."
-  npm run build || {
-    echo "[githook:pre-push] Frontend build failed."
-    exit 1
-  }
-fi
-
-# ── 4. Rust formatting ──
+# ── 2. Rust formatting ──
 if command -v cargo >/dev/null 2>&1; then
   echo "[githook:pre-push] Checking Rust formatting..."
   (cd src-tauri && cargo fmt --all -- --check) || {
@@ -43,14 +25,14 @@ if command -v cargo >/dev/null 2>&1; then
     exit 1
   }
 
-  # ── 5. Clippy ──
+  # ── 3. Clippy ──
   echo "[githook:pre-push] Running Clippy..."
   (cd src-tauri && cargo clippy --all-targets -- -D warnings) || {
     echo "[githook:pre-push] Clippy found errors."
     exit 1
   }
 
-  # ── 6. Cargo test ──
+  # ── 4. Cargo test ──
   echo "[githook:pre-push] Running cargo test..."
   (cd src-tauri && cargo test) || {
     echo "[githook:pre-push] cargo test failed."
