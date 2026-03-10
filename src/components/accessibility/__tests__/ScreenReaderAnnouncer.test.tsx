@@ -1,42 +1,57 @@
-import { describe, it, expect } from "vitest";
-import { render } from "@solidjs/testing-library";
+import { describe, expect, it, vi } from "vitest";
+import { render, screen } from "@solidjs/testing-library";
 import { ScreenReaderAnnouncer } from "../ScreenReaderAnnouncer";
 
 describe("ScreenReaderAnnouncer", () => {
-  it("renders with aria-live region", () => {
-    const { container } = render(() => <ScreenReaderAnnouncer />);
-    const region = container.querySelector('[role="status"]');
-    expect(region).toBeTruthy();
-    expect(region?.getAttribute("aria-live")).toBe("polite");
+  it("renders separate polite and assertive live regions", () => {
+    render(() => <ScreenReaderAnnouncer />);
+
+    expect(screen.getByRole("status").getAttribute("aria-live")).toBe("polite");
+    expect(screen.getByRole("alert").getAttribute("aria-live")).toBe("assertive");
   });
 
-  it("has aria-atomic attribute", () => {
-    const { container } = render(() => <ScreenReaderAnnouncer />);
-    const region = container.querySelector('[role="status"]');
-    expect(region?.getAttribute("aria-atomic")).toBe("true");
+  it("announces polite messages in the status region", async () => {
+    render(() => <ScreenReaderAnnouncer />);
+
+    window.dispatchEvent(
+      new CustomEvent("accessibility:announcement", {
+        detail: { message: "Build finished successfully" },
+      })
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(screen.getByRole("status").textContent).toBe("Build finished successfully");
+    expect(screen.getByRole("alert").textContent).toBe("");
   });
 
-  it("is visually hidden but accessible", () => {
-    const { container } = render(() => <ScreenReaderAnnouncer />);
-    const region = container.querySelector('[role="status"]');
-    const style = region?.getAttribute("style");
-    expect(style).toContain("position: absolute");
-    expect(style).toContain("width: 1px");
-    expect(style).toContain("height: 1px");
+  it("announces assertive messages in the alert region", async () => {
+    render(() => <ScreenReaderAnnouncer />);
+
+    window.dispatchEvent(
+      new CustomEvent("accessibility:announcement", {
+        detail: { message: "Task failed", politeness: "assertive" },
+      })
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(screen.getByRole("alert").textContent).toBe("Task failed");
+    expect(screen.getByRole("status").textContent).toBe("");
   });
 
-  it("accepts style prop", () => {
-    const { container } = render(() => <ScreenReaderAnnouncer style={{}} />);
-    expect(container).toBeTruthy();
-  });
+  it("cancels pending announcement frames on unmount", () => {
+    const cancelAnimationFrameSpy = vi.spyOn(window, "cancelAnimationFrame");
+    const { unmount } = render(() => <ScreenReaderAnnouncer />);
 
-  it("accepts class prop", () => {
-    const { container } = render(() => <ScreenReaderAnnouncer class="sr-only" />);
-    expect(container).toBeTruthy();
-  });
+    window.dispatchEvent(
+      new CustomEvent("accessibility:announcement", {
+        detail: { message: "Queued message" },
+      })
+    );
 
-  it("component is defined", () => {
-    expect(ScreenReaderAnnouncer).toBeDefined();
-    expect(typeof ScreenReaderAnnouncer).toBe("function");
+    unmount();
+
+    expect(cancelAnimationFrameSpy).toHaveBeenCalled();
   });
 });

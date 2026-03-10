@@ -1,56 +1,90 @@
-import { Component, JSX, createSignal, onMount, onCleanup } from "solid-js";
+import { Component, JSX, createSignal, onCleanup, onMount } from "solid-js";
+
+type AnnouncementPoliteness = "polite" | "assertive";
 
 export interface ScreenReaderAnnouncerProps {
   class?: string;
   style?: JSX.CSSProperties;
 }
 
+const VISUALLY_HIDDEN_STYLE: JSX.CSSProperties = {
+  position: "absolute",
+  width: "1px",
+  height: "1px",
+  padding: "0",
+  margin: "-1px",
+  overflow: "hidden",
+  clip: "rect(0, 0, 0, 0)",
+  "white-space": "nowrap",
+  border: "0",
+};
+
 export const ScreenReaderAnnouncer: Component<ScreenReaderAnnouncerProps> = (props) => {
-  const [message, setMessage] = createSignal("");
-  const [politeness, setPoliteness] = createSignal<"polite" | "assertive">("polite");
-  let regionRef: HTMLDivElement | undefined;
+  const [politeMessage, setPoliteMessage] = createSignal("");
+  const [assertiveMessage, setAssertiveMessage] = createSignal("");
+  const pendingFrames: Partial<Record<AnnouncementPoliteness, number>> = {};
+
+  const clearPendingFrame = (politeness: AnnouncementPoliteness) => {
+    const frameId = pendingFrames[politeness];
+    if (frameId !== undefined) {
+      cancelAnimationFrame(frameId);
+      delete pendingFrames[politeness];
+    }
+  };
+
+  const scheduleAnnouncement = (
+    politeness: AnnouncementPoliteness,
+    message: string
+  ) => {
+    clearPendingFrame(politeness);
+
+    if (politeness === "assertive") {
+      setAssertiveMessage("");
+      pendingFrames.assertive = requestAnimationFrame(() => {
+        setAssertiveMessage(message);
+        delete pendingFrames.assertive;
+      });
+      return;
+    }
+
+    setPoliteMessage("");
+    pendingFrames.polite = requestAnimationFrame(() => {
+      setPoliteMessage(message);
+      delete pendingFrames.polite;
+    });
+  };
 
   onMount(() => {
-    const handleAnnouncement = (e: CustomEvent<{ message: string; politeness?: "polite" | "assertive" }>) => {
-      if (e.detail?.message) {
-        setPoliteness(e.detail.politeness || "polite");
-        setMessage("");
-        requestAnimationFrame(() => {
-          setMessage(e.detail.message);
-        });
-      }
+    const handleAnnouncement = (
+      event: CustomEvent<{ message: string; politeness?: AnnouncementPoliteness }>
+    ) => {
+      if (!event.detail?.message) return;
+      scheduleAnnouncement(event.detail.politeness ?? "polite", event.detail.message);
     };
 
-    window.addEventListener("accessibility:announcement", handleAnnouncement as EventListener);
+    window.addEventListener(
+      "accessibility:announcement",
+      handleAnnouncement as EventListener
+    );
 
     onCleanup(() => {
-      window.removeEventListener("accessibility:announcement", handleAnnouncement as EventListener);
+      clearPendingFrame("polite");
+      clearPendingFrame("assertive");
+      window.removeEventListener(
+        "accessibility:announcement",
+        handleAnnouncement as EventListener
+      );
     });
   });
 
-  const containerStyle: JSX.CSSProperties = {
-    position: "absolute",
-    width: "1px",
-    height: "1px",
-    padding: "0",
-    margin: "-1px",
-    overflow: "hidden",
-    clip: "rect(0, 0, 0, 0)",
-    "white-space": "nowrap",
-    border: "0",
-    ...props.style,
-  };
-
   return (
-    <div
-      ref={regionRef}
-      class={props.class}
-      style={containerStyle}
-      role="status"
-      aria-live={politeness()}
-      aria-atomic="true"
-    >
-      {message()}
+    <div class={props.class} style={{ ...VISUALLY_HIDDEN_STYLE, ...props.style }}>
+      <div role="status" aria-live="polite" aria-atomic="true">
+        {politeMessage()}
+      </div>
+      <div role="alert" aria-live="assertive" aria-atomic="true">
+        {assertiveMessage()}
+      </div>
     </div>
   );
 };

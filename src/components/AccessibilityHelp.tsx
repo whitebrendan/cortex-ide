@@ -1,19 +1,15 @@
 import {
-  Show,
   For,
-  createSignal,
+  Show,
   createEffect,
   createMemo,
-  onMount,
+  createSignal,
+  createUniqueId,
   onCleanup,
-  JSX,
+  onMount,
 } from "solid-js";
-import { Icon } from "./ui/Icon";
-import { useAccessibility } from "@/context/AccessibilityContext";
-
-// ============================================================================
-// Types
-// ============================================================================
+import { Icon } from "@/components/ui/Icon";
+import { useAccessibility, type FontScale } from "@/context/AccessibilityContext";
 
 interface KeyboardShortcut {
   keys: string;
@@ -21,28 +17,26 @@ interface KeyboardShortcut {
   category: string;
 }
 
-interface HelpSection {
-  id: string;
-  title: string;
-  icon: JSX.Element;
-}
-
 type TabId = "shortcuts" | "screenReader" | "navigation" | "settings";
 
-// ============================================================================
-// Keyboard Shortcuts Data
-// ============================================================================
+interface HelpSection {
+  id: TabId;
+  title: string;
+  icon: string;
+}
+
+interface ShortcutGroup {
+  category: string;
+  shortcuts: KeyboardShortcut[];
+}
 
 const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
-  // General
   { keys: "Ctrl+Shift+P", description: "Open Command Palette", category: "General" },
   { keys: "Ctrl+P", description: "Quick Open / Go to File", category: "General" },
   { keys: "Ctrl+,", description: "Open Settings", category: "General" },
   { keys: "Ctrl+N", description: "New Session", category: "General" },
   { keys: "F1", description: "Show Accessibility Help", category: "General" },
   { keys: "Ctrl+Shift+?", description: "Show Accessibility Help", category: "General" },
-
-  // Navigation
   { keys: "Ctrl+G", description: "Go to Line", category: "Navigation" },
   { keys: "F12", description: "Go to Definition", category: "Navigation" },
   { keys: "Shift+F12", description: "Go to References", category: "Navigation" },
@@ -50,8 +44,6 @@ const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
   { keys: "Ctrl+Shift+-", description: "Navigate Forward", category: "Navigation" },
   { keys: "Ctrl+Tab", description: "Switch Tabs", category: "Navigation" },
   { keys: "Alt+1-9", description: "Focus Nth Tab", category: "Navigation" },
-
-  // Editor
   { keys: "Ctrl+F", description: "Find in File", category: "Editor" },
   { keys: "Ctrl+H", description: "Find and Replace", category: "Editor" },
   { keys: "Ctrl+Shift+F", description: "Find in Project", category: "Editor" },
@@ -65,30 +57,22 @@ const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
   { keys: "Alt+Down", description: "Move Line Down", category: "Editor" },
   { keys: "Ctrl+D", description: "Add Selection to Next Match", category: "Editor" },
   { keys: "Ctrl+Shift+L", description: "Select All Occurrences", category: "Editor" },
-
-  // View & Panels
   { keys: "Ctrl+B", description: "Toggle Sidebar", category: "View" },
   { keys: "Ctrl+`", description: "Toggle Terminal", category: "View" },
   { keys: "Ctrl+Shift+M", description: "Toggle Problems Panel", category: "View" },
   { keys: "Ctrl+=", description: "Zoom In", category: "View" },
   { keys: "Ctrl+-", description: "Zoom Out", category: "View" },
   { keys: "Ctrl+\\", description: "Split Editor", category: "View" },
-
-  // Debug
   { keys: "F5", description: "Start/Continue Debugging", category: "Debug" },
   { keys: "Shift+F5", description: "Stop Debugging", category: "Debug" },
   { keys: "F9", description: "Toggle Breakpoint", category: "Debug" },
   { keys: "F10", description: "Step Over", category: "Debug" },
   { keys: "F11", description: "Step Into", category: "Debug" },
   { keys: "Shift+F11", description: "Step Out", category: "Debug" },
-
-  // File
   { keys: "Ctrl+S", description: "Save File", category: "File" },
   { keys: "Ctrl+Shift+S", description: "Save All", category: "File" },
   { keys: "Ctrl+W", description: "Close Editor", category: "File" },
   { keys: "Ctrl+Shift+T", description: "Reopen Closed Editor", category: "File" },
-
-  // Accessibility
   { keys: "Tab", description: "Move to Next Focusable Element", category: "Accessibility" },
   { keys: "Shift+Tab", description: "Move to Previous Focusable Element", category: "Accessibility" },
   { keys: "Enter/Space", description: "Activate Focused Button/Link", category: "Accessibility" },
@@ -96,217 +80,330 @@ const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
   { keys: "Arrow Keys", description: "Navigate Within Components", category: "Accessibility" },
 ];
 
-// ============================================================================
-// Screen Reader Tips
-// ============================================================================
-
 const SCREEN_READER_TIPS = [
   {
     title: "Navigation Landmarks",
     tips: [
-      "Use your screen reader's landmark navigation (e.g., D in NVDA) to quickly jump between regions",
-      "Main content area is marked with 'main' landmark",
-      "Sidebar uses 'complementary' landmark",
-      "Activity bar uses 'navigation' landmark",
+      "Use your screen reader's landmark navigation (for example, D in NVDA) to jump between regions.",
+      "The main content area uses the main landmark.",
+      "The sidebar uses a complementary landmark.",
+      "The activity bar uses a navigation landmark.",
     ],
   },
   {
     title: "Headings Structure",
     tips: [
-      "Use heading navigation (H key) to browse document structure",
-      "Panel titles are marked as headings",
-      "File names in tabs are accessible via aria-label",
+      "Use heading navigation to browse the document structure.",
+      "Panel titles are exposed as headings.",
+      "File names in tabs are announced through accessible labels.",
     ],
   },
   {
     title: "Interactive Elements",
     tips: [
-      "All buttons have accessible names",
-      "Form inputs have associated labels",
-      "Status changes are announced via live regions",
-      "Loading states are announced automatically",
+      "Buttons and links expose accessible names.",
+      "Form inputs are paired with labels or descriptions.",
+      "Status changes are announced through live regions.",
+      "Loading states are announced automatically.",
     ],
   },
   {
     title: "Editor Navigation",
     tips: [
-      "Line numbers are announced when navigating",
-      "Syntax errors and warnings are announced",
-      "Use Ctrl+G to go to a specific line",
-      "Use Ctrl+Shift+O to navigate symbols",
+      "Line numbers are announced while moving through code.",
+      "Syntax errors and warnings are surfaced to assistive technology.",
+      "Use Ctrl+G to jump to a specific line.",
+      "Use Ctrl+Shift+O to navigate symbols quickly.",
     ],
   },
   {
     title: "Announcements",
     tips: [
-      "File saves, errors, and completions are announced",
-      "Debug events like breakpoint hits are announced",
-      "Task completions trigger announcements",
-      "Audio signals can provide additional feedback (enable in settings)",
+      "File saves, errors, and completions are announced.",
+      "Debug events such as breakpoint hits are announced.",
+      "Task completions trigger live-region updates.",
+      "Audio signals can provide additional feedback when enabled.",
     ],
   },
 ];
-
-// ============================================================================
-// Navigation Help
-// ============================================================================
 
 const NAVIGATION_HELP = [
   {
     area: "Application Window",
     instructions: [
-      "Press Tab to move through main areas: Activity Bar → Sidebar → Editor → Panel",
-      "Press Escape to close any open dialog or popup",
-      "Use Ctrl+1/2/3... to focus specific editor groups",
-      "Press F6 to cycle between main window sections",
+      "Press Tab to move through the main areas: Activity Bar → Sidebar → Editor → Panel.",
+      "Press Escape to close an open dialog or popup.",
+      "Use Ctrl+1, Ctrl+2, and Ctrl+3 to focus editor groups.",
+      "Press F6 to cycle between major window sections.",
     ],
   },
   {
     area: "File Explorer",
     instructions: [
-      "Use Arrow Up/Down to navigate files and folders",
-      "Press Enter to open files or expand/collapse folders",
-      "Press Right Arrow to expand a folder",
-      "Press Left Arrow to collapse a folder or go to parent",
-      "Type to filter files by name",
+      "Use Arrow Up and Arrow Down to move between files and folders.",
+      "Press Enter to open files or expand and collapse folders.",
+      "Press Right Arrow to expand a folder.",
+      "Press Left Arrow to collapse a folder or move to the parent item.",
+      "Type to filter files by name.",
     ],
   },
   {
     area: "Editor",
     instructions: [
-      "Use Ctrl+Tab to switch between open files",
-      "Press Ctrl+\\ to split the editor",
-      "Use Alt+Click for multiple cursors",
-      "Press Ctrl+L to select the current line",
-      "Use Ctrl+Shift+[ and ] to fold/unfold code",
+      "Use Ctrl+Tab to switch between open files.",
+      "Press Ctrl+\\ to split the editor.",
+      "Use Alt+Click for multiple cursors.",
+      "Press Ctrl+L to select the current line.",
+      "Use Ctrl+Shift+[ and Ctrl+Shift+] to fold or unfold code.",
     ],
   },
   {
     area: "Terminal",
     instructions: [
-      "Press Ctrl+` to toggle terminal visibility",
-      "Use Ctrl+Shift+` to create a new terminal",
-      "Press Ctrl+PageUp/PageDown to switch terminals",
-      "Terminal supports standard shell navigation",
+      "Press Ctrl+` to toggle terminal visibility.",
+      "Use Ctrl+Shift+` to create a new terminal.",
+      "Press Ctrl+PageUp or Ctrl+PageDown to switch terminals.",
+      "Standard shell navigation is supported inside the terminal.",
     ],
   },
   {
     area: "Dialogs & Popups",
     instructions: [
-      "Tab moves between interactive elements",
-      "Enter confirms/submits",
-      "Escape closes without action",
-      "Arrow keys navigate lists and menus",
+      "Tab moves between interactive elements.",
+      "Enter confirms or submits.",
+      "Escape closes the current dialog without taking action.",
+      "Arrow keys navigate lists, menus, and tab sets.",
     ],
   },
 ];
 
-// ============================================================================
-// Help Sections Configuration
-// ============================================================================
-
 const HELP_SECTIONS: HelpSection[] = [
-  { id: "shortcuts", title: "Keyboard Shortcuts", icon: <Icon name="command" size={16} /> },
-  { id: "screenReader", title: "Screen Reader Tips", icon: <Icon name="desktop" size={16} /> },
-  { id: "navigation", title: "Navigation Help", icon: <Icon name="location-arrow" size={16} /> },
-  { id: "settings", title: "Accessibility Settings", icon: <Icon name="gear" size={16} /> },
+  { id: "shortcuts", title: "Keyboard Shortcuts", icon: "command" },
+  { id: "screenReader", title: "Screen Reader Tips", icon: "desktop" },
+  { id: "navigation", title: "Navigation Help", icon: "location-arrow" },
+  { id: "settings", title: "Accessibility Settings", icon: "gear" },
 ];
 
-// ============================================================================
-// Component
-// ============================================================================
+const CATEGORY_ORDER = [
+  "General",
+  "Navigation",
+  "Editor",
+  "View",
+  "Debug",
+  "File",
+  "Accessibility",
+] as const;
+
+function getFocusableElements(container?: HTMLElement): HTMLElement[] {
+  if (!container) return [];
+
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter((element) => !element.hasAttribute("hidden") && element.getAttribute("aria-hidden") !== "true");
+}
+
+interface SettingToggleProps {
+  icon: string;
+  title: string;
+  description: string;
+  enabled: boolean;
+  onToggle: () => void;
+}
+
+function SettingToggle(props: SettingToggleProps) {
+  const labelId = createUniqueId();
+  const descriptionId = createUniqueId();
+
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={props.enabled}
+      aria-labelledby={labelId}
+      aria-describedby={descriptionId}
+      class="flex w-full items-center justify-between gap-4 rounded-lg border px-3 py-3 text-left transition-colors hover:bg-white/5"
+      style={{
+        background: "var(--surface-base)",
+        border: "1px solid var(--border-weak)",
+      }}
+      onClick={props.onToggle}
+    >
+      <div class="flex items-start gap-3 min-w-0">
+        <span style={{ color: "var(--accent)" }} aria-hidden="true">
+          <Icon name={props.icon} size={16} />
+        </span>
+        <div class="min-w-0">
+          <div id={labelId} class="text-sm font-medium" style={{ color: "var(--text-base)" }}>
+            {props.title}
+          </div>
+          <div id={descriptionId} class="text-xs" style={{ color: "var(--text-weak)" }}>
+            {props.description}
+          </div>
+        </div>
+      </div>
+      <span
+        class="relative h-5 w-10 rounded-full transition-colors"
+        style={{ background: props.enabled ? "var(--accent)" : "var(--border-weak)" }}
+        aria-hidden="true"
+      >
+        <span
+          class="absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform"
+          style={{ transform: props.enabled ? "translateX(22px)" : "translateX(2px)" }}
+        />
+      </span>
+    </button>
+  );
+}
 
 export function AccessibilityHelp() {
+  const accessibility = useAccessibility();
   const [isOpen, setIsOpen] = createSignal(false);
   const [activeTab, setActiveTab] = createSignal<TabId>("shortcuts");
   const [searchQuery, setSearchQuery] = createSignal("");
-  const accessibility = useAccessibility();
+  const baseId = createUniqueId();
+  const searchInputId = `${baseId}-shortcut-search`;
+  const titleId = `${baseId}-title`;
+  const descriptionId = `${baseId}-description`;
 
   let dialogRef: HTMLDivElement | undefined;
   let searchInputRef: HTMLInputElement | undefined;
-  let lastFocusableRef: HTMLButtonElement | undefined;
+  let previousFocusedElement: HTMLElement | null = null;
+  const tabRefs: Partial<Record<TabId, HTMLButtonElement | undefined>> = {};
 
-  // Group shortcuts by category
-  const shortcutsByCategory = createMemo(() => {
-    const query = searchQuery().toLowerCase();
+  const groupedShortcuts = createMemo<ShortcutGroup[]>(() => {
+    const query = searchQuery().trim().toLowerCase();
     const filtered = query
       ? KEYBOARD_SHORTCUTS.filter(
-          (s) =>
-            s.description.toLowerCase().includes(query) ||
-            s.keys.toLowerCase().includes(query) ||
-            s.category.toLowerCase().includes(query)
+          (shortcut) =>
+            shortcut.description.toLowerCase().includes(query) ||
+            shortcut.keys.toLowerCase().includes(query) ||
+            shortcut.category.toLowerCase().includes(query)
         )
       : KEYBOARD_SHORTCUTS;
 
     const grouped = new Map<string, KeyboardShortcut[]>();
     for (const shortcut of filtered) {
-      const existing = grouped.get(shortcut.category) || [];
-      existing.push(shortcut);
-      grouped.set(shortcut.category, existing);
+      const existing = grouped.get(shortcut.category) ?? [];
+      grouped.set(shortcut.category, [...existing, shortcut]);
     }
-    return grouped;
+
+    return CATEGORY_ORDER.flatMap((category) => {
+      const shortcuts = grouped.get(category);
+      return shortcuts ? [{ category, shortcuts }] : [];
+    });
   });
 
-  // Category order for display
-  const categoryOrder = [
-    "General",
-    "Navigation",
-    "Editor",
-    "View",
-    "Debug",
-    "File",
-    "Accessibility",
-  ];
+  const shortcutCount = createMemo(() =>
+    groupedShortcuts().reduce((total, group) => total + group.shortcuts.length, 0)
+  );
 
-  // Handle keyboard events for opening/closing
-  const handleGlobalKeydown = (e: KeyboardEvent) => {
-    // F1 to open
-    if (e.key === "F1") {
-      e.preventDefault();
-      setIsOpen(true);
-      return;
+  const openDialog = (tab: TabId = "shortcuts") => {
+    if (!isOpen()) {
+      const activeElement = document.activeElement;
+      previousFocusedElement = activeElement instanceof HTMLElement ? activeElement : null;
+    }
+    setActiveTab(tab);
+    setIsOpen(true);
+  };
+
+  const closeDialog = (restoreFocus = true) => {
+    setIsOpen(false);
+    setSearchQuery("");
+
+    if (restoreFocus) {
+      const target = previousFocusedElement;
+      requestAnimationFrame(() => target?.focus());
     }
 
-    // Ctrl+Shift+? to open (require ONLY Ctrl+Shift, not Alt or Meta)
-    // Note: We explicitly check for ctrlKey to avoid interfering with typing "?"
-    // which only requires Shift on most keyboard layouts
-    if (e.ctrlKey && e.shiftKey && !e.altKey && !e.metaKey && e.key === "?") {
-      e.preventDefault();
-      setIsOpen(true);
-      return;
-    }
+    previousFocusedElement = null;
+  };
 
-    // Escape to close
-    if (e.key === "Escape" && isOpen()) {
-      e.preventDefault();
-      setIsOpen(false);
-      return;
+  const focusTab = (tab: TabId) => {
+    requestAnimationFrame(() => tabRefs[tab]?.focus());
+  };
+
+  const selectTab = (tab: TabId, focus = false) => {
+    setActiveTab(tab);
+    if (focus) {
+      focusTab(tab);
     }
   };
 
-  // Focus trap for modal
-  const handleDialogKeydown = (e: KeyboardEvent) => {
-    if (e.key === "Tab" && accessibility.state.focusTrapEnabled) {
-      const focusableElements = dialogRef?.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
+  const handleGlobalKeydown = (event: KeyboardEvent) => {
+    if (event.key === "F1") {
+      event.preventDefault();
+      openDialog("shortcuts");
+      return;
+    }
 
-      if (!focusableElements || focusableElements.length === 0) return;
+    if (event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && event.key === "?") {
+      event.preventDefault();
+      openDialog("shortcuts");
+      return;
+    }
 
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
+    if (event.key === "Escape" && isOpen()) {
+      event.preventDefault();
+      closeDialog();
+    }
+  };
 
-      if (e.shiftKey && document.activeElement === firstElement) {
-        e.preventDefault();
-        lastElement.focus();
-      } else if (!e.shiftKey && document.activeElement === lastElement) {
-        e.preventDefault();
-        firstElement.focus();
+  const handleDialogKeydown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeDialog();
+      return;
+    }
+
+    if (event.key !== "Tab" || !accessibility.state.focusTrapEnabled) {
+      return;
+    }
+
+    const focusable = getFocusableElements(dialogRef);
+    if (focusable.length === 0) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
+  const handleTabKeydown = (event: KeyboardEvent, currentTab: TabId) => {
+    const currentIndex = HELP_SECTIONS.findIndex((section) => section.id === currentTab);
+    if (currentIndex < 0) return;
+
+    switch (event.key) {
+      case "ArrowRight": {
+        event.preventDefault();
+        const next = HELP_SECTIONS[(currentIndex + 1) % HELP_SECTIONS.length].id;
+        selectTab(next, true);
+        break;
       }
+      case "ArrowLeft": {
+        event.preventDefault();
+        const next = HELP_SECTIONS[(currentIndex - 1 + HELP_SECTIONS.length) % HELP_SECTIONS.length].id;
+        selectTab(next, true);
+        break;
+      }
+      case "Home":
+        event.preventDefault();
+        selectTab(HELP_SECTIONS[0].id, true);
+        break;
+      case "End":
+        event.preventDefault();
+        selectTab(HELP_SECTIONS[HELP_SECTIONS.length - 1].id, true);
+        break;
     }
   };
 
-  // Setup global keyboard listener
   onMount(() => {
     window.addEventListener("keydown", handleGlobalKeydown);
     onCleanup(() => {
@@ -314,114 +411,103 @@ export function AccessibilityHelp() {
     });
   });
 
-  // Focus management when dialog opens
   createEffect(() => {
-    if (isOpen()) {
-      // Focus search input when opening
-      requestAnimationFrame(() => {
-        searchInputRef?.focus();
-      });
+    if (!isOpen()) return;
 
-      // Announce to screen readers
-      accessibility.announceToScreenReader(
-        "Accessibility Help dialog opened. Use Tab to navigate, Escape to close."
-      );
-    }
+    requestAnimationFrame(() => searchInputRef?.focus());
+    accessibility.announceToScreenReader(
+      "Accessibility Help dialog opened. Use Tab to navigate, arrow keys to switch sections, and Escape to close."
+    );
   });
 
-  // Close dialog
-  const closeDialog = () => {
-    setIsOpen(false);
-    setSearchQuery("");
-  };
-
-  // Render keyboard shortcuts tab
   const renderShortcutsTab = () => (
     <div class="space-y-4">
-      {/* Search */}
-      <div class="relative">
+      <div class="space-y-2">
+        <label for={searchInputId} class="sr-only">
+          Search keyboard shortcuts
+        </label>
         <input
           ref={searchInputRef}
+          id={searchInputId}
           type="text"
           placeholder="Search shortcuts..."
           value={searchQuery()}
-          onInput={(e) => setSearchQuery(e.currentTarget.value)}
-          aria-label="Search keyboard shortcuts"
-          class="w-full px-3 py-2 rounded-md text-sm"
+          onInput={(event) => setSearchQuery(event.currentTarget.value)}
+          aria-describedby={`${searchInputId}-summary`}
+          class="w-full rounded-md px-3 py-2 text-sm"
           style={{
             background: "var(--surface-base)",
             color: "var(--text-base)",
             border: "1px solid var(--border-weak)",
-            outline: "none",
-          }}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor = "var(--accent)";
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.borderColor = "var(--border-weak)";
           }}
         />
+        <p id={`${searchInputId}-summary`} class="text-xs" style={{ color: "var(--text-weak)" }} aria-live="polite">
+          {shortcutCount() === 0
+            ? `No shortcuts found matching “${searchQuery()}”.`
+            : `Showing ${shortcutCount()} shortcut${shortcutCount() === 1 ? "" : "s"} in ${groupedShortcuts().length} section${groupedShortcuts().length === 1 ? "" : "s"}.`}
+        </p>
       </div>
 
-      {/* Shortcuts by category */}
-      <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-        <For each={categoryOrder.filter((c) => shortcutsByCategory().has(c))}>
-          {(category) => (
-            <div>
-              <h3
-                class="text-xs font-semibold uppercase tracking-wider px-2 py-1 rounded mb-2"
-                style={{
-                  color: "var(--text-weak)",
-                  background: "var(--background-base)",
-                }}
-              >
-                {category}
-              </h3>
-              <div class="space-y-1">
-                <For each={shortcutsByCategory().get(category)}>
-                  {(shortcut) => (
-                    <div
-                      class="flex items-center justify-between px-2 py-1.5 rounded"
-                      style={{ background: "var(--surface-base)" }}
-                    >
-                      <span class="text-sm" style={{ color: "var(--text-base)" }}>
-                        {shortcut.description}
-                      </span>
-                      <kbd
-                        class="text-xs px-2 py-1 rounded font-mono"
-                        style={{
-                          background: "var(--background-base)",
-                          color: "var(--text-weak)",
-                          border: "1px solid var(--border-weak)",
-                        }}
-                      >
-                        {shortcut.keys}
-                      </kbd>
-                    </div>
-                  )}
-                </For>
-              </div>
-            </div>
-          )}
-        </For>
-
-        <Show when={shortcutsByCategory().size === 0}>
-          <div class="text-center py-8" style={{ color: "var(--text-weak)" }}>
-            No shortcuts found matching "{searchQuery()}"
+      <Show
+        when={groupedShortcuts().length > 0}
+        fallback={
+          <div class="rounded-lg px-3 py-6 text-center text-sm" style={{ color: "var(--text-weak)", background: "var(--surface-base)" }}>
+            No shortcuts found matching “{searchQuery()}”.
           </div>
-        </Show>
-      </div>
+        }
+      >
+        <div class="max-h-[400px] space-y-4 overflow-y-auto pr-2">
+          <For each={groupedShortcuts()}>
+            {(group) => (
+              <section>
+                <h3
+                  class="mb-2 rounded px-2 py-1 text-xs font-semibold uppercase tracking-wider"
+                  style={{
+                    color: "var(--text-weak)",
+                    background: "var(--background-base)",
+                  }}
+                >
+                  {group.category}
+                </h3>
+                <ul role="list" class="space-y-1">
+                  <For each={group.shortcuts}>
+                    {(shortcut) => (
+                      <li
+                        class="flex items-center justify-between gap-3 rounded px-2 py-1.5"
+                        style={{ background: "var(--surface-base)" }}
+                      >
+                        <span class="text-sm" style={{ color: "var(--text-base)" }}>
+                          {shortcut.description}
+                        </span>
+                        <kbd
+                          class="rounded px-2 py-1 text-xs font-mono"
+                          style={{
+                            background: "var(--background-base)",
+                            color: "var(--text-weak)",
+                            border: "1px solid var(--border-weak)",
+                          }}
+                        >
+                          {shortcut.keys}
+                        </kbd>
+                      </li>
+                    )}
+                  </For>
+                </ul>
+              </section>
+            )}
+          </For>
+        </div>
+      </Show>
     </div>
   );
 
-  // Render screen reader tips tab
   const renderScreenReaderTab = () => (
-    <div class="space-y-4 max-h-[450px] overflow-y-auto pr-2">
+    <div class="max-h-[450px] space-y-4 overflow-y-auto pr-2">
       <For each={SCREEN_READER_TIPS}>
         {(section) => (
-          <div>
+          <section>
             <h3
-              class="text-sm font-semibold px-2 py-1.5 rounded mb-2"
+              class="mb-2 rounded px-2 py-1.5 text-sm font-semibold"
               style={{
                 color: "var(--text-base)",
                 background: "var(--surface-base)",
@@ -432,30 +518,28 @@ export function AccessibilityHelp() {
             <ul class="space-y-1 pl-4" role="list">
               <For each={section.tips}>
                 {(tip) => (
-                  <li
-                    class="text-sm py-1 flex items-start gap-2"
-                    style={{ color: "var(--text-weak)" }}
-                  >
-                    <span style={{ color: "var(--accent)" }}>•</span>
+                  <li class="flex items-start gap-2 py-1 text-sm" style={{ color: "var(--text-weak)" }}>
+                    <span style={{ color: "var(--accent)" }} aria-hidden="true">
+                      •
+                    </span>
                     <span>{tip}</span>
                   </li>
                 )}
               </For>
             </ul>
-          </div>
+          </section>
         )}
       </For>
     </div>
   );
 
-  // Render navigation help tab
   const renderNavigationTab = () => (
-    <div class="space-y-4 max-h-[450px] overflow-y-auto pr-2">
+    <div class="max-h-[450px] space-y-4 overflow-y-auto pr-2">
       <For each={NAVIGATION_HELP}>
         {(area) => (
-          <div>
+          <section>
             <h3
-              class="text-sm font-semibold px-2 py-1.5 rounded mb-2 flex items-center gap-2"
+              class="mb-2 flex items-center gap-2 rounded px-2 py-1.5 text-sm font-semibold"
               style={{
                 color: "var(--text-base)",
                 background: "var(--surface-base)",
@@ -467,140 +551,101 @@ export function AccessibilityHelp() {
             <ul class="space-y-1 pl-4" role="list">
               <For each={area.instructions}>
                 {(instruction) => (
-                  <li
-                    class="text-sm py-1 flex items-start gap-2"
-                    style={{ color: "var(--text-weak)" }}
-                  >
-                    <span style={{ color: "var(--accent)" }}>→</span>
+                  <li class="flex items-start gap-2 py-1 text-sm" style={{ color: "var(--text-weak)" }}>
+                    <span style={{ color: "var(--accent)" }} aria-hidden="true">
+                      →
+                    </span>
                     <span>{instruction}</span>
                   </li>
                 )}
               </For>
             </ul>
-          </div>
+          </section>
         )}
       </For>
     </div>
   );
 
-  // Render settings tab
   const renderSettingsTab = () => (
-    <div class="space-y-4 max-h-[450px] overflow-y-auto pr-2">
-      {/* Screen Reader Mode */}
+    <div class="max-h-[450px] space-y-4 overflow-y-auto pr-2">
       <SettingToggle
-        icon={<Icon name="desktop" size={16} />}
+        icon="desktop"
         title="Screen Reader Mode"
-        description="Enhances ARIA attributes and enables automatic announcements"
+        description="Enhance ARIA attributes and enable automatic announcements."
         enabled={accessibility.screenReaderMode()}
         onToggle={accessibility.toggleScreenReaderMode}
       />
-
-      {/* High Contrast */}
       <SettingToggle
-        icon={<Icon name="eye" size={16} />}
+        icon="eye"
         title="High Contrast Mode"
-        description="Increases visual contrast for better visibility"
+        description="Increase visual contrast for better visibility."
         enabled={accessibility.highContrastMode()}
         onToggle={accessibility.toggleHighContrast}
       />
-
-      {/* Reduced Motion */}
       <SettingToggle
-        icon={<Icon name="bolt" size={16} />}
+        icon="bolt"
         title="Reduced Motion"
-        description="Minimizes animations and transitions"
+        description="Minimize animations and transitions."
         enabled={accessibility.reducedMotion()}
         onToggle={accessibility.toggleReducedMotion}
       />
-
-      {/* Audio Signals */}
       <SettingToggle
-        icon={<Icon name="volume-high" size={16} />}
+        icon="volume-high"
         title="Audio Signals"
-        description="Play sounds for errors, warnings, and completions"
+        description="Play sounds for errors, warnings, and completions."
         enabled={accessibility.audioSignalsEnabled()}
         onToggle={accessibility.toggleAudioSignals}
       />
 
-      {/* Font Scale */}
       <div
-        class="p-3 rounded-lg"
+        class="space-y-3 rounded-lg border p-3"
         style={{
           background: "var(--surface-base)",
           border: "1px solid var(--border-weak)",
         }}
       >
-        <div class="flex items-center gap-3 mb-3">
+        <div class="flex items-center gap-3">
           <Icon name="font" size={16} style={{ color: "var(--accent)" }} />
           <div>
             <div class="text-sm font-medium" style={{ color: "var(--text-base)" }}>
               Font Size
             </div>
             <div class="text-xs" style={{ color: "var(--text-weak)" }}>
-              Scale text throughout the application
+              Scale text throughout the application.
             </div>
           </div>
         </div>
-        <div class="flex items-center gap-2">
-          <span class="text-xs" style={{ color: "var(--text-weak)" }}>
-            80%
-          </span>
-          <input
-            type="range"
-            min="0.8"
-            max="1.5"
-            step="0.1"
-            value={accessibility.fontScale()}
-            onInput={(e) =>
-              accessibility.setFontScale(parseFloat(e.currentTarget.value) as 0.8 | 0.9 | 1.0 | 1.1 | 1.2 | 1.3 | 1.4 | 1.5)
-            }
-            aria-label="Font size scale"
-            class="flex-1 h-2 rounded-lg appearance-none cursor-pointer"
-            style={{
-              background: `linear-gradient(to right, var(--accent) ${((accessibility.fontScale() - 0.8) / 0.7) * 100}%, var(--border-weak) ${((accessibility.fontScale() - 0.8) / 0.7) * 100}%)`,
-            }}
-          />
-          <span class="text-xs" style={{ color: "var(--text-weak)" }}>
-            150%
-          </span>
-          <span
-            class="text-xs font-mono px-2 py-1 rounded"
-            style={{
-              background: "var(--background-base)",
-              color: "var(--text-base)",
-              "min-width": "48px",
-              "text-align": "center",
-            }}
-          >
-            {Math.round(accessibility.fontScale() * 100)}%
-          </span>
-        </div>
+        <label class="sr-only" for={`${baseId}-font-scale`}>
+          Font size scale
+        </label>
+        <select
+          id={`${baseId}-font-scale`}
+          class="w-full rounded-md px-3 py-2 text-sm"
+          style={{
+            background: "var(--background-base)",
+            color: "var(--text-base)",
+            border: "1px solid var(--border-weak)",
+          }}
+          value={String(accessibility.fontScale())}
+          onChange={(event) =>
+            accessibility.setFontScale(parseFloat(event.currentTarget.value) as FontScale)
+          }
+        >
+          <For each={[0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5] as const}>
+            {(scale) => <option value={scale}>{Math.round(scale * 100)}%</option>}
+          </For>
+        </select>
       </div>
 
-      {/* Keyboard Hints */}
-      <SettingToggle
-        icon={<Icon name="command" size={16} />}
-        title="Show Keyboard Hints"
-        description="Display keyboard shortcut hints on UI elements"
-        enabled={accessibility.keyboardHintsVisible()}
-        onToggle={accessibility.toggleKeyboardHints}
-      />
-
-      {/* Reset Button */}
       <div class="pt-2">
         <button
+          type="button"
           onClick={accessibility.resetToDefaults}
-          class="w-full px-4 py-2 text-sm rounded-md transition-colors"
+          class="w-full rounded-md border px-4 py-2 text-sm transition-colors hover:bg-white/5"
           style={{
             background: "var(--surface-raised)",
             color: "var(--text-base)",
             border: "1px solid var(--border-weak)",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "var(--surface-raised-hover)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "var(--surface-raised)";
           }}
         >
           Reset All Settings to Defaults
@@ -611,69 +656,64 @@ export function AccessibilityHelp() {
 
   return (
     <Show when={isOpen()}>
-      {/* Backdrop */}
       <div
         class="fixed inset-0 z-[100] flex items-center justify-center"
-        onClick={closeDialog}
+        onClick={() => closeDialog()}
         role="presentation"
       >
         <div class="absolute inset-0 bg-black/50" />
 
-        {/* Dialog */}
         <div
           ref={dialogRef}
-          class="relative w-full max-w-2xl mx-4 rounded-lg shadow-2xl overflow-hidden"
+          class="relative mx-4 w-full max-w-2xl overflow-hidden rounded-lg shadow-2xl"
           style={{ background: "var(--surface-raised)" }}
-          onClick={(e) => e.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
           onKeyDown={handleDialogKeydown}
           role="dialog"
           aria-modal="true"
-          aria-labelledby="accessibility-help-title"
+          aria-labelledby={titleId}
+          aria-describedby={descriptionId}
+          tabIndex={-1}
         >
-          {/* Header */}
           <div
-            class="flex items-center justify-between px-4 py-3 border-b"
+            class="border-b px-4 py-3"
             style={{ "border-color": "var(--border-weak)" }}
           >
-            <div class="flex items-center gap-3">
-              <Icon name="circle-question" size={20} style={{ color: "var(--accent)" }} />
-              <h2
-                id="accessibility-help-title"
-                class="text-lg font-semibold"
-                style={{ color: "var(--text-base)" }}
-              >
-                Accessibility Help
-              </h2>
-            </div>
-            <div class="flex items-center gap-2">
-              <kbd
-                class="text-xs px-1.5 py-0.5 rounded"
-                style={{
-                  background: "var(--background-base)",
-                  color: "var(--text-weak)",
-                }}
-              >
-                esc
-              </kbd>
-              <button
-                ref={lastFocusableRef}
-                onClick={closeDialog}
-                class="p-1.5 rounded-md transition-colors"
-                style={{ color: "var(--text-weak)" }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "var(--surface-active)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
-                }}
-                aria-label="Close accessibility help"
-              >
-                <Icon name="xmark" size={18} />
-              </button>
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-start gap-3">
+                <Icon name="circle-question" size={20} style={{ color: "var(--accent)" }} />
+                <div>
+                  <h2 id={titleId} class="text-lg font-semibold" style={{ color: "var(--text-base)" }}>
+                    Accessibility Help
+                  </h2>
+                  <p id={descriptionId} class="mt-1 text-sm" style={{ color: "var(--text-weak)" }}>
+                    Browse keyboard shortcuts, screen-reader tips, navigation guidance, and quick accessibility settings.
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <kbd
+                  class="rounded px-1.5 py-0.5 text-xs"
+                  style={{
+                    background: "var(--background-base)",
+                    color: "var(--text-weak)",
+                  }}
+                >
+                  Esc
+                </kbd>
+                <button
+                  type="button"
+                  onClick={() => closeDialog()}
+                  class="rounded-md p-1.5 transition-colors hover:bg-white/10"
+                  style={{ color: "var(--text-weak)" }}
+                  aria-label="Close accessibility help"
+                >
+                  <Icon name="xmark" size={18} />
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Tab Navigation */}
           <div
             class="flex border-b px-4"
             style={{ "border-color": "var(--border-weak)" }}
@@ -681,115 +721,93 @@ export function AccessibilityHelp() {
             aria-label="Accessibility help sections"
           >
             <For each={HELP_SECTIONS}>
-              {(section) => (
-                <button
-                  role="tab"
-                  aria-selected={activeTab() === section.id}
-                  aria-controls={`${section.id}-panel`}
-                  id={`${section.id}-tab`}
-                  class="flex items-center gap-2 px-3 py-2.5 text-sm font-medium transition-colors relative"
-                  style={{
-                    color:
-                      activeTab() === section.id
-                        ? "var(--accent)"
-                        : "var(--text-weak)",
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => setActiveTab(section.id as TabId)}
-                  onKeyDown={(e) => {
-                    if (e.key === "ArrowRight") {
-                      const currentIndex = HELP_SECTIONS.findIndex(
-                        (s) => s.id === activeTab()
-                      );
-                      const nextIndex = (currentIndex + 1) % HELP_SECTIONS.length;
-                      setActiveTab(HELP_SECTIONS[nextIndex].id as TabId);
-                    } else if (e.key === "ArrowLeft") {
-                      const currentIndex = HELP_SECTIONS.findIndex(
-                        (s) => s.id === activeTab()
-                      );
-                      const prevIndex =
-                        (currentIndex - 1 + HELP_SECTIONS.length) %
-                        HELP_SECTIONS.length;
-                      setActiveTab(HELP_SECTIONS[prevIndex].id as TabId);
-                    }
-                  }}
-                >
-                  {section.icon}
-                  <span class="hidden sm:inline">{section.title}</span>
-                  <Show when={activeTab() === section.id}>
-                    <div
-                      class="absolute bottom-0 left-0 right-0 h-0.5"
-                      style={{ background: "var(--accent)" }}
-                    />
-                  </Show>
-                </button>
-              )}
+              {(section) => {
+                const selected = () => activeTab() === section.id;
+                const tabId = `${baseId}-${section.id}-tab`;
+                const panelId = `${baseId}-${section.id}-panel`;
+
+                return (
+                  <button
+                    ref={(element) => {
+                      tabRefs[section.id] = element;
+                    }}
+                    type="button"
+                    role="tab"
+                    id={tabId}
+                    aria-selected={selected()}
+                    aria-controls={panelId}
+                    tabIndex={selected() ? 0 : -1}
+                    class="relative flex items-center gap-2 px-3 py-2.5 text-sm font-medium transition-colors"
+                    style={{ color: selected() ? "var(--accent)" : "var(--text-weak)" }}
+                    onClick={() => selectTab(section.id)}
+                    onKeyDown={(event) => handleTabKeydown(event, section.id)}
+                  >
+                    <Icon name={section.icon} size={16} />
+                    <span class="hidden sm:inline">{section.title}</span>
+                    <Show when={selected()}>
+                      <span
+                        class="absolute bottom-0 left-0 right-0 h-0.5"
+                        style={{ background: "var(--accent)" }}
+                        aria-hidden="true"
+                      />
+                    </Show>
+                  </button>
+                );
+              }}
             </For>
           </div>
 
-          {/* Content */}
-          <div
-            class="p-4"
-            style={{ background: "var(--surface-base)" }}
-            role="tabpanel"
-            id={`${activeTab()}-panel`}
-            aria-labelledby={`${activeTab()}-tab`}
-          >
-            <Show when={activeTab() === "shortcuts"}>{renderShortcutsTab()}</Show>
-            <Show when={activeTab() === "screenReader"}>
-              {renderScreenReaderTab()}
-            </Show>
-            <Show when={activeTab() === "navigation"}>
-              {renderNavigationTab()}
-            </Show>
-            <Show when={activeTab() === "settings"}>{renderSettingsTab()}</Show>
+          <div class="p-4" style={{ background: "var(--surface-base)" }}>
+            <div
+              role="tabpanel"
+              id={`${baseId}-shortcuts-panel`}
+              aria-labelledby={`${baseId}-shortcuts-tab`}
+              hidden={activeTab() !== "shortcuts"}
+            >
+              <Show when={activeTab() === "shortcuts"}>{renderShortcutsTab()}</Show>
+            </div>
+            <div
+              role="tabpanel"
+              id={`${baseId}-screenReader-panel`}
+              aria-labelledby={`${baseId}-screenReader-tab`}
+              hidden={activeTab() !== "screenReader"}
+            >
+              <Show when={activeTab() === "screenReader"}>{renderScreenReaderTab()}</Show>
+            </div>
+            <div
+              role="tabpanel"
+              id={`${baseId}-navigation-panel`}
+              aria-labelledby={`${baseId}-navigation-tab`}
+              hidden={activeTab() !== "navigation"}
+            >
+              <Show when={activeTab() === "navigation"}>{renderNavigationTab()}</Show>
+            </div>
+            <div
+              role="tabpanel"
+              id={`${baseId}-settings-panel`}
+              aria-labelledby={`${baseId}-settings-tab`}
+              hidden={activeTab() !== "settings"}
+            >
+              <Show when={activeTab() === "settings"}>{renderSettingsTab()}</Show>
+            </div>
           </div>
 
-          {/* Footer */}
           <div
-            class="flex items-center justify-between px-4 py-3 border-t"
+            class="flex items-center justify-between gap-4 border-t px-4 py-3"
             style={{
               "border-color": "var(--border-weak)",
               background: "var(--surface-raised)",
             }}
           >
             <span class="text-xs" style={{ color: "var(--text-weak)" }}>
-              Press{" "}
-              <kbd
-                class="px-1.5 py-0.5 rounded"
-                style={{
-                  background: "var(--background-base)",
-                  color: "var(--text-weak)",
-                }}
-              >
-                F1
-              </kbd>{" "}
-              or{" "}
-              <kbd
-                class="px-1.5 py-0.5 rounded"
-                style={{
-                  background: "var(--background-base)",
-                  color: "var(--text-weak)",
-                }}
-              >
-                Ctrl+Shift+?
-              </kbd>{" "}
-              to open this help
+              Press <kbd class="rounded px-1.5 py-0.5" style={{ background: "var(--background-base)" }}>F1</kbd> or <kbd class="rounded px-1.5 py-0.5" style={{ background: "var(--background-base)" }}>Ctrl+Shift+?</kbd> to open this help.
             </span>
             <a
               href="https://docs.cortex.ai/accessibility"
               target="_blank"
               rel="noopener noreferrer"
-              class="text-xs underline transition-colors"
+              class="text-xs underline"
               style={{ color: "var(--accent)" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "var(--accent-hover)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "var(--accent)";
-              }}
             >
               Learn more about accessibility
             </a>
@@ -800,68 +818,6 @@ export function AccessibilityHelp() {
   );
 }
 
-// ============================================================================
-// Helper Components
-// ============================================================================
-
-interface SettingToggleProps {
-  icon: JSX.Element;
-  title: string;
-  description: string;
-  enabled: boolean;
-  onToggle: () => void;
-}
-
-function SettingToggle(props: SettingToggleProps) {
-  return (
-    <div
-      class="flex items-center justify-between p-3 rounded-lg"
-      style={{
-        background: "var(--surface-base)",
-        border: "1px solid var(--border-weak)",
-      }}
-    >
-      <div class="flex items-center gap-3">
-        <span style={{ color: "var(--accent)" }}>{props.icon}</span>
-        <div>
-          <div class="text-sm font-medium" style={{ color: "var(--text-base)" }}>
-            {props.title}
-          </div>
-          <div class="text-xs" style={{ color: "var(--text-weak)" }}>
-            {props.description}
-          </div>
-        </div>
-      </div>
-      <button
-        role="switch"
-        aria-checked={props.enabled}
-        aria-label={`${props.title}: ${props.enabled ? "enabled" : "disabled"}`}
-        class="relative w-10 h-5 rounded-full transition-colors"
-        style={{
-          background: props.enabled ? "var(--accent)" : "var(--border-weak)",
-        }}
-        onClick={props.onToggle}
-      >
-        <span
-          class="absolute top-0.5 w-4 h-4 rounded-full transition-transform"
-          style={{
-            background: "white",
-            transform: props.enabled ? "translateX(22px)" : "translateX(2px)",
-          }}
-        />
-      </button>
-    </div>
-  );
-}
-
-// ============================================================================
-// Export hook for programmatic control
-// ============================================================================
-
-/**
- * Hook to control the AccessibilityHelp dialog programmatically
- * Note: This requires the AccessibilityHelp component to be mounted
- */
 export function useAccessibilityHelpDialog() {
   const open = () => {
     window.dispatchEvent(new KeyboardEvent("keydown", { key: "F1" }));
