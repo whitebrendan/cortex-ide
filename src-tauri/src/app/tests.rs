@@ -46,6 +46,7 @@ fn state_types_are_send_sync() {
 
 #[test]
 fn state_initialization_does_not_panic() {
+fn state_initialization_does_not_panic() {
     use std::collections::VecDeque;
     use std::sync::Mutex;
 
@@ -69,9 +70,27 @@ fn state_initialization_does_not_panic() {
     let _ = crate::factory::FactoryState::new();
     let _ = crate::extensions::activation::ActivationState::new();
     let _ = crate::extensions::registry::RegistryState::new();
+    let _ = crate::extensions::activation::ActivationState::new();
+    let _ = crate::extensions::registry::RegistryState::new();
     let _ = crate::testing::TestWatcherState::new();
     #[cfg(feature = "remote-ssh")]
     let _ = crate::ssh_terminal::SSHTerminalState::new();
+    let _ = crate::wsl::WSLState::new();
+}
+
+#[test]
+fn open_in_browser_validation_allows_http_https_and_mailto() {
+    assert!(super::validate_open_in_browser_target("https://example.com/path").is_ok());
+    assert!(super::validate_open_in_browser_target("http://127.0.0.1:3000").is_ok());
+    assert!(super::validate_open_in_browser_target("mailto:support@example.com").is_ok());
+}
+
+#[test]
+fn open_in_browser_validation_rejects_unsafe_schemes() {
+    assert!(super::validate_open_in_browser_target("file:///tmp/test.txt").is_err());
+    assert!(super::validate_open_in_browser_target("javascript:alert(1)").is_err());
+    assert!(super::validate_open_in_browser_target("cortex://open").is_err());
+}
     let _ = crate::wsl::WSLState::new();
 }
 

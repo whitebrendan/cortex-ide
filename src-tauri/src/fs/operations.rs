@@ -12,6 +12,9 @@ use tracing::{debug, info};
 use crate::fs::security::{
     validate_path_for_delete, validate_path_for_read, validate_path_for_write,
 };
+use crate::fs::security::{
+    validate_path_for_delete, validate_path_for_read, validate_path_for_write,
+};
 use crate::fs::types::{
     DirectoryCache, FileContentCache, MAX_BINARY_FILE_SIZE, MAX_CACHEABLE_FILE_SIZE,
     MAX_TEXT_FILE_SIZE, MMAP_THRESHOLD,
@@ -537,13 +540,20 @@ pub async fn fs_trash(app: AppHandle, path: String) -> Result<(), String> {
 }
 
 // ============================================================================
-// Shell/Explorer Operations
-// ============================================================================
 
-#[tauri::command]
-pub async fn fs_reveal_in_explorer(path: String) -> Result<(), String> {
-    let file_path = PathBuf::from(&path);
+fn validate_existing_openable_path(path: &str) -> Result<PathBuf, String> {
+    let validated_path = validate_path_for_read(Path::new(path))?;
 
+    if !validated_path.exists() {
+        return Err(format!("Path does not exist: {}", path));
+    }
+
+    Ok(validated_path)
+}
+    let file_path = validate_existing_openable_path(&path)?;
+    let validated_path = file_path.to_string_lossy().to_string();
+            .args(["/select,", &validated_path])
+            .args(["-R", &validated_path])
     if !file_path.exists() {
         return Err(format!("Path does not exist: {}", path));
     }
@@ -566,12 +576,46 @@ pub async fn fs_reveal_in_explorer(path: String) -> Result<(), String> {
 
     #[cfg(target_os = "linux")]
     {
-        let parent = file_path
-            .parent()
-            .map(|p| p.to_string_lossy().to_string())
-            .unwrap_or_else(|| path.clone());
+            .unwrap_or_else(|| validated_path.clone());
+    info!("Revealed in explorer: {}", validated_path);
+    let validated_path = validate_existing_openable_path(&path)?;
+    open::that(&validated_path).map_err(|e| format!("Failed to open file: {}", e))?;
+    info!("Opened with default app: {}", validated_path.display());
+    if let Ok(validated_url) = crate::app::validate_open_in_browser_target(&path) {
+        open::that(validated_url.as_str()).map_err(|e| format!("Failed to open: {}", e))?;
+        info!("Shell opened URL: {}", validated_url);
+        return Ok(());
+    }
 
-        crate::process_utils::command("xdg-open")
+    let validated_path = validate_existing_openable_path(&path)?;
+    open::that(&validated_path).map_err(|e| format!("Failed to open: {}", e))?;
+    info!("Shell opened path: {}", validated_path.display());
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::validate_existing_openable_path;
+
+    #[test]
+    fn validate_existing_openable_path_rejects_missing_paths() {
+        let missing = std::env::temp_dir().join("cortex-missing-openable-path");
+        let err = validate_existing_openable_path(missing.to_string_lossy().as_ref()).unwrap_err();
+        assert!(err.contains("Path does not exist"));
+    }
+
+    #[test]
+    fn validate_existing_openable_path_accepts_existing_files() {
+        let temp = tempfile::NamedTempFile::new().unwrap();
+        let validated =
+            validate_existing_openable_path(temp.path().to_string_lossy().as_ref()).unwrap();
+        assert_eq!(validated, temp.path());
+    }
+
+    #[test]
+    fn validate_existing_openable_path_rejects_url_like_input() {
+        assert!(validate_existing_openable_path("https://example.com").is_err());
+    }
+}
             .arg(&parent)
             .spawn()
             .map_err(|e| format!("Failed to open file manager: {}", e))?;

@@ -34,13 +34,7 @@
     {
       "identifier": "shell:allow-spawn",
       "allow": [
-        { "name": "git", "cmd": "git", "args": true },
-        { "name": "node", "cmd": "node", "args": true },
-        { "name": "npm", "cmd": "npm", "args": true },
-        { "name": "npx", "cmd": "npx", "args": true },
-        { "name": "cargo", "cmd": "cargo", "args": true },
-        { "name": "python", "cmd": "python", "args": true },
-        { "name": "python3", "cmd": "python3", "args": true }
+        { "name": "cortex", "cmd": "cortex", "args": true }
       ]
     },
     "dialog:allow-open",
@@ -58,7 +52,8 @@
     "os:allow-os-type",
     "os:allow-arch",
     "deep-link:default",
-    "fs:default",
+    "fs:allow-read-text-file",
+    "fs:allow-write-text-file",
     "mcp-bridge:default"
   ]
 }

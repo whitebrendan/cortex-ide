@@ -25,6 +25,14 @@ use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_shell::process::CommandChild;
 use tokio::sync::mpsc;
 use tracing::{error, info, warn};
+use url::Url;
+use serde::{Deserialize, Serialize};
+use tauri::{AppHandle, Emitter, Manager, RunEvent};
+use tauri_plugin_clipboard_manager::ClipboardExt;
+use tauri_plugin_notification::NotificationExt;
+use tauri_plugin_shell::process::CommandChild;
+use tokio::sync::mpsc;
+use tracing::{error, info, warn};
 
 use crate::LazyState;
 use crate::activity::ActivityState;
@@ -239,7 +247,29 @@ pub async fn get_version() -> Result<String, String> {
 
 #[tauri::command]
 pub async fn open_in_browser(url: String) -> Result<(), String> {
-    open::that(&url).map_err(|e| format!("Failed to open URL: {}", e))
+pub(crate) fn validate_open_in_browser_target(url: &str) -> Result<Url, String> {
+    let parsed = Url::parse(url).map_err(|e| format!("Invalid URL: {}", e))?;
+
+    match parsed.scheme() {
+        "http" | "https" => {
+            if parsed.host_str().is_none() {
+                return Err("Browser URLs must include a host".to_string());
+            }
+        }
+        "mailto" => {}
+        scheme => {
+            return Err(format!(
+                "Unsupported URL scheme '{}'. Only http, https, and mailto are allowed.",
+                scheme
+            ));
+        }
+    }
+
+    Ok(parsed)
+}
+
+    let validated = validate_open_in_browser_target(&url)?;
+    open::that(validated.as_str()).map_err(|e| format!("Failed to open URL: {}", e))
 }
 
 #[tauri::command]
