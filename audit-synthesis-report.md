@@ -1,7 +1,7 @@
 # Cortex IDE — Comprehensive Audit Synthesis Report
 
-**Synthesis date:** 2026-03-10  
-**Repository:** `/workspace/ide`  
+**Synthesis date:** 2026-03-10<br>
+**Repository:** `CortexLM/cortex-ide`<br>
 **Purpose:** Reconcile the repository’s architecture, runtime, build, and code-quality audit streams into one actionable engineering report.
 
 ---
@@ -344,7 +344,7 @@ This specific failure mode appears to be **addressed by subsequent code changes*
 - `src-tauri/src/git/command.rs`: shell-based git helpers capture stdout/stderr explicitly via piped handles.
 - `src-tauri/src/git/clone.rs`: clone progress reads piped stderr inside a dedicated thread wrapped with `catch_unwind`.
 - `src-tauri/src/keybindings.rs`: `load_keybindings_file` now reads/parses a JSON file and does not invoke an external process.
-- `src-tauri/src/git/staging.rs`: unsiged `git_commit` uses libgit2 directly; the CLI path is limited to signed commits and also captures stderr.
+- `src-tauri/src/git/staging.rs`: unsigned `git_commit` operations use libgit2 directly; the CLI path is limited to signed commits and also captures stderr.
 
 **Status**  
 **Marked as addressed in code, but still requires runtime regression verification** once the Tauri environment is buildable again.
