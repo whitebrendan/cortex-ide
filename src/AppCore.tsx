@@ -20,8 +20,8 @@ import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { invoke } from "@tauri-apps/api/core";
 import { useLocation, useNavigate } from "@solidjs/router";
 import { getWindowLabel } from "@/utils/windowStorage";
-import { listen } from "@tauri-apps/api/event";
-import { handleDeepLinkAction, type DeepLinkAction } from "@/utils/deepLink";
+import { listen, type Event as TauriEvent } from "@tauri-apps/api/event";
+import { handleDeepLinkAction, parseDeepLinkAction } from "@/utils/deepLink";
 import { gitClone, gitCloneRecursive } from "@/utils/tauri-api";
 import { openWorkspaceSurface } from "@/utils/workingSurface";
 import type { FeedbackType } from "@/components/FeedbackDialog";
@@ -242,8 +242,13 @@ function DeepLinkHandler(): null {
   onCleanup(() => unlisten?.());
 
   onMount(async () => {
-    unlisten = await listen<DeepLinkAction>("deep:link", async (event) => {
-      const action = event.payload;
+    unlisten = await listen("deep:link", async (event: TauriEvent<unknown>) => {
+      const action = parseDeepLinkAction(event.payload);
+      if (!action) {
+        console.warn("[DeepLink] Ignoring malformed deep link payload");
+        return;
+      }
+
       if (import.meta.env.DEV) console.log("[DeepLink] Received:", action);
       await handleDeepLinkAction(action, {
         openFile: (path) => editor.openFile(path),
@@ -275,10 +280,6 @@ function DeepLinkHandler(): null {
           }));
         },
       });
-
-      if (action.type === "Unknown") {
-        toast.error("Unknown deep link format");
-      }
     });
   });
 

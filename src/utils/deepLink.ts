@@ -1,3 +1,4 @@
+import { hasProperty, isBoolean, isNumber, isObject, isString } from "@/utils/json";
 import { type SessionNavigationOptions } from "@/utils/workingSurface";
 
 export interface DeepLinkOpenFile {
@@ -54,6 +55,92 @@ interface HandleDeepLinkActionOptions {
   notifyInfo: (message: string) => void;
   notifyError: (message: string) => void;
   openSettings: (section: string) => void;
+}
+
+const isNonEmptyString = (value: unknown): value is string =>
+  isString(value) && value.trim().length > 0;
+
+const isPositiveInteger = (value: unknown): value is number =>
+  isNumber(value) && Number.isInteger(value) && value >= 1;
+
+const isOptionalBoolean = (value: unknown): value is boolean | undefined =>
+  value === undefined || isBoolean(value);
+
+const isOptionalPositiveInteger = (value: unknown): value is number | undefined =>
+  value === undefined || isPositiveInteger(value);
+
+export function parseDeepLinkAction(value: unknown): DeepLinkAction | null {
+  if (
+    !isObject(value)
+    || !hasProperty(value, "type")
+    || !isString(value.type)
+    || !hasProperty(value, "payload")
+    || !isObject(value.payload)
+  ) {
+    return null;
+  }
+
+  const type = value.type;
+  const payload = value.payload;
+
+  switch (type) {
+    case "OpenFile": {
+      if (!isNonEmptyString(payload.path)) return null;
+      return { type, payload: { path: payload.path } };
+    }
+
+    case "OpenFolder": {
+      if (!isNonEmptyString(payload.path)) return null;
+      if (!isOptionalBoolean(payload.new_window) || !isOptionalBoolean(payload.newWindow)) return null;
+
+      return {
+        type,
+        payload: {
+          path: payload.path,
+          ...(isBoolean(payload.new_window) ? { new_window: payload.new_window } : {}),
+          ...(isBoolean(payload.newWindow) ? { newWindow: payload.newWindow } : {}),
+        },
+      };
+    }
+
+    case "OpenGoto": {
+      if (!isNonEmptyString(payload.path) || !isPositiveInteger(payload.line) || !isOptionalPositiveInteger(payload.column)) {
+        return null;
+      }
+
+      return {
+        type,
+        payload: {
+          path: payload.path,
+          line: payload.line,
+          ...(isNumber(payload.column) ? { column: payload.column } : {}),
+        },
+      };
+    }
+
+    case "OpenDiff": {
+      if (!isNonEmptyString(payload.left) || !isNonEmptyString(payload.right)) return null;
+      return { type, payload: { left: payload.left, right: payload.right } };
+    }
+
+    case "AddFolder": {
+      if (!isNonEmptyString(payload.path)) return null;
+      return { type, payload: { path: payload.path } };
+    }
+
+    case "OpenSettings": {
+      if (!isNonEmptyString(payload.section)) return null;
+      return { type, payload: { section: payload.section } };
+    }
+
+    case "Unknown": {
+      if (!isNonEmptyString(payload.raw_url)) return null;
+      return { type, payload: { raw_url: payload.raw_url } };
+    }
+
+    default:
+      return null;
+  }
 }
 
 const getLeafName = (path: string): string => path.split(/[\\/]/).pop() || path;
