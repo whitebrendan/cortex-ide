@@ -9,9 +9,42 @@ use std::process::{Child, ChildStdin, ChildStdout, Stdio};
 use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader as TokioBufReader};
 use tokio::sync::Mutex;
+use url::Url;
+
+use crate::cortex_engine::security::ssrf::{SsrfConfig, SsrfProtection};
 
 /// Maximum message size to prevent DoS attacks (10 MB)
 const MAX_MESSAGE_SIZE: usize = 10 * 1024 * 1024;
+
+fn validate_context_server_endpoint_with_config(endpoint: &str, config: SsrfConfig) -> Result<Url> {
+    let parsed = Url::parse(endpoint).map_err(|e| anyhow!("Invalid context server URL: {e}"))?;
+    match parsed.scheme() {
+        "http" | "https" => {}
+        scheme => {
+            return Err(anyhow!(
+                "Unsupported context server URL scheme '{}'. Only http and https are allowed.",
+                scheme
+            ));
+        }
+    }
+
+    SsrfProtection::with_config(config)
+        .validate_url(parsed.as_str())
+        .map_err(|e| anyhow!("Unsafe context server URL: {e}"))
+}
+
+pub(crate) fn validate_context_server_endpoint(endpoint: &str) -> Result<Url> {
+    validate_context_server_endpoint_with_config(endpoint, SsrfConfig::new().skip_dns_resolution())
+}
+
+pub(crate) async fn validate_context_server_endpoint_with_dns(endpoint: &str) -> Result<Url> {
+    let endpoint = endpoint.to_string();
+    tokio::task::spawn_blocking(move || {
+        validate_context_server_endpoint_with_config(&endpoint, SsrfConfig::new())
+    })
+    .await
+    .context("Context server URL validation task failed")?
+}
 
 /// Transport trait for MCP communication
 pub trait Transport: Send + Sync {
@@ -263,13 +296,15 @@ pub struct AsyncHttpTransport {
 
 impl AsyncHttpTransport {
     pub fn new(endpoint: &str, headers: HashMap<String, String>) -> Result<Self> {
+        let validated_endpoint = validate_context_server_endpoint(endpoint)?;
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(60))
+            .redirect(reqwest::redirect::Policy::none())
             .build()
             .context("Failed to create HTTP client")?;
 
         Ok(Self {
-            endpoint: endpoint.to_string(),
+            endpoint: validated_endpoint.to_string(),
             headers,
             client,
         })
@@ -302,5 +337,41 @@ impl AsyncHttpTransport {
             .text()
             .await
             .context("Failed to read response body")
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validate_context_server_endpoint_accepts_https_url() {
+        let parsed =
+            validate_context_server_endpoint("https://mcp.example.com/api").expect("valid URL");
+        assert_eq!(parsed.scheme(), "https");
+    }
+
+    #[test]
+    fn validate_context_server_endpoint_rejects_localhost() {
+        let error = validate_context_server_endpoint("http://127.0.0.1:8765")
+            .expect_err("localhost should be blocked");
+        assert!(
+            error
+                .to_string()
+                .contains("localhost and local domains are not allowed")
+        );
+    }
+
+    #[tokio::test]
+    async fn validate_context_server_endpoint_with_dns_rejects_private_ip() {
+        let error = validate_context_server_endpoint_with_dns("http://192.168.10.20:8765/sse")
+            .await
+            .expect_err("private IP should be blocked");
+        assert!(
+            error
+                .to_string()
+                .contains("private and reserved IP ranges are not allowed")
+        );
     }
 }

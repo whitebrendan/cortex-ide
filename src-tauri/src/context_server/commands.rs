@@ -7,10 +7,12 @@ use std::sync::Arc;
 use tauri::{AppHandle, Emitter, State};
 use tokio::sync::Mutex as TokioMutex;
 use tracing::{error, info};
-use url::Url;
 
 use super::ContextServerState;
 use super::protocol::{McpClient, McpClientBuilder};
+use super::transport::{
+    validate_context_server_endpoint, validate_context_server_endpoint_with_dns,
+};
 use super::types::*;
 use crate::LazyState;
 
@@ -24,14 +26,9 @@ fn validate_context_server_config(config: &ContextServerConfig) -> Result<(), St
                 .url
                 .as_ref()
                 .ok_or_else(|| "URL is required for HTTP/SSE context servers".to_string())?;
-            let parsed = Url::parse(url).map_err(|e| format!("Invalid context server URL: {e}"))?;
-            match parsed.scheme() {
-                "http" | "https" => Ok(()),
-                scheme => Err(format!(
-                    "Unsupported context server URL scheme '{}'. Only http and https are allowed.",
-                    scheme
-                )),
-            }
+            validate_context_server_endpoint(url)
+                .map(|_| ())
+                .map_err(|e| e.to_string())
         }
     }
 }
@@ -131,8 +128,23 @@ pub async fn mcp_connect(
         }),
     );
 
-    // Connect to the server
-    let result = McpClientBuilder::new(config).connect_and_initialize().await;
+    let result = async {
+        if matches!(config.server_type, ServerType::Http | ServerType::Sse) {
+            let url = config
+                .url
+                .as_deref()
+                .ok_or_else(|| "URL is required for HTTP/SSE context servers".to_string())?;
+            validate_context_server_endpoint_with_dns(url)
+                .await
+                .map_err(|e| e.to_string())?;
+        }
+
+        McpClientBuilder::new(config)
+            .connect_and_initialize()
+            .await
+            .map_err(|e| e.to_string())
+    }
+    .await;
 
     match result {
         Ok(client) => {
@@ -576,5 +588,45 @@ mod tests {
         let error =
             validate_context_server_config(&config).expect_err("file URLs should be rejected");
         assert!(error.contains("Only http and https are allowed"));
+    }
+
+    #[test]
+    fn validate_context_server_config_rejects_localhost_urls() {
+        let config = ContextServerConfig {
+            name: "loopback".to_string(),
+            server_type: ServerType::Http,
+            command: None,
+            args: None,
+            env: None,
+            url: Some("http://127.0.0.1:8765".to_string()),
+            headers: None,
+            working_directory: None,
+            timeout_ms: None,
+            auto_connect: None,
+        };
+
+        let error =
+            validate_context_server_config(&config).expect_err("localhost URLs should be blocked");
+        assert!(error.contains("localhost and local domains are not allowed"));
+    }
+
+    #[test]
+    fn validate_context_server_config_rejects_private_ip_urls() {
+        let config = ContextServerConfig {
+            name: "private".to_string(),
+            server_type: ServerType::Sse,
+            command: None,
+            args: None,
+            env: None,
+            url: Some("http://192.168.10.20:8765/sse".to_string()),
+            headers: None,
+            working_directory: None,
+            timeout_ms: None,
+            auto_connect: None,
+        };
+
+        let error =
+            validate_context_server_config(&config).expect_err("private IP URLs should be blocked");
+        assert!(error.contains("private and reserved IP ranges are not allowed"));
     }
 }
