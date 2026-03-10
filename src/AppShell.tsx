@@ -13,6 +13,11 @@
 
 import { ParentProps, ErrorBoundary, Suspense, lazy, onMount, onCleanup } from "solid-js";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import type { DeepLinkAction } from "@/utils/deepLink";
+import { createAsyncCleanupRegistrar } from "@/utils/asyncCleanup";
+import { dispatchDeepLinkAction, registerAsyncCleanup } from "@/utils/appStartup";
+import App from "./App";
 import { SplashScreen } from "./components/startup/SplashScreen";
 
 // Startup timing
@@ -125,6 +130,8 @@ function ErrorFallback(props: { error: Error; reset?: () => void }) {
 export default function AppShell(props: ParentProps) {
   if (import.meta.env.DEV) console.log(`[STARTUP] AppShell rendering @ ${performance.now().toFixed(1)}ms`);
 
+  const asyncCleanup = createAsyncCleanupRegistrar();
+
   // Early global error handlers — safety net before AppCore's full handler initializes.
   // These log to console and do NOT prevent propagation (errors still reach error boundaries).
   const earlyErrorHandler = (event: ErrorEvent) => {
@@ -136,25 +143,43 @@ export default function AppShell(props: ParentProps) {
     console.error("[AppShell] Unhandled rejection:", message);
   };
 
-  window.addEventListener("error", earlyErrorHandler);
-  window.addEventListener("unhandledrejection", earlyRejectionHandler);
-
-  onCleanup(() => {
-    window.removeEventListener("error", earlyErrorHandler);
-    window.removeEventListener("unhandledrejection", earlyRejectionHandler);
-  });
+  let showMainWindowFrame = 0;
 
   onMount(() => {
-    requestAnimationFrame(() => {
+    window.addEventListener("error", earlyErrorHandler);
+    window.addEventListener("unhandledrejection", earlyRejectionHandler);
+
+    registerAsyncCleanup(
+      asyncCleanup,
+      listen<DeepLinkAction>("deep:link", ({ payload }) => {
+        dispatchDeepLinkAction(payload);
+      }),
+      (error) => {
+        console.error("[AppShell] Failed to register deep-link listener:", error);
+      },
+    );
+
+    showMainWindowFrame = requestAnimationFrame(() => {
       invoke("show_main_window").catch(() => {});
     });
   });
 
+  onCleanup(() => {
+    window.removeEventListener("error", earlyErrorHandler);
+    window.removeEventListener("unhandledrejection", earlyRejectionHandler);
+    if (showMainWindowFrame !== 0) {
+      cancelAnimationFrame(showMainWindowFrame);
+    }
+    asyncCleanup.dispose();
+  });
+
   return (
-    <ErrorBoundary fallback={(err, reset) => <ErrorFallback error={err} reset={reset} />}>
-      <Suspense fallback={<SplashScreen />}>
-        <AppCore {...props}>{props.children}</AppCore>
-      </Suspense>
-    </ErrorBoundary>
+    <App testId="app-shell-root">
+      <ErrorBoundary fallback={(err, reset) => <ErrorFallback error={err} reset={reset} />}>
+        <Suspense fallback={<SplashScreen />}>
+          <AppCore {...props}>{props.children}</AppCore>
+        </Suspense>
+      </ErrorBoundary>
+    </App>
   );
 }
