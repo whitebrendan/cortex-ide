@@ -18,6 +18,26 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import * as childProcess from "node:child_process";
 import { glob } from "glob";
+import {
+  DEFAULT_COMMAND_STREAM_MAX_BYTES,
+  DEFAULT_READ_FILE_MAX_BYTES,
+  DEFAULT_READ_FILE_MAX_LINES,
+  DEFAULT_RESOURCE_MAX_BYTES,
+  DEFAULT_SEARCH_FILE_MAX_BYTES,
+  DEFAULT_SEARCH_MAX_FILES,
+  DEFAULT_SEARCH_MAX_RESULTS,
+  UserVisibleError,
+  appendToBoundedText,
+  createBoundedTextAccumulator,
+  ensureDirectory,
+  ensureRegularFile,
+  finalizeBoundedText,
+  formatToolError,
+  logMcpError,
+  readTextLines,
+  readTextPreview,
+  resolveSafePath as resolveWorkspacePath,
+} from "./workspace-security.js";
 
 interface TruncationConfig {
   enabled: boolean;
@@ -69,12 +89,8 @@ const server = new McpServer({
 });
 
 // Helper: resolve a path relative to workspace root, preventing path traversal
-function resolveSafePath(inputPath: string): string {
-  const resolved = path.resolve(WORKSPACE_ROOT, inputPath);
-  if (resolved !== WORKSPACE_ROOT && !resolved.startsWith(WORKSPACE_ROOT + path.sep)) {
-    throw new Error(`Path traversal denied: ${inputPath}`);
-  }
-  return resolved;
+async function resolveSafePath(inputPath: string, allowMissing = false): Promise<string> {
+  return resolveWorkspacePath(inputPath, { allowMissing });
 }
 
 // Helper: detect MIME type from file extension
@@ -114,23 +130,27 @@ function registerResources() {
       try {
         const filepath = params.filepath;
         if (typeof filepath !== "string" || !filepath) {
-          throw new Error("Invalid filepath parameter");
+          throw new UserVisibleError("Invalid path");
         }
-        const safePath = resolveSafePath(filepath);
-        const content = await fs.readFile(safePath, "utf-8");
+        const safePath = await resolveSafePath(filepath);
+        await ensureRegularFile(safePath);
+        const content = await readTextPreview(safePath, {
+          maxBytes: DEFAULT_RESOURCE_MAX_BYTES,
+        });
         return {
           contents: [{
             uri: uri.href,
             mimeType: mimeFromExt(safePath),
-            text: content,
+            text: content.text,
           }],
         };
       } catch (e) {
+        logMcpError(`workspace resource read failed for ${uri.href}`, e);
         return {
           contents: [{
             uri: uri.href,
             mimeType: "text/plain",
-            text: `Error reading resource: ${errorText(e)}`,
+            text: formatToolError("reading resource", e),
           }],
         };
       }
@@ -542,21 +562,21 @@ function registerTools() {
     },
     async (args) => {
       try {
-        const safePath = resolveSafePath(args.path);
-        const raw = await fs.readFile(safePath, "utf-8");
-        const allLines = raw.split("\n");
-        const start = Math.max(0, (args.start_line ?? 1) - 1);
-        const selected = args.max_lines != null
-          ? allLines.slice(start, start + args.max_lines)
-          : allLines.slice(start);
-        const numbered = selected.map((line, i) => `${start + i + 1}: ${line}`);
-        const text = truncateText(numbered.join("\n"), { enabled: true, maxLength: 50000, maxLines: 500, truncateMessage: "... [truncated]" });
+        const safePath = await resolveSafePath(args.path);
+        await ensureRegularFile(safePath);
+        const result = await readTextLines(safePath, {
+          startLine: args.start_line,
+          maxLines: args.max_lines,
+          hardMaxLines: DEFAULT_READ_FILE_MAX_LINES,
+          maxBytes: DEFAULT_READ_FILE_MAX_BYTES,
+        });
         return {
-          content: [{ type: "text" as const, text }],
+          content: [{ type: "text" as const, text: result.text }],
         };
       } catch (e) {
+        logMcpError(`read_file failed for ${args.path}`, e);
         return {
-          content: [{ type: "text" as const, text: `Error reading file: ${errorText(e)}` }],
+          content: [{ type: "text" as const, text: formatToolError("reading file", e) }],
           isError: true,
         };
       }
@@ -573,7 +593,7 @@ function registerTools() {
     },
     async (args) => {
       try {
-        const safePath = resolveSafePath(args.path);
+        const safePath = await resolveSafePath(args.path, true);
         const dir = path.dirname(safePath);
         await fs.mkdir(dir, { recursive: true });
         await fs.writeFile(safePath, args.content, "utf-8");
@@ -581,8 +601,9 @@ function registerTools() {
           content: [{ type: "text" as const, text: `Wrote ${args.content.length} bytes to ${args.path}` }],
         };
       } catch (e) {
+        logMcpError(`write_file failed for ${args.path}`, e);
         return {
-          content: [{ type: "text" as const, text: `Error writing file: ${errorText(e)}` }],
+          content: [{ type: "text" as const, text: formatToolError("writing file", e) }],
           isError: true,
         };
       }
@@ -594,12 +615,13 @@ function registerTools() {
     "list_directory",
     "List files and directories at a given path in the workspace.",
     {
-      path: z.string().default(".").describe("Directory path (relative to workspace root, default: '.')"),
+      path: z.string().default(".").describe("Directory path (relative to workspace root, default: \".\")"),
       include_hidden: z.boolean().optional().default(false).describe("Include hidden files/directories (default: false)"),
     },
     async (args) => {
       try {
-        const safePath = resolveSafePath(args.path);
+        const safePath = await resolveSafePath(args.path);
+        await ensureDirectory(safePath);
         const entries = await fs.readdir(safePath, { withFileTypes: true });
         const results: Array<{ name: string; type: string; path: string }> = [];
         for (const entry of entries) {
@@ -607,7 +629,7 @@ function registerTools() {
           results.push({
             name: entry.name,
             type: entry.isDirectory() ? "directory" : "file",
-            path: path.join(args.path, entry.name),
+            path: path.join(args.path || ".", entry.name),
           });
         }
         results.sort((a, b) => {
@@ -618,8 +640,9 @@ function registerTools() {
           content: [{ type: "text" as const, text: JSON.stringify({ entries: results }, null, 2) }],
         };
       } catch (e) {
+        logMcpError(`list_directory failed for ${args.path}`, e);
         return {
-          content: [{ type: "text" as const, text: `Error listing directory: ${errorText(e)}` }],
+          content: [{ type: "text" as const, text: formatToolError("listing directory", e) }],
           isError: true,
         };
       }
@@ -632,13 +655,14 @@ function registerTools() {
     "Search for a regex pattern across files in the workspace. Returns matching lines with file paths and line numbers.",
     {
       pattern: z.string().describe("Regex pattern to search for"),
-      directory: z.string().optional().default(".").describe("Directory to search in (relative to workspace root, default: '.')"),
+      directory: z.string().optional().default(".").describe("Directory to search in (relative to workspace root, default: \".\")"),
       file_pattern: z.string().optional().describe("Glob pattern to filter files (e.g., '**/*.ts')"),
       max_results: z.number().optional().default(50).describe("Maximum number of matches to return (default: 50)"),
     },
     async (args) => {
       try {
-        const searchDir = resolveSafePath(args.directory ?? ".");
+        const searchDir = await resolveSafePath(args.directory ?? ".");
+        await ensureDirectory(searchDir);
         const globPattern = args.file_pattern || "**/*";
         const files = await glob(globPattern, {
           cwd: searchDir,
@@ -648,35 +672,45 @@ function registerTools() {
         });
 
         const regex = new RegExp(args.pattern);
-        const maxResults = args.max_results ?? 50;
+        const maxResults = Math.min(args.max_results ?? 50, DEFAULT_SEARCH_MAX_RESULTS);
         const results: Array<{ file: string; line: number; content: string }> = [];
+        let scannedFiles = 0;
 
         for (const filePath of files) {
+          if (scannedFiles >= DEFAULT_SEARCH_MAX_FILES) break;
           if (results.length >= maxResults) break;
+
+          scannedFiles += 1;
           try {
-            const content = await fs.readFile(filePath, "utf-8");
-            const lines = content.split("\n");
+            const safeFilePath = await resolveSafePath(filePath);
+            await ensureRegularFile(safeFilePath);
+            const content = await readTextPreview(safeFilePath, {
+              maxBytes: DEFAULT_SEARCH_FILE_MAX_BYTES,
+            });
+            const lines = content.text.split("\n");
             for (let i = 0; i < lines.length; i++) {
               if (results.length >= maxResults) break;
               if (regex.test(lines[i])) {
                 results.push({
-                  file: path.relative(WORKSPACE_ROOT, filePath),
+                  file: path.relative(WORKSPACE_ROOT, safeFilePath),
                   line: i + 1,
-                  content: lines[i].trim(),
+                  content: truncateText(lines[i].trim(), { enabled: true, maxLength: 500, truncateMessage: "... [truncated]" }),
                 });
               }
             }
-          } catch {
+          } catch (fileError) {
+            logMcpError(`search_code skipped ${filePath}`, fileError);
             // Skip binary/unreadable files
           }
         }
 
         return {
-          content: [{ type: "text" as const, text: JSON.stringify({ results, total: results.length }, null, 2) }],
+          content: [{ type: "text" as const, text: JSON.stringify({ results, total: results.length, scanned_files: scannedFiles }, null, 2) }],
         };
       } catch (e) {
+        logMcpError(`search_code failed for ${args.directory ?? "."}`, e);
         return {
-          content: [{ type: "text" as const, text: `Error searching code: ${errorText(e)}` }],
+          content: [{ type: "text" as const, text: formatToolError("searching code", e) }],
           isError: true,
         };
       }
@@ -695,7 +729,8 @@ function registerTools() {
     },
     async (args) => {
       try {
-        const cwd = args.cwd ? resolveSafePath(args.cwd) : WORKSPACE_ROOT;
+        const cwd = args.cwd ? await resolveSafePath(args.cwd) : WORKSPACE_ROOT;
+        await ensureDirectory(cwd);
         const timeout = args.timeout_ms ?? 30000;
 
         const result = await new Promise<{ stdout: string; stderr: string; exitCode: number | null }>((resolve, reject) => {
@@ -706,14 +741,22 @@ function registerTools() {
             stdio: ["ignore", "pipe", "pipe"],
           });
 
-          let stdout = "";
-          let stderr = "";
+          const stdout = createBoundedTextAccumulator();
+          const stderr = createBoundedTextAccumulator();
 
-          proc.stdout.on("data", (data: Buffer) => { stdout += data.toString(); });
-          proc.stderr.on("data", (data: Buffer) => { stderr += data.toString(); });
+          proc.stdout.on("data", (data: Buffer) => {
+            appendToBoundedText(stdout, data, DEFAULT_COMMAND_STREAM_MAX_BYTES);
+          });
+          proc.stderr.on("data", (data: Buffer) => {
+            appendToBoundedText(stderr, data, DEFAULT_COMMAND_STREAM_MAX_BYTES);
+          });
 
           proc.on("close", (code) => {
-            resolve({ stdout, stderr, exitCode: code });
+            resolve({
+              stdout: finalizeBoundedText(stdout, DEFAULT_COMMAND_STREAM_MAX_BYTES),
+              stderr: finalizeBoundedText(stderr, DEFAULT_COMMAND_STREAM_MAX_BYTES),
+              exitCode: code,
+            });
           });
 
           proc.on("error", (err) => {
@@ -734,8 +777,9 @@ function registerTools() {
           content: [{ type: "text" as const, text: output }],
         };
       } catch (e) {
+        logMcpError(`run_terminal_command failed for ${args.command}`, e);
         return {
-          content: [{ type: "text" as const, text: `Error running command: ${errorText(e)}` }],
+          content: [{ type: "text" as const, text: formatToolError("running command", e) }],
           isError: true,
         };
       }
