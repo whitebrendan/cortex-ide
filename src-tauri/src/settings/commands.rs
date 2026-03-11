@@ -13,9 +13,52 @@ use std::fs;
 
 use tauri::{AppHandle, Manager};
 use tracing::info;
+use secrecy::ExposeSecret;
+use std::collections::HashMap;
+use std::fs;
+
+use tauri::{AppHandle, Manager};
+use tracing::info;
 
 use super::secure_store::SecureApiKeyStore;
 use super::storage::{SettingsState, ensure_settings_dir, get_settings_path, set_file_permissions};
+use super::types::{
+    AISettings, CommandPaletteSettings, CortexSettings, DebugSettings, EditorSettings,
+    ExplorerSettings, ExtensionSettingsMap, FilesSettings, HttpSettings, LanguageEditorOverride,
+    ScreencastModeSettings, SearchSettings, SecuritySettings, TerminalSettings, ThemeSettings,
+    WorkbenchSettings, ZenModeSettings,
+};
+
+const ALLOWED_API_KEY_NAMES: &[&str] = &[
+    "anthropic_api_key",
+    "google_api_key",
+    "openai_api_key",
+    "openrouter_api_key",
+    "proxy_authorization",
+    "supermaven_api_key",
+];
+
+const ALLOWED_AUTH_SECRET_NAMES: &[&str] = &[
+    "codespaces_auth_state",
+    "copilot_api_token",
+    "copilot_oauth_token",
+];
+
+fn validate_allowed_key(key_name: &str, allowed_keys: &[&str], kind: &str) -> Result<(), String> {
+    if allowed_keys.contains(&key_name) {
+        Ok(())
+    } else {
+        Err(format!("Unsupported {} key: {}", kind, key_name))
+    }
+}
+
+fn validate_api_key_name(key_name: &str) -> Result<(), String> {
+    validate_allowed_key(key_name, ALLOWED_API_KEY_NAMES, "API")
+}
+
+fn validate_auth_secret_name(key_name: &str) -> Result<(), String> {
+    validate_allowed_key(key_name, ALLOWED_AUTH_SECRET_NAMES, "auth secret")
+}
 use super::types::{
     AISettings, CommandPaletteSettings, CortexSettings, DebugSettings, EditorSettings,
     ExplorerSettings, ExtensionSettingsMap, FilesSettings, HttpSettings, LanguageEditorOverride,
@@ -370,6 +413,13 @@ pub async fn settings_set_api_key(
     api_key: String,
 ) -> Result<(), String> {
     SecureApiKeyStore::set_api_key(&key_name, &api_key)?;
+    validate_api_key_name(&key_name)?;
+pub async fn settings_set_api_key(
+    app: AppHandle,
+    key_name: String,
+    api_key: String,
+) -> Result<(), String> {
+    SecureApiKeyStore::set_api_key(&key_name, &api_key)?;
 
     // Update settings to reflect that key exists
     let settings_state = app.state::<SettingsState>();
@@ -394,6 +444,18 @@ pub async fn settings_get_api_key_exists(key_name: String) -> Result<bool, Strin
 #[tauri::command]
 pub async fn settings_delete_api_key(app: AppHandle, key_name: String) -> Result<bool, String> {
     let deleted = SecureApiKeyStore::delete_api_key(&key_name)?;
+    validate_api_key_name(&key_name)?;
+    validate_api_key_name(&key_name)?;
+/// Get an API key from the keyring (returns redacted version for UI)
+#[tauri::command]
+pub async fn settings_get_api_key_exists(key_name: String) -> Result<bool, String> {
+    SecureApiKeyStore::has_api_key(&key_name)
+}
+
+/// Delete an API key from the keyring
+#[tauri::command]
+pub async fn settings_delete_api_key(app: AppHandle, key_name: String) -> Result<bool, String> {
+    let deleted = SecureApiKeyStore::delete_api_key(&key_name)?;
 
     // Update settings to reflect that key is gone
     if deleted {
@@ -406,6 +468,69 @@ pub async fn settings_delete_api_key(app: AppHandle, key_name: String) -> Result
             }
         };
     }
+
+    Ok(deleted)
+}
+
+#[tauri::command]
+pub async fn settings_set_auth_secret(key_name: String, value: String) -> Result<(), String> {
+    validate_auth_secret_name(&key_name)?;
+
+    if value.trim().is_empty() {
+        return Err("Auth secret cannot be empty".to_string());
+    }
+
+    SecureApiKeyStore::set_secret(&key_name, &value)
+}
+
+#[tauri::command]
+pub async fn settings_get_auth_secret(key_name: String) -> Result<Option<String>, String> {
+    validate_auth_secret_name(&key_name)?;
+
+    Ok(SecureApiKeyStore::get_secret(&key_name)?
+        .map(|secret| secret.expose_secret().to_string()))
+}
+
+#[tauri::command]
+pub async fn settings_delete_auth_secret(key_name: String) -> Result<bool, String> {
+    validate_auth_secret_name(&key_name)?;
+    SecureApiKeyStore::delete_secret(&key_name)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn api_key_allowlist_accepts_known_provider_keys() {
+        for key_name in ALLOWED_API_KEY_NAMES {
+            assert!(validate_api_key_name(key_name).is_ok(), "expected {} to be allowed", key_name);
+        }
+    }
+
+    #[test]
+    fn api_key_allowlist_rejects_auth_secret_keys() {
+        assert!(validate_api_key_name("copilot_oauth_token").is_err());
+        assert!(validate_api_key_name("codespaces_auth_state").is_err());
+    }
+
+    #[test]
+    fn auth_secret_allowlist_accepts_known_auth_keys() {
+        for key_name in ALLOWED_AUTH_SECRET_NAMES {
+            assert!(
+                validate_auth_secret_name(key_name).is_ok(),
+                "expected {} to be allowed",
+                key_name
+            );
+        }
+    }
+
+    #[test]
+    fn auth_secret_allowlist_rejects_api_key_names() {
+        assert!(validate_auth_secret_name("openai_api_key").is_err());
+        assert!(validate_auth_secret_name("proxy_authorization").is_err());
+    }
+}
 
     Ok(deleted)
 }

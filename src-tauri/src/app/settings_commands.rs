@@ -20,6 +20,15 @@ macro_rules! settings_commands {
             $crate::settings::commands::settings_delete_api_key,
             // Settings Sync commands
             $crate::settings_sync::commands::sync_push,
+            $crate::settings::commands::settings_set_auth_secret,
+            $crate::settings::commands::settings_get_auth_secret,
+            $crate::settings::commands::settings_delete_auth_secret,
+            // Secure API key commands (keyring-based storage)
+            $crate::settings::commands::settings_set_api_key,
+            $crate::settings::commands::settings_get_api_key_exists,
+            $crate::settings::commands::settings_delete_api_key,
+            // Settings Sync commands
+            $crate::settings_sync::commands::sync_push,
             $crate::settings_sync::commands::sync_pull,
             $crate::settings_sync::commands::sync_status,
             $crate::settings_sync::commands::sync_resolve_conflicts,
