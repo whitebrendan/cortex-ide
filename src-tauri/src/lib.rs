@@ -48,9 +48,9 @@ mod sandbox;
 mod search;
 mod settings;
 mod settings_sync;
-mod startup_timing;
 #[cfg(feature = "remote-ssh")]
 mod ssh_terminal;
+mod startup_timing;
 mod system_specs;
 mod tasks;
 mod terminal;

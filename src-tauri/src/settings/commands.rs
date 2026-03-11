@@ -11,12 +11,7 @@
 use std::collections::HashMap;
 use std::fs;
 
-use tauri::{AppHandle, Manager};
-use tracing::info;
 use secrecy::ExposeSecret;
-use std::collections::HashMap;
-use std::fs;
-
 use tauri::{AppHandle, Manager};
 use tracing::info;
 
@@ -44,6 +39,9 @@ const ALLOWED_AUTH_SECRET_NAMES: &[&str] = &[
     "copilot_oauth_token",
 ];
 
+const MAX_API_KEY_LENGTH: usize = 512;
+const MAX_AUTH_SECRET_LENGTH: usize = 8 * 1024;
+
 fn validate_allowed_key(key_name: &str, allowed_keys: &[&str], kind: &str) -> Result<(), String> {
     if allowed_keys.contains(&key_name) {
         Ok(())
@@ -59,12 +57,23 @@ fn validate_api_key_name(key_name: &str) -> Result<(), String> {
 fn validate_auth_secret_name(key_name: &str) -> Result<(), String> {
     validate_allowed_key(key_name, ALLOWED_AUTH_SECRET_NAMES, "auth secret")
 }
-use super::types::{
-    AISettings, CommandPaletteSettings, CortexSettings, DebugSettings, EditorSettings,
-    ExplorerSettings, ExtensionSettingsMap, FilesSettings, HttpSettings, LanguageEditorOverride,
-    ScreencastModeSettings, SearchSettings, SecuritySettings, TerminalSettings, ThemeSettings,
-    WorkbenchSettings, ZenModeSettings,
-};
+
+fn validate_secret_value<'a>(
+    value: &'a str,
+    kind: &str,
+    max_length: usize,
+) -> Result<&'a str, String> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return Err(format!("{kind} cannot be empty"));
+    }
+
+    if trimmed.len() > max_length {
+        return Err(format!("{kind} exceeds maximum length"));
+    }
+
+    Ok(trimmed)
+}
 
 /// Load settings from disk
 #[tauri::command]
@@ -405,6 +414,14 @@ pub async fn settings_set_extension(
 
 // === Secure API key commands ===
 
+fn set_api_key_presence(settings: &mut CortexSettings, key_name: &str, exists: bool) {
+    match key_name {
+        "supermaven_api_key" => settings.ai.has_supermaven_api_key = exists,
+        "proxy_authorization" => settings.http.has_proxy_authorization = exists,
+        _ => {}
+    }
+}
+
 /// Store an API key securely in the keyring
 #[tauri::command]
 pub async fn settings_set_api_key(
@@ -412,23 +429,14 @@ pub async fn settings_set_api_key(
     key_name: String,
     api_key: String,
 ) -> Result<(), String> {
-    SecureApiKeyStore::set_api_key(&key_name, &api_key)?;
     validate_api_key_name(&key_name)?;
-pub async fn settings_set_api_key(
-    app: AppHandle,
-    key_name: String,
-    api_key: String,
-) -> Result<(), String> {
-    SecureApiKeyStore::set_api_key(&key_name, &api_key)?;
+    let api_key = validate_secret_value(&api_key, "API key", MAX_API_KEY_LENGTH)?;
+    SecureApiKeyStore::set_api_key(&key_name, api_key)?;
 
     // Update settings to reflect that key exists
     let settings_state = app.state::<SettingsState>();
     if let Ok(mut settings) = settings_state.0.lock() {
-        match key_name.as_str() {
-            "supermaven_api_key" => settings.ai.has_supermaven_api_key = true,
-            "proxy_authorization" => settings.http.has_proxy_authorization = true,
-            _ => {}
-        }
+        set_api_key_presence(&mut settings, &key_name, true);
     }
 
     Ok(())
@@ -437,60 +445,43 @@ pub async fn settings_set_api_key(
 /// Get an API key from the keyring (returns redacted version for UI)
 #[tauri::command]
 pub async fn settings_get_api_key_exists(key_name: String) -> Result<bool, String> {
+    validate_api_key_name(&key_name)?;
     SecureApiKeyStore::has_api_key(&key_name)
 }
 
 /// Delete an API key from the keyring
 #[tauri::command]
 pub async fn settings_delete_api_key(app: AppHandle, key_name: String) -> Result<bool, String> {
-    let deleted = SecureApiKeyStore::delete_api_key(&key_name)?;
     validate_api_key_name(&key_name)?;
-    validate_api_key_name(&key_name)?;
-/// Get an API key from the keyring (returns redacted version for UI)
-#[tauri::command]
-pub async fn settings_get_api_key_exists(key_name: String) -> Result<bool, String> {
-    SecureApiKeyStore::has_api_key(&key_name)
-}
-
-/// Delete an API key from the keyring
-#[tauri::command]
-pub async fn settings_delete_api_key(app: AppHandle, key_name: String) -> Result<bool, String> {
     let deleted = SecureApiKeyStore::delete_api_key(&key_name)?;
 
     // Update settings to reflect that key is gone
     if deleted {
         let settings_state = app.state::<SettingsState>();
         if let Ok(mut settings) = settings_state.0.lock() {
-            match key_name.as_str() {
-                "supermaven_api_key" => settings.ai.has_supermaven_api_key = false,
-                "proxy_authorization" => settings.http.has_proxy_authorization = false,
-                _ => {}
-            }
-        };
+            set_api_key_presence(&mut settings, &key_name, false);
+        }
     }
 
     Ok(deleted)
 }
 
+/// Store an auth secret securely in the keyring
 #[tauri::command]
 pub async fn settings_set_auth_secret(key_name: String, value: String) -> Result<(), String> {
     validate_auth_secret_name(&key_name)?;
-
-    if value.trim().is_empty() {
-        return Err("Auth secret cannot be empty".to_string());
-    }
-
-    SecureApiKeyStore::set_secret(&key_name, &value)
+    let value = validate_secret_value(&value, "Auth secret", MAX_AUTH_SECRET_LENGTH)?;
+    SecureApiKeyStore::set_secret(&key_name, value)
 }
 
+/// Retrieve an auth secret from the keyring
 #[tauri::command]
 pub async fn settings_get_auth_secret(key_name: String) -> Result<Option<String>, String> {
     validate_auth_secret_name(&key_name)?;
-
-    Ok(SecureApiKeyStore::get_secret(&key_name)?
-        .map(|secret| secret.expose_secret().to_string()))
+    Ok(SecureApiKeyStore::get_secret(&key_name)?.map(|secret| secret.expose_secret().to_string()))
 }
 
+/// Delete an auth secret from the keyring
 #[tauri::command]
 pub async fn settings_delete_auth_secret(key_name: String) -> Result<bool, String> {
     validate_auth_secret_name(&key_name)?;
@@ -504,7 +495,10 @@ mod tests {
     #[test]
     fn api_key_allowlist_accepts_known_provider_keys() {
         for key_name in ALLOWED_API_KEY_NAMES {
-            assert!(validate_api_key_name(key_name).is_ok(), "expected {} to be allowed", key_name);
+            assert!(
+                validate_api_key_name(key_name).is_ok(),
+                "expected {key_name} to be allowed"
+            );
         }
     }
 
@@ -519,8 +513,7 @@ mod tests {
         for key_name in ALLOWED_AUTH_SECRET_NAMES {
             assert!(
                 validate_auth_secret_name(key_name).is_ok(),
-                "expected {} to be allowed",
-                key_name
+                "expected {key_name} to be allowed"
             );
         }
     }
@@ -530,7 +523,30 @@ mod tests {
         assert!(validate_auth_secret_name("openai_api_key").is_err());
         assert!(validate_auth_secret_name("proxy_authorization").is_err());
     }
-}
 
-    Ok(deleted)
+    #[test]
+    fn validate_secret_value_trims_valid_input() {
+        assert!(matches!(
+            validate_secret_value("  secret  ", "Auth secret", MAX_AUTH_SECRET_LENGTH),
+            Ok("secret")
+        ));
+    }
+
+    #[test]
+    fn validate_secret_value_rejects_empty_input() {
+        assert!(matches!(
+            validate_secret_value("   ", "Auth secret", MAX_AUTH_SECRET_LENGTH),
+            Err(ref error) if error == "Auth secret cannot be empty"
+        ));
+    }
+
+    #[test]
+    fn validate_secret_value_rejects_oversized_input() {
+        let oversized = "a".repeat(MAX_AUTH_SECRET_LENGTH + 1);
+
+        assert!(matches!(
+            validate_secret_value(&oversized, "Auth secret", MAX_AUTH_SECRET_LENGTH),
+            Err(ref error) if error == "Auth secret exceeds maximum length"
+        ));
+    }
 }
