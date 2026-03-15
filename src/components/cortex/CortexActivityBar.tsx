@@ -58,6 +58,7 @@ export const CortexActivityBar: Component<CortexActivityBarProps> = (props) => {
     <>
       <style>{`.cortex-activity-bar-nav::-webkit-scrollbar { display: none; }`}</style>
       <aside
+        data-testid="cortex-activity-bar"
         class={local.class || ""}
         style={{
           display: "flex",
@@ -77,6 +78,8 @@ export const CortexActivityBar: Component<CortexActivityBarProps> = (props) => {
         {...others}
       >
         <nav
+          role="navigation"
+          aria-label="Activity Bar"
           class="cortex-activity-bar-nav"
           style={{
             display: "flex",
@@ -149,6 +152,8 @@ const ActivityBarButton: Component<ActivityBarButtonProps> = (props) => {
   return (
     <CortexTooltip content={props.item.label} position="right">
       <button
+        data-testid={`activity-bar-item-${props.item.id}`}
+        role="button"
         style={{
           position: "relative",
           display: "flex",

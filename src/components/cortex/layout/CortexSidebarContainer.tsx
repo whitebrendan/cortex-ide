@@ -85,7 +85,12 @@ export function CortexSidebarContainer(props: CortexSidebarContainerProps) {
 
   return (
     <Show when={!props.sidebarCollapsed}>
-      <aside style={sidebarStyle()}>
+      <aside
+        data-testid="cortex-sidebar-container"
+        role="complementary"
+        aria-label="Sidebar"
+        style={sidebarStyle()}
+      >
         <div style={{
           flex: "1",
           display: "flex",
