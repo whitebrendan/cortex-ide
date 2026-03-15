@@ -37,3 +37,4 @@ src-tauri/WixTools/
 .sccache/
 # Coverage output
 coverage/
+.factory
