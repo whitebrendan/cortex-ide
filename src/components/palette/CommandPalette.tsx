@@ -75,6 +75,7 @@ export function PaletteCommandPalette() {
   const [selectedIndex, setSelectedIndex] = createSignal(0);
   const [recentIds, setRecentIds] = createSignal<string[]>([]);
   const [subMode, setSubMode] = createSignal<{ parentId: string; label: string; items: Array<{ id: string; label: string }> } | null>(null);
+  const [lastNavMode, setLastNavMode] = createSignal<"keyboard" | "mouse">("keyboard");
   let inputRef: HTMLInputElement | undefined;
   let listRef: HTMLDivElement | undefined;
 
@@ -151,8 +152,8 @@ export function PaletteCommandPalette() {
 
   const handleKeyDown = (e: KeyboardEvent) => {
     const list = flatList();
-    if (e.key === "ArrowDown") { e.preventDefault(); setSelectedIndex(i => Math.min(i + 1, list.length - 1)); }
-    else if (e.key === "ArrowUp") { e.preventDefault(); setSelectedIndex(i => Math.max(i - 1, 0)); }
+    if (e.key === "ArrowDown") { e.preventDefault(); setLastNavMode("keyboard"); setSelectedIndex(i => Math.min(i + 1, list.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setLastNavMode("keyboard"); setSelectedIndex(i => Math.max(i - 1, 0)); }
     else if (e.key === "Enter") { e.preventDefault(); const c = list[selectedIndex()]; if (c) handleSelect(c.id); }
     else if (e.key === "Escape") { e.preventDefault(); if (subMode()) exitSubMode(); else setShowCommandPalette(false); }
     else if (e.key === "Backspace" && !query() && subMode()) { e.preventDefault(); exitSubMode(); }
@@ -173,7 +174,8 @@ export function PaletteCommandPalette() {
     const sel = () => flatIdx() === selectedIndex();
     return (
       <div data-palette-item style={itemStyle(sel())} role="option" aria-selected={sel()}
-        onMouseEnter={() => setSelectedIndex(flatIdx())} onClick={() => handleSelect(cmd.id)}>
+        onMouseMove={() => setLastNavMode("mouse")}
+        onMouseEnter={() => { if (lastNavMode() === "mouse") setSelectedIndex(flatIdx()); }} onClick={() => handleSelect(cmd.id)}>
         <Icon name="command" size={10} style={{ color: "var(--jb-text-muted-color)", "flex-shrink": "0" }} />
         <Show when={!subMode()}>
           <span style={{ "font-size": "10px", color: "var(--jb-text-muted-color)", "white-space": "nowrap" }}>{cmd.category || "General"}</span>
